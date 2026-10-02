@@ -51,7 +51,7 @@ The gate's share stays small because signalling stops flowing through it once a 
 | Path | Who carries the media | Who pays for the bandwidth |
 |---|---|---|
 | `direct` | Nobody in between | The two people talking, on their own connections |
-| `gateway` | A desktop player's own gateway | That player's upload |
+| `gateway` | A desktop participant's own gateway | That participant's upload |
 | `relay` | The gateway of another session member | That member: a desktop participant, or the machine hosting the session |
 | `bridged` | A participant who forwards | That participant's upload, plus CPU to re-encode |
 | `unreachable` | Nobody | Nobody: no media flows, and Freehop says so |
@@ -59,7 +59,7 @@ The gate's share stays small because signalling stops flowing through it once a 
 None of these rows is your operator infrastructure. That is the point of the design, and it comes with obligations:
 
 - **Do not host sessions on servers whose bandwidth you pay for.** A host node relays media for its session. If that host is your own server, the relay bill is back.
-- **Forwarding costs a participant's upload.** How much a forwarding player on home broadband can spare is not yet measured. Freehop caps forwarded video at 200 kbit/s.
+- **Forwarding costs a participant's upload.** How much a forwarding participant on home broadband can spare is not yet measured. Freehop caps forwarded video at 200 kbit/s.
 - **Gateways have quotas.** By default a gateway relays at most 4 Mbit/s per allocation and 40 Mbit/s in total.
 
 ## What you still run

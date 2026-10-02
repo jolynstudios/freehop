@@ -4,12 +4,14 @@ const sidebars: SidebarsConfig = {
   docs: [
     'intro',
     'quickstart',
+    'comparison',
     {
       type: 'category',
       label: 'Concepts',
       collapsed: false,
       items: [
         'concepts/gates',
+        'concepts/trackers',
         'concepts/paths',
         'concepts/gateways',
         'concepts/host-nodes',

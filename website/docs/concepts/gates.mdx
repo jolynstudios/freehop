@@ -26,7 +26,7 @@ Here is the whole conversation from the gate's side, using the frames of the [ga
 {"t":"recv","room":"Xq3v…","from":"n8Wd…","box":"Cq9Lr2T…opaque base64url…"}
 ```
 
-The room tag is derived from the room secret with HKDF, so the gate cannot work out which room, match or application it belongs to. Peer ids are 16 random bytes, fresh for every join.
+The room tag is derived from the room secret with HKDF, so the gate cannot work out which room or application it belongs to. Peer ids are 16 random bytes, fresh for every join.
 
 ## What a gate sees, and what it cannot see
 
@@ -67,7 +67,7 @@ A ticket can list up to eight gates. Clients connect to every one of them and an
 
 - **Peers on different gates still meet.** Say Ana only reaches `gate-1`, Ben only reaches `gate-2`, and Cleo reaches both. Cleo connects to both of them and reports her links in her sealed capabilities. Ana's envelopes for Ben then travel through Cleo's data channel, forwarded once, until Ana and Ben have their own link.
 - **Calls survive a total gate outage.** An established call does not depend on any gate. In the lab, peers kept exchanging media (about 600 audio packets per peer in 6 seconds) after every gate was shut down.
-- **A public WebTorrent tracker works as a gate.** A gate URL of the form `bt+wss://tracker.openwebtorrent.com` makes the client use that tracker as its mailbox. The swarm's `info_hash` is the first 20 hex characters of the room tag, and the envelopes ride in the offer and answer fields that trackers already relay. A tracker sees exactly as little as a Freehop gate. The [live call](/demo) on this site uses public trackers as its only gates.
+- **A public WebTorrent tracker works as a gate.** A gate URL of the form `bt+wss://tracker.openwebtorrent.com` makes the client use that tracker as its mailbox. The swarm's `info_hash` is the first 20 hex characters of the room tag, and the envelopes ride in the offer and answer fields that trackers already relay. A tracker sees exactly as little as a Freehop gate. The [live call](/demo) on this site uses public trackers as its only gates. [Torrent trackers as gates](./trackers.mdx) explains how it works and when to use it.
 
 ## Admission: open or token-gated
 

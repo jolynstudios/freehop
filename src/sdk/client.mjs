@@ -26,6 +26,7 @@ export async function connect(ticket, options = {}) {
 
   const room = await join({ ...options, gates: ticket.gates, secret: ticket.secret, app: ticket.app, auth: ticket.auth, gateway: gateway ?? undefined });
   let current = ticket;
+  let updating = Promise.resolve();
   const trackPeers = new Map();   // remote track id -> origin peer (direct or forwarded)
   room.on('track', ({ peer, track }) => { trackPeers.set(track.id, peer); track.addEventListener('ended', () => trackPeers.delete(track.id)); });
   // Disconnect a peer and revoke its credentials on the desktop gateway (current room tag).
@@ -37,15 +38,23 @@ export async function connect(ticket, options = {}) {
   return Object.assign(room, {
     ticket: () => current,
     /** Apply a newer ticket for the same room (secret rotation after a kick). */
-    async update(next, { dropped = [] } = {}) {
-      if (typeof next === 'string') next = decodeTicket(next);
-      if (!validTicket(next) || next.roomId !== current.roomId || next.epoch <= current.epoch) return false;
-      current = next;
-      await allow(next.secret);
-      // Revoke under the old tag before rekeying: that is the tag the dropped peers hold credentials for.
-      for (const peer of dropped) await remove(peer);
-      await room.rekey(next.secret, { auth: next.auth });
-      return true;
+    update(next, { dropped = [] } = {}) {
+      const task = updating.then(async () => {
+        if (typeof next === 'string') next = decodeTicket(next);
+        if (!validTicket(next) || room.closed || next.roomId !== current.roomId || next.app !== current.app || next.epoch <= current.epoch) return false;
+        const previousTag = room.tag;
+        if ((await deriveRoom(next.secret, next.app)).tag === previousTag) return false;
+        await allow(next.secret);
+        for (const peer of dropped) await remove(peer);
+        // Revoke the whole old epoch, including any unreported identity's credentials.
+        if (gateway && desktop?.revokeRoom) await desktop.revokeRoom(previousTag);
+        await room.rekey(next.secret, { auth: next.auth });
+        trackPeers.clear();
+        current = next;
+        return true;
+      });
+      updating = task.catch(() => {});
+      return task;
     },
     /** Remove a peer locally right away (kick), and revoke it on the desktop gateway. */
     async kick(peer) { await remove(peer); },

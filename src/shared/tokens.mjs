@@ -18,7 +18,7 @@ export function verifyGateToken(secret, token, now = Date.now()) {
   const given = Buffer.from(mac, 'base64url');
   if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
   let claims; try { claims = JSON.parse(Buffer.from(body, 'base64url').toString('utf8')); } catch { return null; }
-  if (!claims || typeof claims !== 'object' || !Number.isFinite(claims.exp) || claims.exp * 1000 < now) return null;
+  if (!claims || typeof claims !== 'object' || !Number.isSafeInteger(claims.exp) || claims.exp * 1000 <= now) return null;
   if (claims.room !== undefined && (typeof claims.room !== 'string' || !TAG.test(claims.room))) return null;
   return claims;
 }

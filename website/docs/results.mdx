@@ -7,18 +7,18 @@ description: Freehop's lab qualification of 2 October 2026, 40 of 40 runs across
 import PathBadge from '@site/src/components/PathBadge';
 import { StatGrid, Stat } from '@site/src/components/Stats';
 
-Freehop was qualified on 2 October 2026 in an isolated network lab: real browsers behind real Linux kernel NATs, one clean run of the final code. Browser and desktop audio and video connected in every lab network where any route exists inside the session, including the cases that earlier direct-only research could not connect.
+Freehop was qualified on 2 October 2026 in an isolated network lab: real browsers behind real Linux kernel NATs, one clean run of the then-current code. Browser and desktop audio and video connected in every lab network where any route exists inside the session, including the cases that earlier direct-only research could not connect.
 
 <StatGrid>
   <Stat value="40/40" label="lab runs passed, 0 failed" note="11 scenarios × 3 Chromium trials, plus 7 cross-engine runs" />
-  <Stat value="79/79" label="unit tests" note="STUN, TURN, port mapper, gate and gateway" />
+  <Stat value="97/97" label="unit tests" note="STUN, TURN, port mapper, gate and gateway" />
   <Stat value="800/800" label="TURN messages over UDP" note="coturn's turnutils_uclient, 0 lost" />
   <Stat value="800/800" label="TURN messages over TCP" note="coturn's turnutils_uclient, 0 lost" />
 </StatGrid>
 
 :::note[Scope]
 
-This is kernel-NAT qualification in network namespaces, not a test on physical ISP, carrier or corporate networks. See [Not yet verified](#not-yet-verified) below.
+This is kernel-NAT qualification in network namespaces, not a test on physical ISP, carrier or corporate networks. The 40-run matrix predates the subsequent security fixes. The updated runtime passed 97 unit tests, the local browser suites and a targeted hard-NAT forwarding run; the full 40-run matrix has not been repeated for this revision. See [Not yet verified](#not-yet-verified) below.
 
 :::
 
@@ -42,7 +42,7 @@ Real **Chromium 151**, **Firefox 153** and **WebKit 26.5** ran in separate Linux
 
 ## Scenario results
 
-Peers are named by letter: `a`, `b` and `c` are browser participants, `g` is a desktop player running a gateway, and `h` is a host node (a gateway member without media). Gate traffic is the gate's total for the whole run, including retries of pairs that stay unreachable. It is signalling only.
+Peers are named by letter: `a`, `b` and `c` are browser participants, `g` is a desktop participant running a gateway, and `h` is a host node (a gateway member without media). Gate traffic is the gate's total for the whole run, including retries of pairs that stay unreachable. It is signalling only.
 
 | Scenario | Networks | Browsers | Passed | Paths per pair | Gate traffic per run |
 |---|---|---|---|---|---|
@@ -53,14 +53,14 @@ Peers are named by letter: `a`, `b` and `c` are browser participants, `g` is a d
 | `hard-pair` | a=random, b=random | Chromium | 3/3 | a–b <PathBadge kind="unreachable" /> (expected: nobody else in the session) | 93 KB |
 | `hard-pair-bridge` | a=random, b=random, c=public | Chromium | 3/3 | a–c, b–c <PathBadge kind="direct" />, a–b <PathBadge kind="bridged" via="c" /> | 91 KB |
 | `hard-pair-bridge` | as above | Firefox, WebKit, Chromium as c | 1/1 | as above | 115 KB |
-| `two-player-desktop-host` | a=random, g=upnp | Chromium | 3/3 | a–g <PathBadge kind="gateway" via="g" /> | 37–66 KB |
-| `two-player-desktop-host` | as above | WebKit, Firefox as g | 1/1 | a–g <PathBadge kind="gateway" via="g" /> | 34 KB |
+| `two-peer-desktop-host` | a=random, g=upnp | Chromium | 3/3 | a–g <PathBadge kind="gateway" via="g" /> | 37–66 KB |
+| `two-peer-desktop-host` | as above | WebKit, Firefox as g | 1/1 | a–g <PathBadge kind="gateway" via="g" /> | 34 KB |
 | `hard-pair-gateway` | a=random, b=random, g=upnp | Chromium | 3/3 | a–g, b–g <PathBadge kind="gateway" via="g" />, a–b <PathBadge kind="relay" via="g" /> | 143–201 KB |
 | `hard-pair-gateway` | as above | Firefox, WebKit, Chromium as g | 1/1 | as above | 146 KB |
 | `udpblock-gateway` | a=udpblock, g=upnp | Chromium | 3/3 | a–g <PathBadge kind="gateway" via="g" /> (TURN over TCP) | 34–63 KB |
 | `udpblock-gateway` | as above | Firefox, Chromium as g | 1/1 | a–g <PathBadge kind="gateway" via="g" /> | 31 KB |
 | `udpblock-pair-gateway` | a=udpblock, b=udpblock, g=upnp | Chromium | 3/3 | a–g, b–g <PathBadge kind="gateway" via="g" />, a–b <PathBadge kind="relay" via="g" /> | 130–158 KB |
-| `hard-pair-host-node` | a=random, b=random, h=public | Chromium | 3/3 | a–b <PathBadge kind="relay" via="h" /> (no desktop player) | 73 KB |
+| `hard-pair-host-node` | a=random, b=random, h=public | Chromium | 3/3 | a–b <PathBadge kind="relay" via="h" /> (no desktop participant) | 73 KB |
 | `hard-pair-host-node` | as above | Firefox, WebKit | 1/1 | a–b <PathBadge kind="relay" via="h" /> | 62 KB |
 | `udpblock-pair-host-node` | a=udpblock, b=udpblock, h=public | Chromium | 3/3 | a–b <PathBadge kind="relay" via="h" /> | 65 KB |
 | `gate-only` | a=gateonly, b=eim, c=public | Chromium | 3/3 | a–b, a–c <PathBadge kind="unreachable" /> (the boundary), b–c <PathBadge kind="direct" /> | 207 KB |
@@ -69,11 +69,11 @@ Peers are named by letter: `a`, `b` and `c` are browser participants, `g` is a d
 
 ### What this answers
 
-Earlier research that only tried direct routes proved its own boundary: two fully random symmetric NATs connected in 0 of 3 attempts, and UDP-blocked peers had no route at all. In this lab Freehop connects both cases, through a desktop player's gateway, the session's host node or a participant. The only network it cannot serve is one that reaches nothing but the gate (`gate-only`). There, media is impossible without the operator carrying it, and Freehop reports `unreachable`.
+Earlier research that only tried direct routes proved its own boundary: two fully random symmetric NATs connected in 0 of 3 attempts, and UDP-blocked peers had no route at all. In this lab Freehop connects both cases, through a desktop participant's gateway, the session's host node or a participant. The only network it cannot serve is one that reaches nothing but the gate (`gate-only`). There, media is impossible without the operator carrying it, and Freehop reports `unreachable`.
 
 ## Other evidence
 
-### Unit tests: 79 of 79
+### Unit tests: 97 of 97
 
 - STUN codec with the RFC 5769 test vectors, plus fuzzing.
 - TURN server: 29 cases.
@@ -98,16 +98,16 @@ coturn's `turnutils_uclient` against Freehop's TURN server: **UDP 800/800 and TC
 - **A public WebTorrent tracker as the only gate** (`wss://tracker.openwebtorrent.com`): no server of our own.
 - The SDK reference app driven through its own interface and API, including a kick rotation.
 
-### Independent security and correctness review
+### Security review
 
-11 findings, 3 of them high, all fixed and re-tested. Examples: gates could inject peers, the gateway exposed loopback services, and a lost offer could deadlock a pair.
+The earlier qualification recorded 11 findings. The subsequent source audit and security regressions cover key epochs, alias revocation, tickets, authority races, forwarding authorization, gate input limits, UDP response budgets and Electron IPC. See the [security model](./concepts/security.mdx) and the repository's `SECURITY-AUDIT.md` for the current findings and trust limits.
 
 ## Not yet verified
 
 1. **Physical networks:** real home routers, 4G and 5G carrier NAT (usually with IPv6), a UDP-blocking corporate network, and routers without UPnP, PCP or NAT-PMP.
 2. **The [Redline Wars](./redline-wars.mdx) integration** through the SDK, with the game as test environment, including its strict frame-time gates with voice on.
 3. **iOS Safari and Android browsers.** Only desktop engines were tested.
-4. **Media quality under real load.** Forwarded (bridged) media is re-encoded by the participant, and the upstream budget of a forwarding player on home broadband is still unmeasured.
+4. **Media quality under real load.** Forwarded (bridged) media is re-encoded by the participant, and the upstream budget of a forwarding participant on home broadband is still unmeasured.
 
 ## Reproduce
 

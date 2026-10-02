@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-// Peer gateway: a TURN server that a desktop player (or any peer with Node) runs on its own
-// machine, made reachable through the player's router via PCP / NAT-PMP / UPnP. It is not a
-// third-party relay: it is the player's own front door. Peers in the same room can reach the
-// player through it even from symmetric NATs or UDP-blocking networks, and the player may let
+// Peer gateway: a TURN server that a desktop participant (or any peer with Node) runs on its own
+// machine, made reachable through the participant's router via PCP / NAT-PMP / UPnP. It is not a
+// third-party relay: it is the participant's own front door. Peers in the same room can reach the
+// participant through it even from symmetric NATs or UDP-blocking networks, and the participant may let
 // other members of its own session use it when they cannot reach each other.
 import { networkInterfaces } from 'node:os';
 import { randomBytes, createHmac } from 'node:crypto';

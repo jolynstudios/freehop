@@ -39,6 +39,16 @@ Each part of the game maps onto one piece of the SDK:
 
 One deployment detail: the game origin's `Permissions-Policy` header must allow `camera` and `microphone` once voice ships.
 
+## Where the torrent trackers fit
+
+The [live call](/demo) on this site uses public WebTorrent trackers as its only gates: browsers find each other through trackers that BitTorrent apps in the browser already use, with no server of ours. [Torrent trackers as gates](./concepts/trackers.mdx) explains how that works.
+
+In the game, the main mailbox is the game's own gate. It runs on the game's own domain and admits only tickets for the game's own rooms. Public trackers can be listed in the same tickets as backup gates:
+
+- **If the game's gate is down or blocked** on someone's network, players still find each other through a tracker. A call that is already running does not need any gate.
+- **The trackers learn nothing about the match.** They see a random-looking swarm fingerprint and sealed envelopes. They cannot tell which match or which players it is, and voice never passes through them.
+- **The trade-off.** Public trackers are run by volunteers, outside the game's control. Whether the game lists them is a decision for the integration.
+
 ## What the game does not get
 
 The game gets no special treatment from Freehop. It uses the same tickets, the same gates and the same path ladder as any other application, and nothing in the SDK is specific to games.

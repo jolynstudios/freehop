@@ -1,10 +1,10 @@
 ---
 title: Desktop (Electron)
 sidebar_label: Desktop (Electron)
-description: Reference for installFreehopGateway and the Freehop preload, which give an Electron app's players their own reachable gateway.
+description: Reference for installFreehopGateway and the Freehop preload, which give an Electron app's participants their own reachable gateway.
 ---
 
-A desktop app can do something a browser tab cannot: run a TURN server on the player's machine and ask the router to forward a port to it. Freehop's Electron helper does both in the main process and hands the result to your page through an origin-restricted preload. Players behind hard NATs or UDP-blocking networks can then reach this player without any third party. The [gateways concept page](../concepts/gateways.mdx) explains why.
+A desktop app can do something a browser tab cannot: run a TURN server on the participant's machine and ask the router to forward a port to it. Freehop's Electron helper does both in the main process and hands the result to your page through an origin-restricted preload. Participants behind hard NATs or UDP-blocking networks can then reach this participant without any third party. The [gateways concept page](../concepts/gateways.mdx) explains why.
 
 ## Main process
 
@@ -14,7 +14,7 @@ import { createRequire } from 'node:module';
 import { installFreehopGateway } from 'freehop/electron';
 
 const require = createRequire(import.meta.url);
-const freehop = installFreehopGateway({ ipcMain });
+const freehop = installFreehopGateway({ ipcMain, allowedOrigins: ['https://play.example.com'] });
 app.on('will-quit', () => freehop.close());
 
 app.whenReady().then(() => {
@@ -34,10 +34,11 @@ app.whenReady().then(() => {
 | Parameter | Meaning |
 |---|---|
 | `ipcMain` | Electron's `ipcMain`. The helper registers four handlers on it. |
+| `allowedOrigins` | Required array of exact HTTP(S) origins. Use the same origins in the preload argument. Only the main frame may invoke gateway IPC. |
 | `options` | Passed to the gateway (see below). Optional. |
 | `log` | `(event, details) => void`, for example to forward port-mapping results to your logs. Optional. |
 
-It returns `{ gateway, close() }`. `gateway` stays `null` until a page first asks for it: the gateway starts lazily, so players who never use voice pay nothing. `close()` removes the IPC handlers, stops the TURN server and removes the router mappings (best effort).
+It returns `{ gateway, close() }`. `gateway` stays `null` until a page first asks for it: the gateway starts lazily, so participants who never use voice pay nothing. `close()` removes the IPC handlers, stops the TURN server and removes the router mappings (best effort).
 
 ### Gateway options
 
@@ -53,7 +54,7 @@ It returns `{ gateway, close() }`. `gateway` stays `null` until a page first ask
 
 ## Preload: window.freehopGateway
 
-The preload (`freehop/electron/preload`) exposes `window.freehopGateway` **only** to pages whose origin appears in `--freehop-origins=`, a comma-separated list you pass through `additionalArguments`. Any other page in the window, such as a link a player opens, never sees the gateway or its secret.
+The preload (`freehop/electron/preload`) exposes `window.freehopGateway` **only** to pages whose origin appears in `--freehop-origins=`, a comma-separated list you pass through `additionalArguments`. Any other page in the window, such as a link a participant opens, never sees the gateway or its secret.
 
 | Method | What it does |
 |---|---|
@@ -62,7 +63,7 @@ The preload (`freehop/electron/preload`) exposes `window.freehopGateway` **only*
 | `revokePeer(tag, peer)` | Revokes one peer's credentials and allocations in a room |
 | `revokeRoom(tag)` | Revokes a whole room |
 
-The main process validates every argument (room tags and peer ids must be base64url of the expected length) before it touches the gateway. The IPC channels are `freehop:gateway-info`, `freehop:allow-room`, `freehop:revoke-peer` and `freehop:revoke-room`.
+The main process validates the sending frame and its current origin, as well as every argument (room tags and peer ids must be base64url of the expected length) before it touches the gateway. The IPC channels are `freehop:gateway-info`, `freehop:allow-room`, `freehop:revoke-peer` and `freehop:revoke-room`.
 
 ## In your page
 
@@ -70,17 +71,17 @@ Nothing changes. `connect()` looks for `window.freehopGateway`, asks for the gat
 
 ```js
 const session = await connect(ticket, { media: { audio: true } });
-// On the desktop, other players can now reach this player through its own gateway.
+// On the desktop, other participants can now reach this participant through its own gateway.
 ```
 
 When `info()` resolves to `null` (no public address, no router that grants a mapping, or a router whose own external address is private), the app joins as an ordinary peer. Nothing fails; the other steps of the ladder stay available.
 
-For kicks, `session.update(newTicket, { dropped })` drops the listed peers and revokes them on this player's gateway. To remove someone before the new ticket arrives, call `session.kick(peerId)`, which does the same for one peer right away.
+For kicks, `session.update(newTicket, { dropped })` drops old links and revokes the entire previous room epoch on this participant's gateway, including unreported aliases. To remove someone before the new ticket arrives, call `session.kick(peerId)`, which does the same for one peer right away.
 
 ## Other Node.js programs
 
-Outside Electron, `startGateway()` from `freehop/relay` runs the same gateway. Pass its `info()` to the client as the `gateway` option of `connect()` or `join()`. A session host that should offer its gateway without joining the call uses [host sessions](./host.mdx) instead.
+Outside Electron, `startGateway()` from `freehop/relay` runs the same gateway. The application must revoke the old room with `gateway.revokeRoom(oldTag)` on key rotation when using a raw gateway without the Electron bridge. Pass its `info()` to the client as the `gateway` option of `connect()` or `join()`. A session host that should offer its gateway without joining the call uses [host sessions](./host.mdx) instead.
 
 ## Next
 
-[Host sessions](./host.mdx) turn the machine that hosts a match into the session's gateway.
+[Host sessions](./host.mdx) turn the machine that hosts a session into the session's gateway.

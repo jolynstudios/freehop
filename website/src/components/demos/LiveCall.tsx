@@ -37,8 +37,10 @@ function newCode() {
 }
 
 function codeFromHash() {
-  const raw = decodeURIComponent(window.location.hash.replace(/^#/, ''));
-  return CODE.test(raw) ? raw : null;
+  try {
+    const raw = decodeURIComponent(window.location.hash.replace(/^#/, ''));
+    return CODE.test(raw) ? raw : null;
+  } catch { return null; }
 }
 
 function kb(bytes: number) {
@@ -121,7 +123,7 @@ function RemoteTile({peer, streams}: {peer: Peer; streams: MediaStream | undefin
     el.play().catch(() => {});
   }, [streams]);
   return (
-    <MediaTile stream={streams ?? null} label={`Peer ${peer.id.slice(0, 6)}`}>
+    <MediaTile stream={streams ?? null} label={`Peer ${peer.id.slice(0, 6)}`} muted>
       <PathBadge kind={peer.path} via={peer.via ? peer.via.slice(0, 6) : undefined} size="sm" />
       <span className={s.counters}>
         audio {peer.audio.toLocaleString('en-US')} pkts · video {peer.video.toLocaleString('en-US')} frames
@@ -149,6 +151,7 @@ export default function LiveCall() {
   const [copied, setCopied] = useState(false);
   const [lonely, setLonely] = useState(false);
   const roomRef = useRef<FreehopRoom | null>(null);
+  const mounted = useRef(true);
 
   // Room code lives in the URL fragment, which never reaches any server.
   useEffect(() => {
@@ -177,9 +180,11 @@ export default function LiveCall() {
       setGates(Object.fromEntries(TRACKERS.map(t => [t, 'connecting'])));
       try {
         const mod: ClientModule = await import(/* webpackIgnore: true */ url);
+        if (!mounted.current) return;
         // Join with the microphone first; the camera is added afterwards, so a busy or blocked
         // camera never keeps anyone out of the call.
         const r = await mod.join({gates: TRACKERS, stun: STUN, secret: code, app: APP, media: {audio: true, video: false}});
+        if (!mounted.current) { await r.leave(); return; }
         roomRef.current = r;
         setRoom(r);
         setMic(true);
@@ -221,6 +226,7 @@ export default function LiveCall() {
           }
         }
       } catch (e) {
+        if (!mounted.current) return;
         const err = e as Error & {name?: string};
         roomRef.current = null;
         setRoom(null);
@@ -294,7 +300,14 @@ export default function LiveCall() {
     await r?.leave();
   }, []);
 
-  useEffect(() => () => void roomRef.current?.leave(), []);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      const r = roomRef.current; roomRef.current = null;
+      void r?.leave();
+    };
+  }, []);
 
   const copy = async () => {
     try {

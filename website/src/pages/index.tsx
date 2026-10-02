@@ -4,6 +4,7 @@ import Hero from '@site/src/components/home/Hero';
 import Problem from '@site/src/components/home/Problem';
 import Ladder from '@site/src/components/home/Ladder';
 import Proof from '@site/src/components/home/Proof';
+import Compare from '@site/src/components/home/Compare';
 import Quickstart from '@site/src/components/home/Quickstart';
 import Redline from '@site/src/components/home/Redline';
 import Honest from '@site/src/components/home/Honest';
@@ -23,6 +24,7 @@ export default function Home() {
         <Ladder />
         <CostSection />
         <Proof />
+        <Compare />
         <Quickstart />
         <Redline />
         <Honest />

@@ -27,7 +27,7 @@ export class GateClient extends Emitter {
       this.#raw({ t: 'hello', v: 1, ...(auth ? { auth } : {}) });
     };
     ws.onmessage = event => {
-      if (ws !== this.ws || typeof event.data !== 'string') return;
+      if (ws !== this.ws || typeof event.data !== 'string' || event.data.length > 65536) return;
       this.counters.bytesIn += event.data.length;
       let m; try { m = JSON.parse(event.data); } catch { return; }
       switch (m?.t) {
@@ -36,7 +36,7 @@ export class GateClient extends Emitter {
           this.#raw({ t: 'join', room: this.room, peer: this.peer });
           break;
         case 'peers':
-          if (m.room !== this.room) return;
+          if (m.room !== this.room || !Array.isArray(m.peers) || m.peers.length > 64) return;
           this.state = 'joined'; this.attempt = 0; this.joinAttempts = 0; this.counters.connects++;
           // Application-level keepalive: the gate drops sockets it has not heard from.
           clearInterval(this.pinger);

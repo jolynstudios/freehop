@@ -13,7 +13,7 @@ import { ATTR, CLASS, METHOD, decode, encode, getAttr, encodeXorAddress, decodeX
 export const DEFAULT_LIMITS = Object.freeze({ maxAllocations: 64, maxAllocationsPerUsername: 4, allocationBitrate: 4_000_000,
   totalBitrate: 40_000_000, defaultLifetime: 600, maxLifetime: 3600, permissionLifetime: 300, channelLifetime: 600, maxPermissions: 32,
   maxChannels: 32, nonceLifetime: 600, maxTcpConnections: 256, tcpIdleMs: 120000, hookTimeoutMs: 5000,
-  maxTcpPerAddress: 16, tcpPreAuthMs: 10000, errorRate: 30, errorBurst: 60 });
+  maxTcpPerAddress: 16, tcpPreAuthMs: 10000, errorRate: 30, errorBurst: 60, udpResponseRate: 200, udpResponseBurst: 400 });
 
 const RESPONSE_CACHE_MS = 40_000, RESPONSE_CACHE_MAX = 2048, MAX_INFLIGHT = 256, SWEEP_MS = 1000, ADDRESS_REFRESH_MS = 10_000;
 const TCP_DATA_HIGH_WATER = 256 * 1024, TCP_PAUSE_WATER = 1024 * 1024, TLS_HANDSHAKE_MS = 10_000, MAX_UNKNOWN_REPORTED = 16;
@@ -205,14 +205,18 @@ export async function createTurnServer(options = {}) {
   // Error answers (401 challenges above all) go to unauthenticated UDP sources, which may be
   // spoofed: a per-source token bucket keeps the server from being a reflector.
   const errorBudget = new Map();
+  const responseBudget = { level: limits.udpResponseBurst, at: Date.now() };
   const errorAllowed = ctx => {
     if (ctx.transport !== 'udp') return true;
     const now = Date.now();
+    responseBudget.level = Math.min(limits.udpResponseBurst, responseBudget.level + (now - responseBudget.at) / 1000 * limits.udpResponseRate);
+    responseBudget.at = now;
+    if (responseBudget.level < 1) { counters.droppedErrorRate++; return false; }
     let b = errorBudget.get(ctx.address);
     if (!b) { if (errorBudget.size > 10000) errorBudget.clear(); b = { level: limits.errorBurst, at: now }; errorBudget.set(ctx.address, b); }
     b.level = Math.min(limits.errorBurst, b.level + (now - b.at) / 1000 * limits.errorRate); b.at = now;
     if (b.level < 1) { counters.droppedErrorRate++; return false; }
-    b.level -= 1; return true;
+    b.level -= 1; responseBudget.level -= 1; return true;
   };
   const sendError = (ctx, msg, code, reason, extra = []) => errorAllowed(ctx) && respond(ctx, msg, CLASS.ERROR, failure(code, reason, extra).attributes);
   const challenge = (ctx, msg, code, reason) => sendError(ctx, msg, code, reason, [{ type: ATTR.REALM, value: realmBuf }, { type: ATTR.NONCE, value: makeNonce(ctx) }]);
@@ -238,6 +242,7 @@ export async function createTurnServer(options = {}) {
   }
 
   function onBinding(ctx, msg) {
+    if (!errorAllowed(ctx)) return;
     const unknown = unknownRequired(msg);
     if (unknown.length) return sendError(ctx, msg, 420, 'Unknown Attribute', [unknownAttr(unknown)]);
     counters.bindings++;

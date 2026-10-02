@@ -116,7 +116,7 @@ stateDiagram-v2
 
 ```mermaid
 sequenceDiagram
-  participant D as Desktop player (Electron main)
+  participant D as Desktop participant (Electron main)
   participant R as Home router
   participant P as Remote peer (strict NAT)
   D->>R: PCP / NAT-PMP / UPnP: map UDP+TCP 3478 (and relay ports on demand)
@@ -141,8 +141,8 @@ sequenceDiagram
 
 ## 5. Host node, bridging and kicks
 
-- **Host node.** The machine hosting a session (a match server, community server or hosting
-  desktop) calls `hostSession(ticket)`. It joins the room with a `gw_…` id, never sends media,
+- **Host node.** The machine hosting a session (an app server, a community server or a hosting
+  desktop app) calls `hostSession(ticket)`. It joins the room with a `gw_…` id, never sends media,
   and greets each authenticated member with that member's own credentials.
 - **Bridging.** When a pair has no route and no untried session gateway, the lower id asks
   connected participants that can reach the other side. The forwarder:
@@ -156,7 +156,7 @@ sequenceDiagram
     Their links stay up, gates move to the new room tag, and envelopes under the old key are
     accepted from connected peers for 30 s.
   - Gateways revoke the kicked peer: the host node through `host.update()`, a desktop
-    player's own gateway through `session.update()`.
+    participant's own gateway through `session.update()`.
 
 ## 6. Threat model (summary)
 

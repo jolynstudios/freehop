@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// peerlane port mapper: asks the home router to forward an inbound UDP/TCP port so a desktop player or a
+// peerlane port mapper: asks the home router to forward an inbound UDP/TCP port so a desktop participant or a
 // volunteer relay becomes directly reachable. Speaks PCP (RFC 6887), NAT-PMP (RFC 6886) and UPnP IGD v1/v2
 // (SSDP discovery + SOAP WANIPConnection/WANPPPConnection). Node built-ins only.
 //

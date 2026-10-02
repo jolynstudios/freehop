@@ -1,20 +1,20 @@
 ---
 title: Gateways and port mapping
 sidebar_label: Gateways & port mapping
-description: A Freehop gateway is a TURN server on a desktop player's own machine, made reachable through the player's router with PCP, NAT-PMP or UPnP.
+description: A Freehop gateway is a TURN server on a desktop participant's own machine, made reachable through the participant's router with PCP, NAT-PMP or UPnP.
 ---
 
 import { GatewayScene } from '@site/src/components/scenes';
 
-<GatewayScene caption="A gateway is the player's own front door: the router maps a port, and the door opens for the people in the call." />
+<GatewayScene caption="A gateway is the participant's own front door: the router maps a port, and the door opens for the people in the call." />
 
-A gateway is a small TURN server that runs on a desktop player's own machine, made reachable from the internet through the player's router. It is not a third-party relay: it is the player's own front door, and only the people in that player's session get a key.
+A gateway is a small TURN server that runs on a desktop participant's own machine, made reachable from the internet through the participant's router. It is not a third-party relay: it is the participant's own front door, and only the people in that participant's session get a key.
 
 ## Why a front door helps
 
 Take Ben, on a phone hotspot behind a carrier NAT that picks a new random port for every destination, and Dani, who plays from the desktop app at home. Ben's NAT makes his address unpredictable, and Dani's home router drops packets it was not expecting. A direct route between them usually fails.
 
-Dani's router can do something about that: it supports UPnP. So Dani's app asks the router to forward a port to her machine, and runs a TURN server behind it. Now Ben has an address that accepts his packets. His browser connects to Dani's gateway, the gateway hands the packets to Dani, and the path is reported as `gateway`. In the lab this is scenario `two-player-desktop-host`, three passes out of three, with 37 to 66 KB of gate traffic per run.
+Dani's router can do something about that: it supports UPnP. So Dani's app asks the router to forward a port to her machine, and runs a TURN server behind it. Now Ben has an address that accepts his packets. His browser connects to Dani's gateway, the gateway hands the packets to Dani, and the path is reported as `gateway`. In the lab this is scenario `two-peer-desktop-host`, three passes out of three, with 37 to 66 KB of gate traffic per run.
 
 The same front door works for Omar, whose office blocks all UDP: his browser reaches Dani's gateway with TURN over TCP (scenario `udpblock-gateway`).
 
@@ -30,7 +30,7 @@ A machine with a public address skips the mapping step. If the router reports a 
 
 :::note[Not every router can do this]
 
-Routers without PCP, NAT-PMP or UPnP cannot map a port, and players behind carrier-grade NAT have no public address to map. Their desktop app then joins as an ordinary peer, and the other steps of the [ladder](./paths.mdx) (host node, forwarding) remain available. Port mapping has been qualified against miniupnpd in the lab and against simulated routers in unit tests; physical routers are not yet verified.
+Routers without PCP, NAT-PMP or UPnP cannot map a port, and participants behind carrier-grade NAT have no public address to map. Their desktop app then joins as an ordinary peer, and the other steps of the [ladder](./paths.mdx) (host node, forwarding) remain available. Port mapping has been qualified against miniupnpd in the lab and against simulated routers in unit tests; physical routers are not yet verified.
 
 :::
 
@@ -55,7 +55,7 @@ A TURN server on someone's home machine must not become a proxy into their home.
 
 - refuses loopback, link-local, multicast and private peer addresses by default;
 - keeps services on the host itself unreachable (the machine's own addresses only work relay to relay);
-- answers unauthenticated UDP errors at a bounded rate per source, so it is not a reflector;
+- bounds unauthenticated UDP errors and Binding answers per source and globally to limit reflection;
 - accepts at most 16 TCP connections per source address, with a 10-second deadline to authenticate;
 - caps usage at 6 allocations per username, 4 Mbit/s per allocation and 40 Mbit/s in total.
 
@@ -75,4 +75,4 @@ Electron 28 and newer can alternatively pin WebRTC's UDP port range (`webContent
 
 ## Next
 
-[Host nodes](./host-nodes.mdx) bring the same front door to sessions where no player runs the desktop app.
+[Host nodes](./host-nodes.mdx) bring the same front door to sessions where no participant runs the desktop app.

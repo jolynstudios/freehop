@@ -28,7 +28,7 @@ Classic WebRTC deployments fall back to a TURN relay that the operator rents. Ev
 | Step | Path | What carries the media |
 |---|---|---|
 | 1 | <PathBadge kind="direct" /> | Nothing in between: LAN, IPv6, or addresses discovered with STUN |
-| 2 | <PathBadge kind="gateway" /> | A desktop player's own gateway, reachable through their router's port mapping |
+| 2 | <PathBadge kind="gateway" /> | A desktop participant's own gateway, reachable through their router's port mapping |
 | 3 | <PathBadge kind="relay" /> | The gateway of another session member, such as the session's host node |
 | 4 | <PathBadge kind="bridged" /> | Another participant, who forwards the media because it is in the call anyway |
 | | <PathBadge kind="unreachable" /> | Nothing: an honest status when no route exists inside the session |
@@ -42,7 +42,7 @@ The [paths and escalation](./concepts/paths.mdx) page explains when each step is
 | **Authority** | Your backend | Decides who is in a room and hands each member a **ticket** |
 | **Gate** | Any server, any number of them | Passes sealed envelopes between peers that announce the same room tag |
 | **Client** | Every browser or desktop renderer | Joins with the ticket, negotiates media and climbs the path ladder |
-| **Desktop gateway** (optional) | A player's desktop app | Opens the player's own front door: TURN plus a router port mapping |
+| **Desktop gateway** (optional) | A participant's desktop app | Opens the participant's own front door: TURN plus a router port mapping |
 | **Host node** (optional) | The machine that hosts the session | Joins without media and offers its gateway to the session |
 
 A gate carries tens of kilobytes per call setup and almost nothing afterwards, because signalling moves onto the peers' own data channels once they are connected. Clients use every gate in their ticket, peers on different gates still meet through each other, and calls keep running when every gate goes down. A gate can even be a public WebTorrent tracker (`bt+wss://…`), so a room can run with no server of your own at all. The [live call](/demo) on this site works that way.
@@ -68,7 +68,7 @@ The lab profile column names the Linux kernel NAT profile that emulates each net
 
 <StatGrid>
   <Stat value="40/40" label="lab runs passed" note="11 network scenarios × 3 trials, plus 7 cross-engine runs" />
-  <Stat value="79/79" label="unit tests" note="STUN, TURN, port mapper, gate, gateway" />
+  <Stat value="97/97" label="unit tests" note="STUN, TURN, port mapper, gate, gateway" />
   <Stat value="800/800" label="TURN messages, UDP and TCP" note="coturn's turnutils_uclient against Freehop's TURN server, 0 lost" />
 </StatGrid>
 

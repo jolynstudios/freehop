@@ -19,7 +19,7 @@ const KINDS = new Set(['caps', 'description', 'candidate', 'bye', 'restart-reque
   'bridge-active', 'bridge-release', 'bridge-fail', 'forward-map', 'forward-unmap']);
 
 export const DEFAULT_TIMING = Object.freeze({ capsWaitMs: 150, politeWaitMs: 1500, endpointMs: 5000, sessionMs: 7000,
-  bridgedRetryMs: 30000, maxRetryMs: 300000, restartFallbackMs: 2500, mediaWatchMs: 5000, rekeyGraceMs: 30000,
+  bridgedRetryMs: 30000, maxRetryMs: 300000, restartFallbackMs: 2500, mediaWatchMs: 5000,
   recoveryMs: 4000, bridgeWaitMs: 4000, departGraceMs: 8000, offerTimeoutMs: 8000, greetMs: 20000, outboxMs: 20000, sweepMs: 2000 });
 export const DEFAULT_LIMITS = Object.freeze({ audioBitrate: 32000, videoBitrate: 300000, forwardVideoBitrate: 200000,
   maxPeers: 8, maxGatewayMembers: 4, maxHints: 64, maxBridges: 4, meshForwardPerMinute: 600, outboxPerPeer: 32 });
@@ -120,20 +120,22 @@ export class Room extends Emitter {
   }
 
   openGates() {
+    const epoch = this.crypto;
     for (const url of this.options.gates) {
       // "bt+wss://tracker/..." uses a public WebTorrent tracker as a gate (magnet-style).
       const gate = url.startsWith('bt+')
         ? new TrackerClient(url.slice(3), { room: this.tag, peer: this.id, WebSocketImpl: this.WebSocket,
-            hello: () => seal(this.crypto, this.id, '*', { kind: 'hello', n: ++this.sendCounter }) })
+            hello: () => seal(epoch, this.id, '*', { kind: 'hello', n: ++this.sendCounter }) })
         : new GateClient(url, { room: this.tag, peer: this.id, auth: this.options.auth, WebSocketImpl: this.WebSocket });
       gate.on('hello', async ({ gate: g, from, box, route }) => {
         if (this.closed || !PEER_ID.test(from) || from === this.id || this.blocked(from)) return;
-        const p = await open(this.crypto, from, '*', box);
-        if (p?.kind !== 'hello' || !Number.isSafeInteger(p.n) || !this.acceptSequence(from, p.n)) return;
+        const p = await open(epoch, from, '*', box);
+        if (this.closed || epoch !== this.crypto || this.blocked(from) || p?.kind !== 'hello' || !Number.isSafeInteger(p.n) || p.n < 1 || !this.acceptSequence(from, p.n)) return;
         g.bind?.(from, route);
         this.hint(from, g);
       });
       gate.on('joined', ({ peers, stun }) => {
+        if (this.closed || epoch !== this.crypto) return;
         for (const u of stun) this.stunUrls.add(u);
         this.emit('gate', { url, state: 'joined' });
         for (const p of peers) this.hint(p, gate);
@@ -147,21 +149,30 @@ export class Room extends Emitter {
     }
   }
 
-  // Kick support: the application hands the remaining members a new secret (and, for
-  // token-gated gates, a token bound to the new room). Links stay up; gates move to the new
-  // room tag; envelopes under the previous key are accepted from still-connected peers for
-  // a short grace period while everyone switches.
-  async rekey(secret, { auth } = {}) {
+  // Rotation closes every old-key link, including unreported identities. Possession of the
+  // new secret is required to reconnect; a known peer id alone is never sufficient.
+  rekey(secret, options = {}) {
+    const task = (this.rekeyTask ?? Promise.resolve()).then(() => this.changeKey(secret, options));
+    this.rekeyTask = task.catch(() => {});
+    return task;
+  }
+
+  async changeKey(secret, { auth } = {}) {
     if (this.closed) return;
     const next = await deriveRoom(secret, this.app);
     if (this.closed) return;
-    if (auth !== undefined) this.options = { ...this.options, auth };
-    this.previousCrypto = this.crypto; this.crypto = next; this.tag = next.tag;
-    this.gatewayCreds.clear(); if (this.ownGateway) await this.gatewayCredsFor('self');
-    clearTimeout(this.rekeyGrace);
-    this.rekeyGrace = setTimeout(() => { this.previousCrypto = null; }, this.timing.rekeyGraceMs);
+    this.options = { ...this.options, auth };
+    if (next.tag === this.tag) return;
     for (const gate of this.gates) gate.close();
-    this.gates = []; this.presence.clear();
+    clearTimeout(this.capsTimer); this.capsTimer = null;
+    for (const peer of [...this.known]) this.dropPeer(peer, 'rekey');
+    for (const t of this.pendingLinks.values()) clearTimeout(t);
+    for (const id of this.gatewayMembers) this.emit('gateway', { id, available: false });
+    this.crypto = next; this.tag = next.tag;
+    this.gates = []; this.presence.clear(); this.caps.clear(); this.gatewayMembers.clear();
+    this.pendingLinks.clear(); this.early.clear(); this.sequences.clear(); this.greeted.clear(); this.lastContact.clear();
+    this.outbox.clear(); this.bridges.clear(); this.relaying.clear(); this.bridgeOffers.clear(); this.sendProgress.clear(); this.meshBudget.clear();
+    this.gatewayCreds.clear(); if (this.ownGateway) await this.gatewayCredsFor('self');
     if (!this.closed) this.openGates();
     this.scheduleCapsBroadcast();
   }
@@ -177,7 +188,7 @@ export class Room extends Emitter {
   blocked(peer) {
     const d = this.departed.get(peer);
     if (!d) return false;
-    if (d.reason !== 'gone') return true;
+    if (d.reason !== 'gone' && d.reason !== 'rekey') return true;
     this.departed.delete(peer);
     return false;
   }
@@ -278,7 +289,9 @@ export class Room extends Emitter {
 
   async signalTo(peer, payload) {
     if (this.closed && payload.kind !== 'bye') return false;
-    const box = await seal(this.crypto, this.id, peer, { ...payload, n: ++this.sendCounter });
+    const crypto = this.crypto;
+    const box = await seal(crypto, this.id, peer, { ...payload, n: ++this.sendCounter });
+    if (crypto !== this.crypto || this.closed && payload.kind !== 'bye') return false;
     this.counters.sent++;
     if (this.route(peer, box)) return true;
     // No route right now (gate reconnecting, peer not yet present): keep it briefly.
@@ -321,7 +334,7 @@ export class Room extends Emitter {
     return false;
   }
 
-  onControlOpen(link) { this.sendCaps(link.id); this.flushOutbox(link.id); }
+  onControlOpen(link) { this.sendCaps(link.id); this.flushOutbox(link.id); this.scheduleCapsBroadcast(); }
 
   onControlMessage(link, data) {
     if (typeof data !== 'string' || data.length > 70000) return;
@@ -351,9 +364,10 @@ export class Room extends Emitter {
 
   async receiveBox(from, box, via, route) {
     if (this.closed || this.blocked(from)) return;
-    let p = await open(this.crypto, from, this.id, box);
-    if (!p && this.previousCrypto && this.links.get(from)?.connected) p = await open(this.previousCrypto, from, this.id, box);
-    if (!p || !Number.isSafeInteger(p.n) || !KINDS.has(p.kind)) { this.counters.rejected++; return; }
+    const crypto = this.crypto;
+    const p = await open(crypto, from, this.id, box);
+    if (crypto !== this.crypto || this.closed || this.blocked(from)) return;
+    if (!p || !Number.isSafeInteger(p.n) || p.n < 1 || !KINDS.has(p.kind)) { this.counters.rejected++; return; }
     if (!this.acceptSequence(from, p.n)) { this.counters.duplicates++; return; }
     this.counters.received++;
     this.lastContact.set(from, Date.now());
@@ -423,10 +437,13 @@ export class Room extends Emitter {
       const c = await this.gatewayCredsFor(peer);
       gateway = { urls: this.ownGateway.urls, username: c.username, credential: c.credential, external: this.ownGateway.external, internal: this.ownGateway.internal };
     }
-    return { v: 1, forward: this.forward, peers: [...this.links.values()].filter(l => l.connected).map(l => l.id), gateway };
+    return { v: 1, forward: this.forward, peers: [...this.links.values()].filter(l => l.connected && l.control.readyState === 'open').map(l => l.id), gateway };
   }
 
-  async sendCaps(peer) { this.signalTo(peer, { kind: 'caps', caps: await this.capsFor(peer) }); }
+  async sendCaps(peer) {
+    const epoch = this.crypto, caps = await this.capsFor(peer);
+    if (!this.closed && epoch === this.crypto) return this.signalTo(peer, { kind: 'caps', caps });
+  }
 
   scheduleCapsBroadcast() {
     if (this.capsTimer || this.closed) return;
@@ -607,14 +624,15 @@ export class Room extends Emitter {
       }
       case 'bridge-offer': {
         const bridge = this.bridges.get(key);
-        if (a !== this.id || !bridge || bridge.via || this.links.get(b)?.connected) return;
+        const link = this.links.get(b);
+        if (a !== this.id || !bridge || bridge.via || !link || link.connected || !this.bridgeCandidates(link).some(l => l.id === from)) return;
         bridge.via = from; bridge.state = 'accepted';
         return this.signalTo(from, { kind: 'bridge-accept', a, b });
       }
       case 'bridge-accept': {
         // Only an accept for an offer we made, from the endpoint we made it to.
         const offer = this.bridgeOffers.get(key);
-        if (from !== a || !offer || offer.a !== a || !this.canForward(a, b, key)) return;
+        if (from !== a || !offer || offer.a !== a || Date.now() - offer.at >= 30000 || !this.canForward(a, b, key)) return;
         this.bridgeOffers.delete(key);
         return this.startRelayBridge(key, a, b);
       }
@@ -623,7 +641,7 @@ export class Room extends Emitter {
         const peer = a === this.id ? b : a;
         const link = this.links.get(peer), bridge = this.bridges.get(key);
         // A second forwarder (both endpoints asked) or a stale one is released at once.
-        if (!link || link.connected || bridge?.via && bridge.via !== from) { this.signalTo(from, { kind: 'bridge-release', a, b }); return; }
+        if (!link || link.connected || bridge?.via && bridge.via !== from || !this.bridgeCandidates(link).some(l => l.id === from)) { this.signalTo(from, { kind: 'bridge-release', a, b }); return; }
         this.bridges.set(key, { peer, via: from, state: 'active', requestedAt: bridge?.requestedAt ?? Date.now() });
         this.counters.bridgesUsed++;
         if (link.phase < PHASE.BRIDGED) link.phase = PHASE.BRIDGED;
@@ -647,7 +665,7 @@ export class Room extends Emitter {
         const link = this.links.get(from), origin = p.origin;
         if (!link || !PEER_ID.test(origin ?? '') || origin === from || origin === this.id || this.links.get(origin)?.connected) return;
         const bridge = this.bridges.get(pairKey(this.id, origin));
-        if (bridge?.via && bridge.via !== from) return;
+        if (bridge?.state !== 'active' || bridge.via !== from) return;
         if (typeof p.stream !== 'string' || p.stream.length > 128 || link.forwardMap.size >= 16) return;
         link.forwardMap.set(p.stream, origin);
         return;
@@ -668,10 +686,11 @@ export class Room extends Emitter {
     const la = this.links.get(a), lb = this.links.get(b);
     if (!la?.connected || !lb?.connected) return this.signalTo(a, { kind: 'bridge-fail', a, b });
     if (!this.relaying.has(key)) { this.relaying.set(key, { a, b }); this.counters.bridgesServed++; }
+    // Establish the authenticated forwarding relationship before sending attribution maps.
+    await this.signalTo(a, { kind: 'bridge-active', a, b });
+    await this.signalTo(b, { kind: 'bridge-active', a, b });
     await this.forwardTracks(la, lb);
     await this.forwardTracks(lb, la);
-    this.signalTo(a, { kind: 'bridge-active', a, b });
-    this.signalTo(b, { kind: 'bridge-active', a, b });
   }
 
   async forwardTracks(fromLink, toLink) {
@@ -712,6 +731,7 @@ export class Room extends Emitter {
   }
 
   async #enableTrack(kind, enabled, constraints) {
+    if (this.closed) return;
     let track = this.localStream.getTracks().find(t => t.kind === kind);
     if (!enabled) {
       if (!track) return;
@@ -722,6 +742,7 @@ export class Room extends Emitter {
     }
     if (track) { track.enabled = true; return; }
     const captured = await this.getUserMedia({ [kind]: constraints });
+    if (this.closed) { for (const t of captured.getTracks()) t.stop(); return; }
     track = captured.getTracks().find(t => t.kind === kind);
     if (!track) return;
     this.localStream.addTrack(track);
@@ -815,7 +836,7 @@ export class Room extends Emitter {
     const goodbyes = [...this.known, ...this.gatewayMembers].map(peer => this.signalTo(peer, { kind: 'bye' }).catch(() => {}));
     await Promise.race([Promise.all(goodbyes), new Promise(r => setTimeout(r, 300))]);
     this.closed = true;
-    clearTimeout(this.capsTimer); clearInterval(this.mediaWatch); clearInterval(this.sweeper); clearTimeout(this.rekeyGrace);
+    clearTimeout(this.capsTimer); clearInterval(this.mediaWatch); clearInterval(this.sweeper);
     for (const t of this.pendingLinks.values()) clearTimeout(t);
     for (const link of this.links.values()) link.close();
     this.links.clear(); this.outbox.clear();

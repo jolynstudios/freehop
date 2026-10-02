@@ -53,9 +53,9 @@ const authority = createAuthority({
   gateTokenSecret: process.env.FREEHOP_GATE_TOKEN_SECRET // optional: same secret as your gate
 });
 
-await authority.openRoom('match-42');                       // creates the room secret
-const ticket = await authority.ticket('match-42', 'player-7'); // only for members you admitted
-// Send `ticket` to player-7 over your own authenticated channel (your API or websocket).
+await authority.openRoom('room-42');                       // creates the room secret
+const ticket = await authority.ticket('room-42', 'user-7'); // only for members you admitted
+// Send `ticket` to user-7 over your own authenticated channel (your API or websocket).
 ```
 
 A ticket carries the room secret, so it is as sensitive as room membership itself. Deliver it only to that member. [Authority and tickets](./sdk/authority.mdx) covers kicks and the ticket format.
@@ -102,9 +102,9 @@ await session.leave();
 
 `kind` is one of `direct`, `gateway`, `relay`, `bridged` or `unreachable` once a route is known, and `connecting` before that. Show it to your users: it is honest about what happened. Report `session.id` to your backend so that it can tell the other members which peer to drop after a kick. See [Client: connect](./sdk/client.mdx) for every option and event.
 
-## 4. Desktop apps: open the player's front door
+## 4. Desktop apps: open the participant's front door
 
-A desktop app can run a **gateway** on the player's own machine: a TURN server made reachable through the player's router (PCP, NAT-PMP or UPnP). Players behind hard NATs or UDP-blocking networks can then reach that player without any third party.
+A desktop app can run a **gateway** on the participant's own machine: a TURN server made reachable through the participant's router (PCP, NAT-PMP or UPnP). Participants behind hard NATs or UDP-blocking networks can then reach that participant without any third party.
 
 ```js title="main.mjs (Electron main process)"
 import { app, BrowserWindow, ipcMain } from 'electron';
@@ -112,7 +112,7 @@ import { createRequire } from 'node:module';
 import { installFreehopGateway } from 'freehop/electron';
 
 const require = createRequire(import.meta.url);
-const freehop = installFreehopGateway({ ipcMain });
+const freehop = installFreehopGateway({ ipcMain, allowedOrigins: ['https://play.example.com'] });
 app.on('will-quit', () => freehop.close());
 
 app.whenReady().then(() => {
@@ -127,16 +127,16 @@ app.whenReady().then(() => {
 });
 ```
 
-`connect()` finds `window.freehopGateway` automatically. The gateway starts the first time the page asks for it, so players who never use voice pay nothing. [Desktop (Electron)](./sdk/desktop.mdx) explains the origin restriction and the options.
+`connect()` finds `window.freehopGateway` automatically. The gateway starts the first time the page asks for it, so participants who never use voice pay nothing. [Desktop (Electron)](./sdk/desktop.mdx) explains the origin restriction and the options.
 
 ## 5. Hosts: let the session's own host relay for it
 
-Whoever hosts a session (a community server that runs the match, or a player's desktop app that hosts) can make that machine the session's gateway. It joins the room without media and offers its gateway to the members.
+Whoever hosts a session (a community server, or a participant's desktop app that hosts) can make that machine the session's gateway. It joins the room without media and offers its gateway to the members.
 
 ```js title="host.mjs"
 import { hostSession } from 'freehop/host';
 
-const host = await hostSession(await authority.ticket('match-42')); // a ticket without a member
+const host = await hostSession(await authority.ticket('room-42')); // a ticket without a member
 if (!host.available) console.log('Not reachable from outside: no public address, no router mapping.');
 
 // After a kick, follow the rotation and revoke the removed peer:

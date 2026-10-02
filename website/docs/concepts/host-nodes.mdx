@@ -6,20 +6,20 @@ description: A host node is the machine that hosts a session; it joins the room 
 
 import { HostNodeScene } from '@site/src/components/scenes';
 
-<HostNodeScene caption="The host node is the session's own lighthouse: it belongs to the match, and it lights the way for the players who cannot see each other." />
+<HostNodeScene caption="The host node is the session's own lighthouse: it belongs to the session, and it lights the way for the participants who cannot see each other." />
 
-Many sessions already have a machine that hosts them: the server that runs a match, a community server, or the desktop app of the player who opened the lobby. Freehop can make that machine the session's gateway. It joins the room as a **gateway member**, sends no media of its own, and offers its gateway to the members who need it.
+Many sessions already have a machine that hosts them: an app server that runs the session, a community server, or the desktop app of the participant who started the session. Freehop can make that machine the session's gateway. It joins the room as a **gateway member**, sends no media of its own, and offers its gateway to the members who need it.
 
 ## An example
 
-Ben and Kai are both on phone hotspots behind carrier NATs that pick a new random port for every destination. On their own they cannot connect: the lab scenario `hard-pair` shows exactly that. Now they join a match that runs on a community server with a public address, and the server calls `hostSession()` for the match's room:
+Ben and Kai are both on phone hotspots behind carrier NATs that pick a new random port for every destination. On their own they cannot connect: the lab scenario `hard-pair` shows exactly that. Now they join a session that runs on a community server with a public address, and the server calls `hostSession()` for its room:
 
 1. The server joins the room through the gates with an id that starts with `gw_`.
 2. Ben and Kai each greet it with a sealed envelope. Only then does it send each of them its gateway address and a credential minted for that person.
 3. Ben and Kai first try each other directly. After 5 seconds (plus one grace period while checks are getting answers) their pair moves to the session phase and adds the host node's gateway.
 4. Both allocate a relay on the host node, and their media meets there. The path is reported as `relay` via the host node.
 
-In the lab this is scenario `hard-pair-host-node`: three passes out of three with Chromium, plus a cross-engine pass with Firefox and WebKit as the two players, at 62 to 73 KB of gate traffic per run. The same works for two players in different offices that block UDP (`udpblock-pair-host-node`), who reach the host node with TURN over TCP.
+In the lab this is scenario `hard-pair-host-node`: three passes out of three with Chromium, plus a cross-engine pass with Firefox and WebKit as the two participants, at 62 to 73 KB of gate traffic per run. The same works for two participants in different offices that block UDP (`udpblock-pair-host-node`), who reach the host node with TURN over TCP.
 
 ## What a gateway member does, and does not do
 
@@ -35,8 +35,8 @@ A host node spends its own upload on the pairs that need it. That is why the rig
 
 | Good host | Why |
 |---|---|
-| A community server that runs the match | It hosts the session anyway, and its operator chose to |
-| The desktop app of the player hosting a lobby | It belongs to the call and can open its front door |
+| A community server that runs the session | It hosts the session anyway, and its operator chose to |
+| The desktop app of the participant hosting the session | It belongs to the call and can open its front door |
 | Not your own operator servers | Relayed media would be back on your bill, which is what Freehop exists to avoid |
 
 [Redline Wars](../redline-wars.mdx) plans exactly this split: every match has a host node, and the game owner's own nodes must not host media.

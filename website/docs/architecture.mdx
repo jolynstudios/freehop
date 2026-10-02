@@ -12,7 +12,7 @@ Freehop is a handful of small modules: a browser library, a gate, a gateway, and
           sealed signalling only (kilobytes)                 media (megabytes), never through a gate
 
  ┌───────┐   ┌───────────┐   ┌───────┐          ┌───────┐ ─────────────── direct ──────────────── ┌───────┐
- │ Ana   │───│  gate(s)  │───│ Ben   │          │ Ana   │ ─── a player's own gateway (TURN) ───── │ Ben   │
+ │ Ana   │───│  gate(s)  │───│ Ben   │          │ Ana   │ ─── a participant's own gateway (TURN) ───── │ Ben   │
  └───────┘   └───────────┘   └───────┘          └───────┘ ─── the session host's gateway ──────── └───────┘
      any number of gates, run by anyone                    ─── forwarded by a participant ───────
 ```
@@ -26,7 +26,7 @@ On the left, everything your servers ever handle: sealed envelopes that introduc
 | **Your backend** | The authority (`freehop/authority`) | Room secrets, in memory; your own notion of membership |
 | **Your gate host** | The gate service (`freehop-gate`) | In-memory routing tables of room tags and peer ids. Nothing persistent. |
 | **Every browser or renderer** | The client (`connect()`) | Its ticket, its derived room key, its links and media |
-| **A player's desktop app** (optional) | The gateway, in the Electron main process | The gateway secret, which only its own page can read |
+| **A participant's desktop app** (optional) | The gateway, in the Electron main process | The gateway secret, which only its own page can read |
 | **The session's host** (optional) | `hostSession()`: a gateway plus a gateway member | The gateway secret; credentials for the members it serves |
 
 ## Module map
@@ -45,11 +45,11 @@ On the left, everything your servers ever handle: sealed envelopes that introduc
 | SDK | `src/sdk/` | Backend, browser, host | The modules above | `createAuthority()`, `connect()`, `hostSession()`, tickets |
 | Electron helper | `src/electron/` | Electron | The gateway | Gateway in the main process, origin-restricted preload |
 
-Around the library: `bin/freehop-gate.mjs` and `deploy/` (the gate service), `examples/minimal/` (a complete reference consumer), `lab/` (the disposable Linux NAT lab) and `test/` (unit tests and real-browser tests). The browser client has no runtime dependencies, and no PeerJS, libp2p or other networking library is used anywhere.
+Around the library: `bin/freehop-gate.mjs` and `deploy/` (the gate service), `examples/minimal/` (a complete reference consumer), `lab/` (the disposable Linux NAT lab) and `test/` (unit tests and real-browser tests). The browser client has no runtime dependencies.
 
 ## One call, step by step
 
-Ana and Ben join `match-42`. Ana is on a home router; Ben is on a phone hotspot.
+Ana and Ben join `room-42`. Ana is on a home router; Ben is on a phone hotspot.
 
 1. **Tickets.** Your backend opens the room (a 32-byte secret) and sends each of them a ticket over your own authenticated channel.
 2. **Keys.** Each client derives the room tag and the envelope key from the secret with HKDF. It picks a fresh random peer id.

@@ -14,6 +14,7 @@ export const GATE_LIMITS = Object.freeze({
   roomsPerSocket: 4,
   peersPerRoom: 16,
   socketsPerAddress: 32,
+  maxSockets: 1024,
   helloMs: 5000,
   idleMs: 90000,
   pingMs: 30000,
@@ -23,7 +24,9 @@ export const GATE_LIMITS = Object.freeze({
   refillBytesPerSec: 2048,
   messagesPerSec: 40,
   messageBurst: 400,
-  maxBufferedBytes: 1048576
+  maxBufferedBytes: 1048576,
+  maxPendingFrames: 64,
+  maxPendingBytes: 262144
 });
 
 const TAG = /^[A-Za-z0-9_-]{22,43}$/;   // base64url of 16..32 bytes
@@ -42,7 +45,7 @@ export function verifyGateToken(secret, token, now = Date.now()) {
   const given = Buffer.from(mac, 'base64url');
   if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
   let claims; try { claims = JSON.parse(Buffer.from(body, 'base64url').toString('utf8')); } catch { return null; }
-  if (!claims || typeof claims !== 'object' || !Number.isFinite(claims.exp) || claims.exp * 1000 < now) return null;
+  if (!claims || typeof claims !== 'object' || !Number.isSafeInteger(claims.exp) || claims.exp * 1000 <= now) return null;
   if (claims.room !== undefined && (typeof claims.room !== 'string' || !TAG.test(claims.room))) return null;
   return claims;
 }
@@ -82,7 +85,9 @@ export async function createGate(options = {}) {
   });
   const wss = new WebSocketServer({ noServer: true, maxPayload: limits.frame, perMessageDeflate: false, clientTracking: false });
   const onUpgrade = (request, socket, head) => {
-    const url = new URL(request.url ?? '/', 'http://gate');
+    let url;
+    try { url = new URL(request.url ?? '/', 'http://gate'); }
+    catch { socket.destroy(); stats.refused++; return; }
     if (url.pathname !== path) { socket.destroy(); return; }
     // Behind a local reverse proxy every socket comes from loopback: with trustProxy, the
     // client address is the hop the proxy appended to X-Forwarded-For.
@@ -90,7 +95,7 @@ export async function createGate(options = {}) {
     const forwarded = options.trustProxy && /^(127\.|::1$|::ffff:127\.)/.test(direct)
       ? String(request.headers['x-forwarded-for'] ?? '').split(',').map(v => v.trim()).filter(Boolean).pop() : null;
     const address = forwarded || direct;
-    if ((perAddress.get(address) ?? 0) >= limits.socketsPerAddress) { socket.destroy(); stats.refused++; return; }
+    if (sockets.size >= limits.maxSockets || (perAddress.get(address) ?? 0) >= limits.socketsPerAddress) { socket.destroy(); stats.refused++; return; }
     wss.handleUpgrade(request, socket, head, ws => accept(ws, request, address));
   };
   server.on('upgrade', onUpgrade);
@@ -118,7 +123,7 @@ export async function createGate(options = {}) {
   }
   function refuse(state, code, close = false) {
     stats.refused++; emit(state, { t: 'error', code });
-    if (close) { stats.closedForAbuse++; state.ws.close(1008, code); }
+    if (close) { state.closed = true; stats.closedForAbuse++; state.ws.close(1008, code); }
   }
   function leaveRoom(state, room) {
     const members = rooms.get(room); const peer = state.rooms.get(room);
@@ -135,11 +140,12 @@ export async function createGate(options = {}) {
     const claims = verifyGateToken(options.tokenSecret, hello.auth);
     if (!claims) return false;
     state.boundRoom = claims.room ?? null;
+    state.expiresAt = claims.exp * 1000;
     return true;
   }
 
   function accept(ws, request, address) {
-    const state = { ws, address, admitted: false, rooms: new Map(), boundRoom: null,
+    const state = { ws, address, admitted: false, rooms: new Map(), boundRoom: null, expiresAt: Infinity, closed: false,
       bytes: new Bucket(limits.burstBytes, limits.refillBytesPerSec), messages: new Bucket(limits.messageBurst, limits.messagesPerSec),
       lastSeen: Date.now(), alive: true };
     sockets.add(state); perAddress.set(address, (perAddress.get(address) ?? 0) + 1);
@@ -147,6 +153,7 @@ export async function createGate(options = {}) {
     const helloTimer = setTimeout(() => { if (!state.admitted) ws.close(1008, 'hello-timeout'); }, limits.helloMs);
     ws.on('pong', () => { state.alive = true; state.lastSeen = Date.now(); });
     ws.on('close', () => {
+      state.closed = true;
       clearTimeout(helloTimer);
       for (const room of [...state.rooms.keys()]) leaveRoom(state, room);
       sockets.delete(state);
@@ -154,29 +161,34 @@ export async function createGate(options = {}) {
       stats.sockets = sockets.size;
     });
     ws.on('error', () => {});
-    let chain = Promise.resolve();
+    let chain = Promise.resolve(), pendingFrames = 0, pendingBytes = 0;
     ws.on('message', (data, isBinary) => {
+      if (state.closed) return;
+      pendingBytes += data.length;
+      if (pendingBytes > limits.maxPendingBytes || ++pendingFrames > limits.maxPendingFrames || !state.messages.take(1)) { stats.rateLimited++; return refuse(state, 'rate', true); }
       chain = chain.then(() => handle(state, data, isBinary, request, helloTimer)).catch(error => {
         log('gate-error', { message: error?.message }); refuse(state, 'internal', true);
-      });
+      }).finally(() => { pendingFrames--; pendingBytes -= data.length; });
     });
   }
 
   async function handle(state, data, isBinary, request, helloTimer) {
+    if (state.closed) return;
+    if (Date.now() >= state.expiresAt) return refuse(state, 'auth-expired', true);
     stats.framesIn++; stats.bytesIn += data.length; state.lastSeen = Date.now();
     if (isBinary) return refuse(state, 'binary', true);
-    if (!state.messages.take(1)) { stats.rateLimited++; return refuse(state, 'rate', true); }
     let m; try { m = JSON.parse(data.toString('utf8')); } catch { return refuse(state, 'json', true); }
     if (!m || typeof m !== 'object' || Array.isArray(m) || typeof m.t !== 'string') return refuse(state, 'schema', true);
     if (!state.admitted) {
       if (m.t !== 'hello' || m.v !== GATE_PROTOCOL) return refuse(state, 'hello', true);
       if (!(await admit(state, m, request))) return refuse(state, 'auth', true);
+      if (state.closed || state.ws.readyState !== 1) return;
       state.admitted = true; clearTimeout(helloTimer);
       return emit(state, { t: 'welcome', v: GATE_PROTOCOL, stun: stunUrls, limits: { box: limits.box, peersPerRoom: limits.peersPerRoom } });
     }
     switch (m.t) {
       case 'join': {
-        if (Object.keys(m).length !== 3 || !TAG.test(m.room ?? '') || !TAG.test(m.peer ?? '')) return refuse(state, 'schema', true);
+        if (Object.keys(m).length !== 3 || typeof m.room !== 'string' || typeof m.peer !== 'string' || !TAG.test(m.room) || !TAG.test(m.peer)) return refuse(state, 'schema', true);
         if (state.boundRoom && state.boundRoom !== m.room) return refuse(state, 'room-not-allowed');
         if (state.rooms.has(m.room)) return refuse(state, 'already-joined');
         if (state.rooms.size >= limits.roomsPerSocket) return refuse(state, 'too-many-rooms');
@@ -215,6 +227,7 @@ export async function createGate(options = {}) {
   const heartbeat = setInterval(() => {
     const now = Date.now();
     for (const state of sockets) {
+      if (now >= state.expiresAt) { refuse(state, 'auth-expired', true); continue; }
       if (!state.alive || now - state.lastSeen > limits.idleMs) { state.ws.terminate(); continue; }
       state.alive = false; try { state.ws.ping(); } catch {}
     }

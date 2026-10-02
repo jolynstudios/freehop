@@ -5,7 +5,7 @@ where *any* route exists inside the session. That includes the cases the earlier
 research proved impossible directly: two fully random symmetric NATs, and UDP-blocking
 networks. The operator runs only gates, which carry sealed signalling of tens of KB per call and
 never media. When no direct route exists, media goes through machines that belong to the
-session: a desktop player's own gateway, the match's host node, or a participant. The only
+session: a desktop participant's own gateway, the session's host node, or another participant. The only
 unsolved network is one that can reach nothing but the gate. There, media is impossible without
 the operator carrying it, and Freehop reports `unreachable`.
 
@@ -26,14 +26,14 @@ behind its own kernel-NAT router profile, with fake camera and microphone. Every
 | hard-pair (chromium) | 3/3 | a-b:unreachable (two random NATs, nobody else: expected) | 93 KB |
 | hard-pair-bridge (chromium) | 3/3 | a-c:direct b-c:direct a-b:bridged@c | 91 KB |
 | hard-pair-bridge (mixed) | 1/1 | a-c:direct b-c:direct a-b:bridged@c | 115 KB |
-| two-player-desktop-host (chromium) | 3/3 | a-g:gateway@g | 37–66 KB |
-| two-player-desktop-host (mixed) | 1/1 | a-g:gateway@g | 34 KB |
+| two-peer-desktop-host (chromium) | 3/3 | a-g:gateway@g | 37–66 KB |
+| two-peer-desktop-host (mixed) | 1/1 | a-g:gateway@g | 34 KB |
 | hard-pair-gateway (chromium) | 3/3 | a-g:gateway@g b-g:gateway@g a-b:relay@g | 143–201 KB |
 | hard-pair-gateway (mixed) | 1/1 | a-g:gateway@g b-g:gateway@g a-b:relay@g | 146 KB |
 | udpblock-gateway (chromium) | 3/3 | a-g:gateway@g (TURN over TCP) | 34–63 KB |
 | udpblock-gateway (mixed) | 1/1 | a-g:gateway@g | 31 KB |
 | udpblock-pair-gateway (chromium) | 3/3 | a-g:gateway@g b-g:gateway@g a-b:relay@g | 130–158 KB |
-| hard-pair-host-node (chromium) | 3/3 | a-b:relay@h (host node, no desktop player) | 73 KB |
+| hard-pair-host-node (chromium) | 3/3 | a-b:relay@h (host node, no desktop participant) | 73 KB |
 | hard-pair-host-node (mixed) | 1/1 | a-b:relay@h | 62 KB |
 | udpblock-pair-host-node (chromium) | 3/3 | a-b:relay@h | 65 KB |
 | gate-only (chromium) | 3/3 | a-b, a-c:unreachable (boundary), b-c:direct | 207 KB |
@@ -51,13 +51,16 @@ behind its own kernel-NAT router profile, with fake camera and microphone. Every
 party is needed. Gate traffic is the gate's total for the whole run, including retries of pairs
 that stay unreachable. It is signalling only.
 
+The 40-run matrix above is historical qualification before the security changes in [SECURITY-AUDIT.md](SECURITY-AUDIT.md). The updated runtime passed the 97-test unit suite, local browser suites and a targeted `hard-pair-bridge` kernel-NAT run. The full matrix has not been repeated for this revision.
+
 ## Other evidence
-- **Unit tests: 79/79.**
+- **Unit tests: 97/97.**
   - STUN codec with RFC 5769 vectors and fuzzing;
-  - TURN server, 29 cases;
+  - TURN server, 30 cases;
   - port mapper, 30 cases with fake PCP/NAT-PMP/UPnP routers;
   - gate: routing, isolation, floods, tokens, capacity, STUN, keepalive, trust-proxy;
-  - gateway: room-scoped and revocable credentials, loopback refused.
+  - gateway: room-scoped and revocable credentials, loopback refused, old-epoch alias allocations revoked;
+  - 13 protocol security regressions (tickets, authority races, key epochs, forwarding, hostile gates and Electron IPC).
 - **Independent TURN conformance:** coturn's `turnutils_uclient` against Freehop's TURN
   server got UDP 800/800 and TCP 800/800 messages with 0 lost.
   - It runs in Send/Data mode because coturn's client uses obsolete RFC 5766 channel numbers.
@@ -74,9 +77,7 @@ that stay unreachable. It is signalling only.
   - **a public WebTorrent tracker as the only gate** (`wss://tracker.openwebtorrent.com`: no
     server of our own);
   - the SDK example app driven through its own UI and API, including a kick rotation.
-- **Independent security/correctness review:** 11 findings, 3 high, all fixed and re-tested.
-  Examples: gates could inject peers, the gateway exposed loopback services, a lost offer
-  could deadlock a pair.
+- **Earlier review:** the prior qualification recorded 11 security/correctness findings. The current source audit and regression evidence are documented in [SECURITY-AUDIT.md](SECURITY-AUDIT.md).
 
 ## Not yet verified (next phases)
 1. **Physical networks:**
@@ -88,7 +89,7 @@ that stay unreachable. It is signalling only.
    environment, including the strict frame-time gates with voice on.
 3. **iOS Safari and Android browsers:** only desktop engines were tested.
 4. **Media quality under real load:** forwarded (bridged) media is re-encoded by the
-   participant, and the upstream budget of a forwarding player on home broadband is still
+   participant, and the upstream budget of a forwarding participant on home broadband is still
    unmeasured.
 
 ## Reproduce

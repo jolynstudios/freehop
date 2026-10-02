@@ -4,19 +4,19 @@ sidebar_label: Host sessions
 description: Reference for hostSession, which makes the machine that hosts a session its gateway member, joining without media and relaying for members who need it.
 ---
 
-`hostSession()` makes the machine that hosts a session the session's gateway. It starts (or reuses) a gateway, joins the room through the gates as a **gateway member** without any media, and offers that gateway to the members with per-peer credentials. Use it on the machine that already hosts the match: a community server, or a player's desktop app that hosts a lobby. The [host nodes concept page](../concepts/host-nodes.mdx) shows when it helps.
+`hostSession()` makes the machine that hosts a session the session's gateway. It starts (or reuses) a gateway, joins the room through the gates as a **gateway member** without any media, and offers that gateway to the members with per-peer credentials. Use it on the machine that already hosts the session: a community server, or a participant's desktop app that hosts a lobby. The [host nodes concept page](../concepts/host-nodes.mdx) shows when it helps.
 
-```js title="match-server.mjs"
+```js title="session-server.mjs"
 import { hostSession } from 'freehop/host';
 
-const host = await hostSession(await authority.ticket('match-42'));   // a ticket with no member
+const host = await hostSession(await authority.ticket('room-42'));   // a ticket with no member
 console.log(host.available ? `hosting as ${host.id}` : 'not reachable from outside');
 
 // After a kick, follow the rotation:
-const { hostTicket } = await authority.kick('match-42', 'player-3');
+const { hostTicket } = await authority.kick('room-42', 'user-3');
 await host.update(hostTicket, { dropped: [kickedPeerId] });
 
-// When the match ends:
+// When the session ends:
 await host.close();
 ```
 
@@ -45,7 +45,7 @@ When the machine cannot be reached from outside (no public address and no router
 | `available` | `true` |
 | `id` | The gateway member's peer id, starting with `gw_` |
 | `gateway` | The gateway in use |
-| `update(ticket, { dropped })` | Moves to the newer ticket's room tag and revokes the dropped peers. Ignores tickets that are not newer. |
+| `update(ticket, { dropped })` | Moves to an unexpired newer ticket for the same app and room with a new secret; revokes every old-epoch allocation, including aliases. Returns false for an invalid update. |
 | `drop(peerId)` | Revokes one peer's credentials and allocations now |
 | `stats()` | `{ available, epoch, member, gateway }`: peers served, envelopes, revocations, mappings and TURN counters |
 | `close()` | Says goodbye to the members it served, leaves the gates and revokes every room tag it served |

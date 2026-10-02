@@ -1,0 +1,71 @@
+---
+title: How Freehop compares
+sidebar_label: Comparison
+hide_table_of_contents: true
+description: Freehop next to plain WebRTC with your own TURN, PeerJS, Trystero, LiveKit, Jitsi, mediasoup and hosted video APIs. The main difference is who carries the media when a direct connection fails, and who pays for it.
+---
+
+import CompareTable from '@site/src/components/compare/CompareTable';
+
+Every option on this page can put people in a call. They differ in one question that decides your bill: **when two people cannot connect directly, where do their audio and video go?**
+
+- **Peer-to-peer libraries** (PeerJS, Trystero, plain WebRTC) send media directly when they can. When they can't, they need a TURN relay, and someone pays for every byte it carries.
+- **SFU servers** (LiveKit, Jitsi, mediasoup) route group media through a server. Jitsi also tries a direct route in two-person calls. Server forwarding makes large rooms, recording and livestreams possible, and makes the server's bandwidth a running cost.
+- **Hosted APIs** run those servers for you and charge per minute or per gigabyte.
+- **Freehop** keeps media between the people in the call. When a direct route fails, it uses machines that already belong to the session: a participant's desktop gateway, the host node, or a participant who forwards. Your servers only run [gates](./concepts/gates.mdx), which pass sealed signalling.
+
+## At a glance
+
+<CompareTable />
+
+On a narrow screen, the table scrolls sideways.
+
+"No operator media bill" means Freehop's gates carry no media. Participants and session-owned gateways still use bandwidth and computing resources. The 2-to-8-person range is the intended use, not enforced room admission; see [room limits](./limits.mdx#small-rooms).
+
+## Which one fits
+
+**Freehop fits when:**
+
+- calls are small groups of 2 to 8 people: games, communities, voice rooms, small video calls;
+- you don't want a relay bill that grows with every call, and you accept that a pair with no route inside the session is reported as `unreachable`;
+- people use your app in the browser and on the desktop, so desktop participants can open a front door for everyone.
+
+**An SFU (LiveKit, Jitsi, mediasoup) fits when:**
+
+- rooms have dozens or hundreds of people, or one person broadcasts to many;
+- you need recording, server-side processing, transcription or AI agents in the call;
+- a call must connect on any network that can reach your server, and you budget for the bandwidth.
+
+**A thin peer-to-peer library (PeerJS, Trystero, plain WebRTC) fits when:**
+
+- you want one-to-one calls or data channels with the least code;
+- you are happy to run (and pay for) your own TURN server for the pairs that can't connect directly.
+
+**A hosted API fits when:**
+
+- you want nothing to operate and a vendor contract, and per-minute pricing works for your margins.
+
+## What Freehop does not do
+
+Being honest about the trade-offs is part of the comparison:
+
+- **No large-room qualification.** Freehop is a mesh: every person sends to every other person. Larger rooms need separate load testing; an SFU reduces each participant's upload requirements.
+- **No built-in recording or server-side media processing.** Gates cannot record media they never receive. Receiving participants can record it, including a participant forwarding decoded tracks; gateway relays carry encrypted packets.
+- **No guarantee on locked-down networks.** A network that can reach only your server has no route for media without your server carrying it. Freehop reports `unreachable` instead of paying for a relay. See [limits](./limits.mdx).
+- **Lab-qualified, not field-proven yet.** See [results](./results.mdx).
+
+## Sources
+
+Checked against each project's own documentation and source code on 2 October 2026. Pricing and service availability can change:
+
+- [coturn](https://github.com/coturn/coturn): TURN server, BSD-3-Clause.
+- [PeerJS](https://peerjs.com) and its [repository](https://github.com/peers/peerjs): MIT and PeerServer cloud; the maintainers' [5 December 2023 announcement](https://github.com/orgs/peers/discussions/1172) ended the free TURN service. Some default settings still list the old TURN addresses; they are not a supplied service you should rely on.
+- [Trystero](https://github.com/dmotz/trystero#readme): MIT; Nostr is the default strategy, TURN is configured separately, and a password protects signalling with a private key.
+- [LiveKit](https://github.com/livekit/livekit): Apache-2.0 SFU; [embedded TURN](https://docs.livekit.io/transport/self-hosting/deployment/), [end-to-end encryption](https://docs.livekit.io/transport/encryption/), and [Cloud pricing](https://livekit.com/pricing).
+- [Jitsi Meet](https://github.com/jitsi/jitsi-meet) and [Jitsi Videobridge](https://github.com/jitsi/jitsi-videobridge): Apache-2.0; [security and two-person P2P mode](https://jitsi.org/security/), [P2P configuration](https://github.com/jitsi/jitsi-meet/blob/master/config.js), and [JaaS](https://jaas.8x8.vc/).
+- [mediasoup](https://github.com/versatica/mediasoup): ISC; [Node.js and Rust integrations](https://mediasoup.org/documentation/v3/).
+- [simple-peer](https://github.com/feross/simple-peer): MIT; configurable ICE servers and mesh groups built by the application.
+- Hosted APIs: [Daily](https://www.daily.co/pricing/), [Agora](https://www.agora.io/en/pricing/), [Twilio Video](https://www.twilio.com/en-us/video/pricing), [Cloudflare Realtime](https://developers.cloudflare.com/realtime/).
+- Native game networks: [Steam Datagram Relay](https://partner.steamgames.com/doc/features/multiplayer/steamdatagramrelay) and [Epic Online Services P2P](https://dev.epicgames.com/docs/epic-online-services/multiplayer/nat-p2p-interface/p2p-reference).
+
+Something out of date or wrong? [Open an issue](https://github.com/jolynstudios/freehop/issues) and we will correct it.

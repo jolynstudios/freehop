@@ -1,0 +1,228 @@
+.wrap {
+  background: #ffffff;
+  border: 1px solid var(--fh-lavender);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--fh-shadow-code);
+}
+
+.wrapFull {
+  margin: 1.5rem 0 2rem;
+}
+
+.scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scroll:focus-visible {
+  outline: 3px solid var(--fh-azure);
+  outline-offset: -3px;
+}
+
+.table {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.tableFull {
+  min-width: 1320px;
+  font-size: 0.875rem;
+}
+
+.tableFull thead th:not(:first-child),
+.tableFull tbody td {
+  min-width: 11.5rem;
+}
+
+.table thead th {
+  background: #fbfbfe;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.056em;
+  text-transform: uppercase;
+  color: var(--fh-fog);
+  text-align: left;
+  vertical-align: bottom;
+  padding: 0.8rem 1.1rem;
+  border: none;
+  border-bottom: 1px solid var(--fh-lavender);
+}
+
+.table tbody tr {
+  border: none;
+  border-top: 1px solid var(--fh-lavender);
+  background: #ffffff;
+  transition: background-color 0.15s var(--fh-ease);
+}
+
+.table tbody tr:first-child {
+  border-top: none;
+}
+
+.table tbody tr:hover {
+  background: #fffdf0;
+}
+
+.table tbody th,
+.table tbody td {
+  border: none;
+  padding: 0.85rem 1.1rem;
+  vertical-align: top;
+  text-align: left;
+  color: var(--fh-slate);
+}
+
+.option {
+  min-width: 13rem;
+  background: inherit;
+}
+
+.tableFull .option,
+.tableFull .optionHead {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  box-shadow: 1px 0 0 var(--fh-lavender);
+}
+
+.tableFull .option {
+  background: #ffffff;
+}
+
+.tableFull .optionHead {
+  background: #fbfbfe;
+}
+
+.name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  font-weight: 600;
+  color: var(--fh-ink);
+}
+
+.name a {
+  color: var(--fh-ink);
+  text-decoration: none;
+}
+
+.name a:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--fh-azure);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+}
+
+.kind {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--fh-fog);
+}
+
+.ours,
+.ours:hover,
+.tableFull .ours .option {
+  background: #fffbd6 !important;
+}
+
+.ours .option {
+  box-shadow: inset 5px 0 0 var(--fh-yellow);
+}
+
+.tableFull .ours .option {
+  box-shadow: inset 5px 0 0 var(--fh-yellow), 1px 0 0 var(--fh-lavender);
+}
+
+.oursTag {
+  font-family: var(--fh-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fh-charcoal);
+  background: var(--fh-yellow);
+  border: 1.5px solid var(--fh-charcoal);
+  border-radius: var(--fh-round);
+  padding: 0.05rem 0.5rem;
+}
+
+.bill {
+  display: inline-block;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  border-radius: 10px;
+  padding: 0.25rem 0.6rem;
+  border: 1.5px solid currentColor;
+}
+
+.bill_none {
+  color: var(--fh-teal);
+  background: #eaf6f6;
+}
+
+.bill_yours {
+  color: var(--fh-rust);
+  background: #fbf1f0;
+}
+
+.bill_provider {
+  color: var(--fh-plum);
+  background: #f6eefa;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .table:not(.tableFull) thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .table:not(.tableFull),
+  .table:not(.tableFull) tbody,
+  .table:not(.tableFull) tr,
+  .table:not(.tableFull) th,
+  .table:not(.tableFull) td {
+    display: block;
+  }
+  .table:not(.tableFull) tbody tr {
+    padding: 1rem 1.1rem;
+  }
+  .table:not(.tableFull) tbody th,
+  .table:not(.tableFull) tbody td {
+    padding: 0.2rem 0;
+  }
+  .table:not(.tableFull) tbody td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--fh-fog);
+    margin-top: 0.5rem;
+  }
+  .table:not(.tableFull) .option {
+    min-width: 0;
+  }
+  .ours .option {
+    box-shadow: none;
+  }
+  .table:not(.tableFull) .ours {
+    box-shadow: inset 5px 0 0 var(--fh-yellow);
+  }
+}

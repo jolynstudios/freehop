@@ -60,18 +60,18 @@ name the peer the remaining clients must drop.
 Main process:
 ```js
 import { installFreehopGateway } from 'freehop/electron';
-const freehop = installFreehopGateway({ ipcMain });
+const freehop = installFreehopGateway({ ipcMain, allowedOrigins: ['https://play.example.com'] });
 app.on('will-quit', () => freehop.close());
 new BrowserWindow({ webPreferences: { preload: require.resolve('freehop/electron/preload'),
   additionalArguments: ['--freehop-origins=https://example.com'], contextIsolation: true } });
 ```
 `connect()` finds `window.freehopGateway` automatically. It starts the gateway (TURN plus a
 PCP/NAT-PMP/UPnP router mapping) on first use, allows that room, and offers it to the room's
-peers with per-peer credentials. Players behind hard NATs or UDP-blocking networks can then
-reach the desktop player without any third party.
+peers with per-peer credentials. Participants behind hard NATs or UDP-blocking networks can then
+reach the desktop participant without any third party.
 
 ## 5. Hosts: let the session's own host relay for it (`freehop/host`)
-Whoever hosts a session can make its machine the session's gateway: a match server, a
+Whoever hosts a session can make its machine the session's gateway: an app server, a
 community server, or a desktop app that hosts. It needs a public address or a router mapping.
 ```js
 import { hostSession } from 'freehop/host';

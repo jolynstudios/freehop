@@ -34,9 +34,9 @@ const authority = createAuthority({
   gateTokenSecret: process.env.FREEHOP_GATE_TOKEN_SECRET,
 });
 
-await authority.openRoom('match-42');
-const ticket = await authority.ticket('match-42', 'player-7');   // send it over your own channel
-const { tickets } = await authority.kick('match-42', 'player-3'); // new secret for everyone else`,
+await authority.openRoom('room-42');
+const ticket = await authority.ticket('room-42', 'user-7');   // send it over your own channel
+const { tickets } = await authority.kick('room-42', 'user-3'); // new secret for everyone else`,
   },
   {
     id: 'gate',
@@ -54,12 +54,12 @@ node bin/freehop-gate.mjs`,
   {
     id: 'desktop',
     step: 'Desktop apps open their front door',
-    note: 'Optional. TURN on the player’s machine plus a router port mapping.',
+    note: 'Optional. TURN on the participant’s machine plus a router port mapping.',
     file: 'electron-main.mjs',
     language: 'js',
     code: `import { installFreehopGateway } from 'freehop/electron';
 
-const freehop = installFreehopGateway({ ipcMain }); // starts on first use
+const freehop = installFreehopGateway({ ipcMain, allowedOrigins: ['https://play.example.com'] }); // starts on first use
 app.on('will-quit', () => freehop.close());
 // BrowserWindow: preload 'freehop/electron/preload',
 // additionalArguments: ['--freehop-origins=https://play.example.com']`,
@@ -67,7 +67,7 @@ app.on('will-quit', () => freehop.close());
   {
     id: 'host',
     step: 'Hosts lend their gateway',
-    note: 'Optional. The machine that runs the match joins without media.',
+    note: 'Optional. The machine that hosts the session joins without media.',
     file: 'host.mjs',
     language: 'js',
     code: `import { hostSession } from 'freehop/host';
@@ -80,7 +80,7 @@ await host.close();`,
 
 const KINDS: {kind: PathKind; text: string}[] = [
   {kind: 'direct', text: 'nothing in between'},
-  {kind: 'gateway', text: "one player's own front door"},
+  {kind: 'gateway', text: "one participant's own front door"},
   {kind: 'relay', text: "another member's gateway"},
   {kind: 'bridged', text: 'forwarded by a participant'},
   {kind: 'unreachable', text: 'no route inside the session'},
@@ -103,7 +103,7 @@ export default function Quickstart() {
   };
 
   return (
-    <Section tone="paper" labelledBy="quickstart">
+    <Section tone="surface" labelledBy="quickstart">
       <Eyebrow>Quickstart</Eyebrow>
       <Title id="quickstart" className={styles.title}>
         Five lines in the browser.

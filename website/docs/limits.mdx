@@ -20,13 +20,17 @@ A gate operator who *chooses* to also run a gateway, for example a community gat
 
 ### Two hard networks and nobody else
 
-Two browser-only participants who are both behind hard NATs or UDP-blocking networks, with no IPv6, no gateway in the session and no third participant, cannot connect (lab scenario `hard-pair`). Any one of these changes that: a desktop player with a reachable gateway, a [host node](./concepts/host-nodes.mdx), or a third participant who reaches both and can [forward](./concepts/forwarding.mdx).
+Two browser-only participants who are both behind hard NATs or UDP-blocking networks, with no IPv6, no gateway in the session and no third participant, cannot connect (lab scenario `hard-pair`). Any one of these changes that: a desktop participant with a reachable gateway, a [host node](./concepts/host-nodes.mdx), or a third participant who reaches both and can [forward](./concepts/forwarding.mdx).
 
 When a pair is `unreachable`, Freehop keeps retrying with ICE restarts after 30, 60, 120 and 240 seconds, then every 300 seconds, at almost no cost to the gate. Show your users an honest message, such as "voice unavailable on this network", rather than silence.
 
 ### Small rooms
 
 Rooms are a full mesh designed for 2 to 8 participants. Every participant sends its media to every other participant, so upstream grows with the room: at five participants with video, each one sends about 4 × 330 kbit/s.
+
+`limits.maxPeers` defaults to 8 **remote peers per client**, so the client limit alone allows a nine-person mesh. It is a local resource limit, not room admission control: excess peers are ignored without a "room full" event, and larger rooms can form an incomplete mesh. Enforce your product's room-size limit in the backend before issuing tickets; `createAuthority()` does not enforce it for you. The browser-only live demo has no backend and recommends rooms of up to 8 people.
+
+More people do not increase capacity as they would in a file-sharing swarm. The trackers introduce peers; they never carry media. A host node provides a TURN gateway for pairs that need it, preserving their encrypted traffic. It does not turn the mesh into an SFU where each participant uploads one stream for redistribution. Larger voice-only rooms need separate load testing before changing the limit.
 
 ### Trust and privacy
 
@@ -56,7 +60,7 @@ These are the next phases of verification. Until they are done, treat Freehop's 
 1. **Physical networks:** real home routers, 4G and 5G carrier NAT (usually with IPv6), a UDP-blocking corporate network, and routers without UPnP, PCP or NAT-PMP.
 2. **The [Redline Wars](./redline-wars.mdx) integration** through the SDK, including the game's strict frame-time checks with voice on.
 3. **iOS Safari and Android browsers.** Only desktop engines were tested.
-4. **Media quality under real load,** including how much upload a forwarding player on home broadband can spare.
+4. **Media quality under real load,** including how much upload a forwarding participant on home broadband can spare.
 
 The [qualification results](./results.mdx) list exactly what *has* been verified.
 

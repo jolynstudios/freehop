@@ -1,0 +1,89 @@
+---
+title: Torrent trackers as gates
+sidebar_label: Torrent trackers
+description: Freehop can use public WebTorrent trackers as gates. The same sealed envelopes ride in the offer and answer messages the trackers already pass between browsers, so an app can run with no server of its own.
+---
+
+import { GateScene } from '@site/src/components/scenes';
+
+<GateScene caption="A public tracker is a borrowed mailbox: the same sealed envelopes, posted at an address that already exists." />
+
+A Freehop gate is a mailbox for sealed envelopes. Freehop can also borrow mailboxes that already exist on the internet: the public trackers that browser-based BitTorrent apps use to find each other. The [live call](/demo) on this site runs on two of them and on nothing of ours.
+
+## What a WebTorrent tracker is
+
+When people share a file with BitTorrent, a **tracker** is the noticeboard that tells everyone who is fetching the same file who else is there. The file is identified by a short fingerprint called the `info_hash`, and the group of people fetching it is called a **swarm**.
+
+**WebTorrent** is BitTorrent for web browsers. Browsers connect to each other with WebRTC, so a WebTorrent tracker does one more thing: over a WebSocket (`wss://`), it passes small **offer** and **answer** messages between the browsers in the same swarm, so that they can set up a connection. Public WebTorrent trackers such as `tracker.openwebtorrent.com` and `tracker.webtorrent.dev` are run by volunteers, are free, and already serve many apps.
+
+That is exactly the job of a Freehop gate: help two browsers that share a secret room find each other and exchange a few envelopes.
+
+## How Freehop uses one
+
+You list a tracker as a gate with a `bt+` prefix, next to your own gates or on its own:
+
+```js title="backend.mjs"
+import { createAuthority } from 'freehop/authority';
+
+const authority = createAuthority({
+  app: 'my-app',
+  gates: [
+    'wss://gate.example.com/freehop',          // your own gate (optional)
+    'bt+wss://tracker.openwebtorrent.com',     // public WebTorrent trackers
+    'bt+wss://tracker.webtorrent.dev',
+  ],
+});
+```
+
+Here is what happens when Ana and Ben join the same room with a tracker in their tickets:
+
+1. **The swarm is named after the room.** Both derive the room tag from the room secret, and the swarm's `info_hash` is the first 20 hex characters of that tag. Only people with the secret can work out the name. To the tracker it is a random-looking fingerprint, like any other file.
+2. **Each client says hello.** Every 30 seconds (or less often, if the tracker asks for that), each client announces itself to the swarm with six offers. Instead of a WebRTC offer, each one carries a sealed hello: `pl1:<peer id>:<sealed hello>`. The tracker hands these to other members of the swarm, as it would for any file.
+3. **Only real members are admitted.** When Ben receives Ana's hello, he opens it with the room key. Only if it authenticates does he remember which tracker address belongs to Ana. A stranger in the swarm cannot impersonate her or redirect her envelopes.
+4. **Envelopes travel as answers.** From then on, Ben's envelopes for Ana go to the tracker as "answers" addressed to her. These are the same sealed envelopes a Freehop gate would carry: session descriptions, ICE candidates and capabilities.
+5. **Pair signalling moves onto the data channel.** As soon as Ana and Ben's own data channel opens, their connection messages use it. Periodic tracker announcements continue so newcomers can discover them, and tracker signalling can be used again during connection recovery. Audio and video never pass through the tracker at all.
+
+In the live call, the whole introduction through two trackers costs about 25 to 40 KB per browser. After that, each client only sends a small announce every 30 seconds, so that newcomers can find the room. The counter "Through the trackers (signalling)" on the [live call page](/demo) shows it as it happens.
+
+## What a tracker can and cannot see
+
+A tracker sees as little as a Freehop gate does:
+
+| A tracker can see | A tracker cannot |
+|---|---|
+| The IP addresses of the browsers that connect to it | Read the envelopes, which are sealed with AES-256-GCM under a key derived from the room secret |
+| The swarm fingerprint, which cannot be linked to the room's name without the secret | Forge or alter an envelope, or add anyone to the room |
+| Random per-join peer ids, message sizes and timing | Learn the room secret |
+| That a swarm is active, and how many browsers are in it | Carry or see media: audio and video go between the people in the call |
+
+Anyone who knows a swarm's fingerprint could post into it, but without the room secret their messages fail authentication and are dropped.
+
+## When to use trackers
+
+**Good for:**
+
+- **Demos and prototypes with zero servers.** Like this site's live call: no backend, no gate, no bill.
+- **Extra resilience next to your own gate.** Clients use every gate in the ticket at once. If your gate is down or slow, people still find each other through a tracker.
+- **Community projects** that would rather not run any server at all.
+
+**Think twice when you need:**
+
+- **Guaranteed availability.** Public trackers are run by volunteers. They can rate-limit, change or go offline, and you cannot do anything about it. For production, list your own gate first.
+- **Networks that block them.** Some corporate and school networks block known tracker domains. Your own gate on your own domain is less likely to be blocked.
+- **Admission control.** Trackers are open to everyone. Your own gate can require [room-bound tokens](./gates.mdx#admission-open-or-token-gated), so it serves only your rooms.
+- **Host nodes.** [Host nodes](./host-nodes.mdx) join through WebSocket gates only, so their tickets need at least one `wss://` gate.
+
+## Be a good neighbour
+
+Public trackers are shared infrastructure that volunteers pay for. Freehop is light on them (a few kilobytes per announce, a short burst per introduction), but steady production traffic belongs on infrastructure you run: your own Freehop gate, or your own WebTorrent-compatible tracker.
+
+## Evidence
+
+- A browser suite forms a three-person call with `wss://tracker.openwebtorrent.com` as the **only** gate. It checks that audio and video arrive on every link and that no gate of ours was used. See [results](../results.mdx).
+- The [live call](/demo) on this site uses `tracker.openwebtorrent.com` and `tracker.webtorrent.dev` as its only gates, with public STUN servers. In our checks, two browsers connected directly within seconds.
+
+## Next
+
+- [Gates](./gates.mdx): the mailbox model and running your own.
+- [Security model](./security.mdx): what sealing protects and what it does not.
+- [Use case: Redline Wars](../redline-wars.mdx): where trackers fit in a game.

@@ -12,7 +12,7 @@ run() {
 }
 if [[ "${1:?scenario}" == all ]]; then
   status=0
-  for s in direct-eim hard-pair hard-pair-bridge two-player-desktop-host hard-pair-gateway udpblock-gateway udpblock-pair-gateway gate-only; do
+  for s in direct-eim hard-pair hard-pair-bridge two-peer-desktop-host hard-pair-gateway udpblock-gateway udpblock-pair-gateway gate-only; do
     run "$s" || status=1
   done
   exit $status

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // The SDK as a third-party app sees it: three browsers use the minimal example's UI and API
 // only (join, tickets, kick). Asserts media flows in the full mesh, the kick rotates the
-// room for the remaining members without interrupting them, and the kicked member is out.
+// room for the remaining members with fresh connections, and the kicked member is out.
 import assert from 'node:assert/strict';
 import { startExample } from '../../examples/minimal/server.mjs';
 import { launchPeer, waitUntil, writeEvidence } from './lab.mjs';
@@ -32,11 +32,13 @@ try {
   assert.equal(kicked.epoch, 2);
   const after = await waitUntil(async () => { const all = await Promise.all(peers.map(state));
     return all[0].epoch === 2 && all[1].epoch === 2 && all[2].state === 'kicked' &&
-      !all[0].links.some(l => l.peer === c.id && l.connected) && !all[1].links.some(l => l.peer === c.id && l.connected) && all; }, { timeoutMs: 20000 });
+      !all[0].links.some(l => l.peer === c.id && l.connected) && !all[1].links.some(l => l.peer === c.id && l.connected) &&
+      all[0].links.some(l => l.peer === b.id && l.connected && l.a > 50 && l.v > 20) &&
+      all[1].links.some(l => l.peer === a.id && l.connected && l.a > 50 && l.v > 20) && all; }, { timeoutMs: 20000 });
   report.after = after;
   assert.ok(after, 'remaining members rotated to epoch 2, dropped the kicked peer, kicked member left');
-  const ab = after[0].links.find(l => l.peer === b.id), before = a.links.find(l => l.peer === b.id);
-  assert.ok(ab?.connected && ab.a > before.a + 50, 'A<->B media continued through the rotation');
+  const ab = after[0].links.find(l => l.peer === b.id);
+  assert.ok(ab?.connected && ab.a > 50 && ab.v > 20, 'A<->B media recovered through the rotation');
   report.passed = true;
 } catch (error) { report.error = error.message; }
 finally {

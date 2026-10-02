@@ -13,7 +13,7 @@ export type LighthouseProps = {
 };
 
 /**
- * The session's host node: it belongs to the match, joins without media and lends its
+ * The session's host node: it belongs to the session, joins without media and lends its
  * gateway. Base centre at (0,0), about 190 tall.
  */
 export default function Lighthouse({x = 0, y = 0, scale = 1, rotate = 0, beams = true, animate = true, className}: LighthouseProps) {

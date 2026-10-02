@@ -164,3 +164,49 @@ test('behind a trusted local proxy the per-address limit applies to X-Forwarded-
     for (const x of [a, b, c]) x.ws.terminate();
   } finally { await gate.close(); }
 });
+
+test('an admitted socket loses access when its gate token expires', async () => {
+  const secret = 'expiry-regression', expires = Math.floor(Date.now() / 1000) + 2;
+  const gate = await createGate({port: 0, tokenSecret: secret, limits: {pingMs: 50}});
+  try {
+    const ws = await joined(gate.url(), randomTag(32), randomTag(), {t: 'hello', v: 1, auth: mintGateToken(secret, {exp: expires})});
+    assert.equal(ws.peers.t, 'peers');
+    const event = await Promise.race([ws.closed, new Promise((_, reject) => setTimeout(() => reject(new Error('expired socket stayed open')), 3000))]);
+    assert.equal(event.code, 1008);
+    assert.equal(event.reason, 'auth-expired');
+    const until = Date.now() + 1000;
+    while (gate.rooms() && Date.now() < until) await new Promise(resolve => setTimeout(resolve, 10));
+    assert.equal(gate.rooms(), 0);
+  } finally {await gate.close();}
+});
+
+test('frames queued behind asynchronous admission are bounded and cannot resurrect a closed socket', async () => {
+  let release, begun;
+  const started = new Promise(resolve => {begun = resolve;});
+  const gate = await createGate({port: 0, limits: {maxPendingFrames: 4}, authorize: () => {begun(); return new Promise(resolve => {release = resolve;});}});
+  try {
+    const ws = await connect(gate.url());
+    ws.sendJson({t: 'hello', v: 1}); await started;
+    for (let i = 0; i < 8; i++) ws.sendJson({t: 'join', room: randomTag(32), peer: randomTag()});
+    assert.equal((await ws.closed).code, 1008);
+    release(true);
+    await new Promise(resolve => setTimeout(resolve, 30));
+    assert.equal(gate.rooms(), 0);
+    assert.equal(gate.stats().joins, 0);
+    assert.ok(gate.stats().rateLimited >= 1);
+  } finally {release?.(false); await gate.close();}
+});
+
+test('STUN Binding answers obey the global reflection budget', async () => {
+  const {createStunResponder} = await import('../src/gate/stun-responder.mjs');
+  const responder = await createStunResponder({host: '127.0.0.1', port: 0, burst: 100, totalBurst: 2, totalRatePerSec: 0});
+  const socket = dgram.createSocket('udp4');
+  try {
+    await new Promise(resolve => socket.bind(0, '127.0.0.1', resolve));
+    for (let i = 0; i < 10; i++) socket.send(stun.encode({method: stun.METHOD.BINDING, cls: stun.CLASS.REQUEST, transactionId: Buffer.alloc(12, i)}), responder.address().port, '127.0.0.1');
+    const until = Date.now() + 2000;
+    while (responder.stats().responses + responder.stats().rateLimited < 10 && Date.now() < until) await new Promise(resolve => setTimeout(resolve, 10));
+    assert.equal(responder.stats().responses, 2);
+    assert.equal(responder.stats().rateLimited, 8);
+  } finally {socket.close(); await responder.close();}
+});

@@ -18,8 +18,8 @@ export default function Honest() {
             will not do that. It reports <code>unreachable</code>, keeps the call's other pairs running, and retries quietly.
           </p>
           <p className={styles.text}>
-            Two browser-only players who are both behind hard NATs or UDP-blocking networks, with nobody else in the session, cannot
-            connect either. Add a desktop player, a host node or a third participant and they can.
+            Two browser-only participants who are both behind hard NATs or UDP-blocking networks, with nobody else in the session, cannot
+            connect either. Add a desktop participant, a host node or a third participant and they can.
           </p>
           <Link className={styles.link} to="/docs/limits">
             <Chevron>Read every known limit</Chevron>

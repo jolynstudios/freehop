@@ -12,7 +12,7 @@ export function validTicket(t) {
     typeof t.roomId === 'string' && t.roomId.length <= 128 && Number.isSafeInteger(t.epoch) && t.epoch >= 1 &&
     Array.isArray(t.gates) && t.gates.length >= 1 && t.gates.length <= 8 && t.gates.every(g => typeof g === 'string' && GATE_URL.test(g)) &&
     typeof t.secret === 'string' && t.secret.length >= 22 && t.secret.length <= 128 &&
-    (t.auth === undefined || typeof t.auth === 'string' && t.auth.length <= 2048) && Number.isFinite(t.expires);
+    (t.auth === undefined || typeof t.auth === 'string' && t.auth.length <= 2048) && Number.isSafeInteger(t.expires) && t.expires * 1000 > Date.now();
 }
 
 const te = new TextEncoder(), td = new TextDecoder();

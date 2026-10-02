@@ -4,13 +4,16 @@
 import dgram from 'node:dgram';
 import { isStunMessage, decode, encode, encodeXorAddress, METHOD, CLASS, ATTR } from '../shared/stun.mjs';
 
-export async function createStunResponder({ host = '0.0.0.0', port = 3478, ratePerSec = 10, burst = 30, software = 'peerlane-gate', log = () => {} } = {}) {
+export async function createStunResponder({ host = '0.0.0.0', port = 3478, ratePerSec = 10, burst = 30, totalRatePerSec = 200, totalBurst = 400, software = 'peerlane-gate', log = () => {} } = {}) {
   const type = host.includes(':') ? 'udp6' : 'udp4';
   const socket = dgram.createSocket({ type, ipv6Only: type === 'udp6' });
   const stats = { requests: 0, responses: 0, bytesIn: 0, bytesOut: 0, dropped: 0, rateLimited: 0 };
   let buckets = new Map();
+  const total = { level: totalBurst, at: Date.now() };
   const allow = address => {
     const now = Date.now();
+    total.level = Math.min(totalBurst, total.level + (now - total.at) / 1000 * totalRatePerSec); total.at = now;
+    if (total.level < 1) return false;
     let b = buckets.get(address);
     if (!b) {
       if (buckets.size > 50000) buckets = new Map();
@@ -18,7 +21,7 @@ export async function createStunResponder({ host = '0.0.0.0', port = 3478, rateP
     }
     b.level = Math.min(burst, b.level + (now - b.at) / 1000 * ratePerSec); b.at = now;
     if (b.level < 1) return false;
-    b.level -= 1; return true;
+    b.level -= 1; total.level -= 1; return true;
   };
   socket.on('message', (buf, rinfo) => {
     try {

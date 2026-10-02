@@ -52,8 +52,8 @@ Media is captured with echo cancellation, noise suppression and automatic gain c
 | `setCamera(enabled)` | Turns the camera on, or stops it and frees the device. |
 | `attach(track, element)` | Plays a remote track in an `<audio>` or `<video>` element (sets `srcObject`, autoplay, inline playback). |
 | `levels()` | Resolves to `{ [peerId]: 0..1 }`: the current speaking level of each origin peer, from inbound audio statistics. |
-| `update(ticket, { dropped })` | Applies a newer ticket for the same room after a kick, drops the listed peer ids and revokes them on this player's desktop gateway. Resolves to `false` if the ticket is not newer. |
-| `kick(peerId)` | Disconnects a peer now and revokes it on this player's desktop gateway, without waiting for the new ticket. |
+| `update(ticket, { dropped })` | Applies an unexpired newer ticket with a new secret for the same app and room. Closes old links, revokes the old desktop gateway epoch and reconnects approved members. Resolves to `false` for an invalid update. |
+| `kick(peerId)` | Disconnects a peer now and revokes it on this participant's desktop gateway, without waiting for the new ticket. |
 | `drop(peerId)` | Disconnects a peer locally, without touching a gateway. |
 | `ticket()` | The current ticket. |
 | `stats()` | A snapshot of gates, links, paths, media counters and bridges (see below). |
@@ -117,4 +117,4 @@ Without an authority there are no tickets and no kicks: everyone who knows the s
 
 ## Next
 
-[Desktop (Electron)](./desktop.mdx) adds a player's own gateway to the same session.
+[Desktop (Electron)](./desktop.mdx) adds a participant's own gateway to the same session.

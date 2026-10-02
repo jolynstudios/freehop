@@ -194,7 +194,7 @@ export default function CostCalculator() {
             </p>
           </div>
           <p className={s.who}>
-            With Freehop the relayed share still exists: a desktop player's gateway, the session's host node or a forwarding
+            With Freehop the relayed share still exists: a desktop participant's gateway, the session's host node or a forwarding
             participant carries it. That is upload inside the session, not a line on your bill. Host sessions only on machines
             whose bandwidth you are willing to spend.
           </p>

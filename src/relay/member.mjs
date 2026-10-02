@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-// Gateway member: the session's own host node (a player's desktop app or a community server
-// that hosts the match) joins the room through the same gates, never sends media and offers
+// Gateway member: the session's own host node (a participant's desktop app or a community server
+// that hosts the session) joins the room through the same gates, never sends media and offers
 // its gateway to the session's peers, each with its own short-lived, room-scoped TURN
 // credentials. The relay cost therefore stays inside the session that uses it.
 import { deriveRoom, seal, open, randomId } from '../client/crypto.mjs';
@@ -26,6 +26,7 @@ export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, 
   const greeted = new Map();     // peer -> expiry of the credentials we sent
   const sequences = new Map();   // peer -> highest envelope counter seen (replay guard)
   const tags = new Set();        // every room tag this member served (kept until close)
+  let rekeyTask = Promise.resolve();
 
   const capsFor = peer => {
     const info = gateway.info(), creds = gateway.credentialsFor(room.tag, peer);
@@ -34,7 +35,9 @@ export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, 
   };
   async function greet(peer) {
     if (closed || peer === id || !PEER_ID.test(peer) || peer.startsWith(GATEWAY_ID_PREFIX)) return;
-    const caps = capsFor(peer), box = await seal(room, id, peer, { kind: 'caps', caps, n: ++n });
+    const epoch = room;
+    const caps = capsFor(peer), box = await seal(epoch, id, peer, { kind: 'caps', caps, n: ++n });
+    if (closed || epoch !== room) return;
     let sent = false;
     for (const gate of presence.get(peer) ?? []) sent = gate.send(peer, box) || sent;
     if (sent) { if (!greeted.has(peer)) stats.peersServed++; greeted.set(peer, Number(caps.gateway.username.split(':')[0])); stats.envelopesSent++; }
@@ -53,9 +56,12 @@ export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, 
         if (!presence.get(peer)?.size) presence.delete(peer);
       });
       gate.on('recv', async ({ from, box }) => {
-        const p = await open(room, from, id, box);
-        if (!p || !Number.isSafeInteger(p.n) || p.n <= (sequences.get(from) ?? 0)) return;
-        sequences.set(from, p.n); seen(from);
+        if (closed || !PEER_ID.test(from) || from.startsWith(GATEWAY_ID_PREFIX)) return;
+        const epoch = room;
+        const p = await open(epoch, from, id, box);
+        if (closed || epoch !== room || !p || !Number.isSafeInteger(p.n) || p.n < 1 || p.n <= (sequences.get(from) ?? 0)) return;
+        if (!sequences.has(from) && sequences.size >= 64 || !seen(from)) return;
+        sequences.set(from, p.n);
         stats.envelopesReceived++;
         if (p.kind === 'bye') { drop(from); return; }
         // Credentials only for peers that proved room membership with a sealed envelope.
@@ -70,7 +76,9 @@ export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, 
     greeted.delete(peer); presence.delete(peer);
   }
   async function enter(newSecret) {
-    room = await deriveRoom(newSecret, app);
+    const next = await deriveRoom(newSecret, app);
+    if (closed) return;
+    room = next;
     tags.add(room.tag); gateway.allowRoom(room.tag);
     openGates();
   }
@@ -86,15 +94,22 @@ export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, 
     id,
     stats: () => ({ ...stats, peers: presence.size }),
     drop,
-    // Kick: move to the new room (credentials for its tag) and revoke the removed peers. The
-    // previous tag stays allowed for remaining members' existing allocations until close().
-    async rekey(newSecret, { auth: nextAuth, dropped = [] } = {}) {
-      if (closed) return;
-      for (const peer of dropped) drop(peer);
-      if (nextAuth !== undefined) currentAuth = nextAuth;
-      for (const gate of clients) gate.close();
-      presence.clear(); greeted.clear();
-      await enter(newSecret);
+    // Every old-epoch allocation is revoked, including aliases the backend never learned.
+    rekey(newSecret, { auth: nextAuth, dropped = [] } = {}) {
+      const task = rekeyTask.then(async () => {
+        if (closed) return;
+        const next = await deriveRoom(newSecret, app);
+        if (closed || next.tag === room.tag) return;
+        for (const peer of dropped) drop(peer);
+        currentAuth = nextAuth;
+        for (const gate of clients) gate.close();
+        for (const tag of tags) gateway.revokeRoom(tag);
+        tags.clear(); presence.clear(); greeted.clear(); sequences.clear();
+        room = next; tags.add(room.tag); gateway.allowRoom(room.tag);
+        openGates();
+      });
+      rekeyTask = task.catch(() => {});
+      return task;
     },
     async close() {
       closed = true; clearInterval(renew);

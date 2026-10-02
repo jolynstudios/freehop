@@ -15,14 +15,14 @@ const STEPS = [
     n: '2',
     name: 'Gateway',
     when: 'Phase 0 · first 5 s',
-    text: "A desktop player's own front door: a TURN gateway on their machine, reachable through a router port mapping.",
+    text: "A desktop participant's own front door: a TURN gateway on their machine, reachable through a router port mapping.",
     art: <GatewayPorthole />,
   },
   {
     n: '3',
     name: 'Relay',
     when: 'Phase 1 · next 7 s',
-    text: "Another session member's gateway carries it, such as the host node that runs the match.",
+    text: "Another session member's gateway carries it, such as the host node that runs the session.",
     art: <RelayPorthole />,
   },
   {

@@ -1,7 +1,7 @@
 import {C, Cloud, HopArc, House, Lighthouse, Mover, NameTag, PaperPlane, arc, motion as m, useMotionAllowed} from '../illustrations';
 import SceneFrame from './SceneFrame';
 
-/** The match's own host node, a lighthouse that belongs to the session, carries the hop. */
+/** The session's own host node, a lighthouse that belongs to the session, carries the hop. */
 export default function HostNodeScene({caption}: {caption?: string}) {
   const motion = useMotionAllowed();
   const toHost = arc([142, 192], [346, 112], 52);

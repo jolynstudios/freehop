@@ -17,7 +17,7 @@ export const SCENARIOS = {
   'hard-pair': { peers: 'a=random b=random', expect: { 'a-b': 'none' }, observeMs: 25000 },
   'hard-pair-bridge': { peers: 'a=random b=random c=public', expect: { 'a-c': ['direct'], 'b-c': ['direct'], 'a-b': ['bridged'] } },
   'hard-pair-gateway': { peers: 'a=random b=random g=upnp', gateways: ['g'], expect: { 'a-g': ['gateway', 'direct'], 'b-g': ['gateway', 'direct'], 'a-b': ['relay'] } },
-  'two-player-desktop-host': { peers: 'a=random g=upnp', gateways: ['g'], expect: { 'a-g': ['gateway', 'direct'] } },
+  'two-peer-desktop-host': { peers: 'a=random g=upnp', gateways: ['g'], expect: { 'a-g': ['gateway', 'direct'] } },
   'udpblock-gateway': { peers: 'a=udpblock g=upnp', gateways: ['g'], expect: { 'a-g': ['gateway'] } },
   'udpblock-pair-gateway': { peers: 'a=udpblock b=udpblock g=upnp', gateways: ['g'], expect: { 'a-g': ['gateway'], 'b-g': ['gateway'], 'a-b': ['relay'] } },
   'hard-pair-host-node': { peers: 'a=random b=random h=public', members: ['h'], expect: { 'a-b': ['relay'] } },

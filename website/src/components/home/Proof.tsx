@@ -5,7 +5,7 @@ import styles from './Proof.module.css';
 
 const STATS = [
   {value: '40/40', label: 'lab runs passed', note: '11 network scenarios × 3 trials, plus 7 cross-engine runs'},
-  {value: '79/79', label: 'unit tests', note: 'STUN codec, TURN server, port mapper, gate and gateway'},
+  {value: '97/97', label: 'unit tests', note: 'STUN codec, TURN server, port mapper, gate and gateway'},
   {value: '800/800', label: 'TURN messages, UDP and TCP', note: "coturn's turnutils_uclient against Freehop's TURN: 0 lost"},
   {value: '3', label: 'browser engines', note: 'Chromium 151, Firefox 153 and WebKit 26.5'},
 ];
@@ -14,10 +14,10 @@ type Row = {setup: string; detail: string; kind: PathKind; via?: string; runs: s
 const ROWS: Row[] = [
   {setup: 'Two home routers', detail: 'direct-eim', kind: 'direct', runs: '3/3 + 1/1', gate: '31–34 KB'},
   {setup: 'IPv6, IPv4 UDP blocked', detail: 'ipv6-direct', kind: 'direct', runs: '3/3 + 1/1', gate: '30–34 KB'},
-  {setup: 'Strict NAT and a desktop player (UPnP)', detail: 'two-player-desktop-host', kind: 'gateway', runs: '3/3 + 1/1', gate: '34–66 KB'},
-  {setup: 'UDP-blocked and a desktop player', detail: 'udpblock-gateway, TURN over TCP', kind: 'gateway', runs: '3/3 + 1/1', gate: '31–63 KB'},
-  {setup: 'Two strict NATs and a desktop player', detail: 'hard-pair-gateway', kind: 'relay', via: 'desktop player', runs: '3/3 + 1/1', gate: '143–201 KB'},
-  {setup: 'Two UDP-blocked and a desktop player', detail: 'udpblock-pair-gateway', kind: 'relay', via: 'desktop player', runs: '3/3', gate: '130–158 KB'},
+  {setup: 'Strict NAT and a desktop participant (UPnP)', detail: 'two-peer-desktop-host', kind: 'gateway', runs: '3/3 + 1/1', gate: '34–66 KB'},
+  {setup: 'UDP-blocked and a desktop participant', detail: 'udpblock-gateway, TURN over TCP', kind: 'gateway', runs: '3/3 + 1/1', gate: '31–63 KB'},
+  {setup: 'Two strict NATs and a desktop participant', detail: 'hard-pair-gateway', kind: 'relay', via: 'desktop participant', runs: '3/3 + 1/1', gate: '143–201 KB'},
+  {setup: 'Two UDP-blocked and a desktop participant', detail: 'udpblock-pair-gateway', kind: 'relay', via: 'desktop participant', runs: '3/3', gate: '130–158 KB'},
   {setup: 'Two strict NATs and a host node', detail: 'hard-pair-host-node', kind: 'relay', via: 'host node', runs: '3/3 + 1/1', gate: '62–73 KB'},
   {setup: 'Two UDP-blocked and a host node', detail: 'udpblock-pair-host-node', kind: 'relay', via: 'host node', runs: '3/3', gate: '65 KB'},
   {setup: 'Two strict NATs and an open participant', detail: 'hard-pair-bridge', kind: 'bridged', via: 'participant', runs: '3/3 + 1/1', gate: '91–115 KB'},
@@ -30,7 +30,7 @@ const NOT_YET = [
   '4G and 5G carrier NAT',
   'Corporate networks that block UDP',
   'iOS Safari and Android browsers',
-  'Media quality under real load, and the upload a forwarding player can spare',
+  'Media quality under real load, and the upload a forwarding participant can spare',
 ];
 
 export default function Proof() {

@@ -78,7 +78,7 @@ function Tall({walls, roof, windowFill, doorFill, door, antenna, waves}: Require
 }
 
 /**
- * A player's home. Base centre at (0,0), about 96 units wide and 120 tall. The coral roof is
+ * A participant's home. Base centre at (0,0), about 96 units wide and 120 tall. The coral roof is
  * the home's NAT router; the antenna on it is the router's radio.
  */
 export default function House({

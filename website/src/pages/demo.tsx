@@ -31,7 +31,7 @@ export default function Demo() {
               <ul>
                 <li>The room code sits in the link after the # sign. Browsers never send that part to a web server.</li>
                 <li>The code is the room secret: anyone with the link can join, so share it only with people you want in the call.</li>
-                <li>Up to 8 people can join one room. Each pair shows the path it took: direct, gateway, relay, bridged or unreachable.</li>
+                <li>Keep rooms to 8 people for this demo. It has no room-size admission control; larger rooms can leave some people disconnected. Each pair shows the path it took: direct, gateway, relay, bridged or unreachable.</li>
                 <li>Without desktop gateways or a host node in this room, two browsers behind strict NATs or UDP-blocking networks may stay unreachable. That is the honest boundary of a browser-only call.</li>
               </ul>
             </section>

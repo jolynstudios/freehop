@@ -85,7 +85,7 @@ function labFor(a: Net, b: Net, v: Omit<Verdict, 'lab'>): Verdict['lab'] {
     if (v.kind === 'relay' && via === 'Dani') return {scenario: 'hard-pair-gateway', runs: '3/3 Chromium, 1/1 mixed engines', gate: '143–201 KB'};
     if (v.kind === 'relay' && via === 'host node') return {scenario: 'hard-pair-host-node', runs: '3/3 Chromium, 1/1 Firefox + WebKit', gate: '62–73 KB'};
   }
-  if (pair === 'strict+upnp' && v.kind === 'gateway') return {scenario: 'two-player-desktop-host', runs: '3/3 Chromium, 1/1 WebKit + Firefox', gate: '34–66 KB'};
+  if (pair === 'strict+upnp' && v.kind === 'gateway') return {scenario: 'two-peer-desktop-host', runs: '3/3 Chromium, 1/1 WebKit + Firefox', gate: '34–66 KB'};
   if (pair === 'udp+upnp' && v.kind === 'gateway') return {scenario: 'udpblock-gateway', runs: '3/3 Chromium, 1/1 Firefox + Chromium', gate: '31–63 KB'};
   if (pair === 'udp+udp') {
     if (v.kind === 'relay' && via === 'Dani') return {scenario: 'udpblock-pair-gateway', runs: '3/3 Chromium', gate: '130–158 KB'};
@@ -158,7 +158,7 @@ function decideRoute(a: Net, b: Net, x: Extras): Omit<Verdict, 'lab'> {
     };
   }
   const missing: string[] = [];
-  if (!x.desktop) missing.push('a desktop player');
+  if (!x.desktop) missing.push('a desktop participant');
   if (!x.host) missing.push('a host node');
   if (!x.third) missing.push('a third participant');
   const thirdUseless = x.third && !(reachesOpenPeer(a) && reachesOpenPeer(b));

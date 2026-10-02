@@ -726,3 +726,17 @@ test('close() releases every handle: a child process exits on its own', async ()
   assert.match(out, /^closed /m);
   assert.equal(JSON.parse(out.slice(out.indexOf('{'))).allocations, 0);
 });
+
+test('unauthenticated TURN Binding answers obey both per-source and global UDP budgets', async t => {
+  for (const limits of [{errorBurst: 2, errorRate: 0}, {errorBurst: 100, udpResponseBurst: 2, udpResponseRate: 0}]) {
+    const server = await startServer(t, {limits});
+    const client = await new TurnClient(server).open();
+    try {
+      for (let i = 0; i < 10; i++) client.send(client.build(METHOD.BINDING, [], {auth: false}));
+      await waitFor(() => server.stats().bindings + server.stats().droppedErrorRate >= 10);
+      await waitFor(() => client.responses.length === 2);
+      assert.equal(server.stats().bindings, 2);
+      assert.equal(server.stats().droppedErrorRate, 8);
+    } finally {client.close();}
+  }
+});

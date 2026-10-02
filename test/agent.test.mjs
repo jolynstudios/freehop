@@ -74,3 +74,24 @@ test('gateway refuses permissions towards loopback (no access to services on its
     assert.equal(stun.decodeErrorCode(stun.getAttr(res, stun.ATTR.ERROR_CODE))?.code, 403);
   } finally { client.close(); await gw.close(); }
 });
+
+test('gateway member rotation revokes all old-room allocations, including an unknown alias', async () => {
+  const { joinAsGateway } = await import('../src/relay/member.mjs');
+  const { deriveRoom, randomId } = await import('../src/client/crypto.mjs');
+  class OfflineSocket { readyState = 0; close() {} send() {} }
+  const oldSecret = randomId(32), nextSecret = randomId(32), app = 'audit-gateway';
+  const oldTag = (await deriveRoom(oldSecret, app)).tag, nextTag = (await deriveRoom(nextSecret, app)).tag;
+  const gw = await startGateway({host: '127.0.0.1', port: 0, portMapping: false, externalAddress: '198.51.100.9'});
+  const member = await joinAsGateway({gates: ['ws://127.0.0.1:9/freehop'], secret: oldSecret, app, gateway: gw, WebSocketImpl: OfflineSocket});
+  const client = await turnClient(gw.turn.addresses().find(a => a.transport === 'udp').port);
+  try {
+    const alias = gw.credentialsFor(oldTag, 'unreported-alias');
+    assert.equal((await client.allocate(alias.username, alias.credential)).cls, stun.CLASS.SUCCESS);
+    assert.equal(gw.turn.stats().allocations, 1);
+    await member.rekey(nextSecret, {dropped: ['reported-member']});
+    assert.equal(gw.turn.stats().allocations, 0, 'unknown alias allocation torn down too');
+    assert.equal((await client.allocate(alias.username, alias.credential)).code, 401, 'old credentials cannot return');
+    const next = gw.credentialsFor(nextTag, 'remaining-member');
+    assert.equal((await client.allocate(next.username, next.credential)).cls, stun.CLASS.SUCCESS);
+  } finally {client.close(); await member.close(); await gw.close();}
+});
