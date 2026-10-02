@@ -51,7 +51,7 @@ A gate's list of peers in a room is only a hint. A hint makes a client greet tha
 
 ## Tickets
 
-A ticket is `{ v, app, roomId, epoch, gates, secret, auth?, expires }`. It carries the room secret, so it is a bearer credential: anyone holding it can join the room. Deliver it only to the member it was issued for, over your application's own authenticated channel, and never put it in a listing or a shareable link. A ticket's `expires` is 6 hours after issue by default, and, when configured, the gate token inside it expires at the same moment. The SDK refuses expired tickets at connect and update; token-gated sockets reject further requests at expiry and close on the next heartbeat. Expiry does not erase a member's copy of the shared secret or terminate established media. Use key rotation to revoke membership, including on public trackers.
+A ticket is `{ v, app, roomId, epoch, gates, secret, auth?, stun?, expires }`. It carries the room secret, so it is a bearer credential: anyone holding it can join the room. Deliver it only to the member it was issued for, over your application's own authenticated channel, and never put it in a listing or a shareable link. A ticket's `expires` is 6 hours after issue by default, and, when configured, the gate token inside it expires at the same moment. The SDK refuses expired tickets at connect and update; token-gated sockets reject further requests at expiry and close on the next heartbeat. Expiry does not erase a member's copy of the shared secret or terminate established media. Use key rotation to revoke membership, including on public trackers.
 
 ## Kicks rotate the room
 
@@ -66,7 +66,7 @@ A voluntary departure also needs rotation: `await authority.leave(roomId, member
 
 ## Gateways
 
-Gateway credentials are minted per peer and per room, are valid for 2 hours and are only issued to authenticated members. The gateway's default policy refuses loopback, link-local, multicast and private peer addresses, keeps services on its own host unreachable, and enforces quotas (6 allocations per username, 4 Mbit/s per allocation, 40 Mbit/s in total).
+Gateway credentials are minted per peer and per room, are valid for 2 hours and are only issued to authenticated members. The gateway's default policy refuses loopback, link-local, multicast and private peer addresses, keeps services on its own host unreachable, and enforces quotas (6 allocations per username, 4 Mbit/s per allocation, 32 allocations and 20 Mbit/s per room, 40 Mbit/s in total).
 
 One residual risk is documented in the protocol: a room member could use a gateway's credentials to relay traffic to arbitrary public hosts. Credential expiry blocks authenticated requests; existing allocations can continue until their granted lifetime ends. Revocation ends them immediately. Operators who care can shorten the credential lifetime (`credentialTtlSeconds`).
 

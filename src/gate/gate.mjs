@@ -4,8 +4,9 @@
 // clients seal every envelope with a room key the gate does not have. Any number of
 // interchangeable gates may serve the same room; clients announce on several at once.
 import http from 'node:http';
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { WebSocketServer } from 'ws';
+import { verifyGateToken } from '../shared/tokens.mjs';
 
 export const GATE_PROTOCOL = 1;
 export const GATE_LIMITS = Object.freeze({
@@ -32,23 +33,7 @@ export const GATE_LIMITS = Object.freeze({
 const TAG = /^[A-Za-z0-9_-]{22,43}$/;   // base64url of 16..32 bytes
 const BOX = /^[A-Za-z0-9_-]+$/;
 
-export function mintGateToken(secret, claims) {
-  const body = Buffer.from(JSON.stringify(claims)).toString('base64url');
-  return body + '.' + createHmac('sha256', secret).update(body).digest('base64url');
-}
-
-export function verifyGateToken(secret, token, now = Date.now()) {
-  if (typeof token !== 'string' || token.length > 2048) return null;
-  const [body, mac, extra] = token.split('.');
-  if (!body || !mac || extra !== undefined) return null;
-  const expected = createHmac('sha256', secret).update(body).digest();
-  const given = Buffer.from(mac, 'base64url');
-  if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
-  let claims; try { claims = JSON.parse(Buffer.from(body, 'base64url').toString('utf8')); } catch { return null; }
-  if (!claims || typeof claims !== 'object' || !Number.isSafeInteger(claims.exp) || claims.exp * 1000 <= now) return null;
-  if (claims.room !== undefined && (typeof claims.room !== 'string' || !TAG.test(claims.room))) return null;
-  return claims;
-}
+export { mintGateToken, verifyGateToken } from '../shared/tokens.mjs';
 
 class Bucket {
   constructor(capacity, refillPerSec) { this.capacity = capacity; this.refill = refillPerSec; this.level = capacity; this.at = Date.now(); }
@@ -138,7 +123,9 @@ export async function createGate(options = {}) {
     if (options.authorize) return !!(await options.authorize(hello, request));
     if (!options.tokenSecret) return true;
     const claims = verifyGateToken(options.tokenSecret, hello.auth);
-    if (!claims) return false;
+    const a = server.address();
+    const audience = options.tokenAudience ?? `${server.setSecureContext ? 'wss' : 'ws'}://${a.address.includes(':') ? `[${a.address}]` : a.address}:${a.port}${path}`;
+    if (!claims || claims.aud !== audience) return false;
     state.boundRoom = claims.room ?? null;
     state.expiresAt = claims.exp * 1000;
     return true;

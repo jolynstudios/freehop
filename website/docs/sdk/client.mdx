@@ -32,8 +32,8 @@ The browser client has no runtime dependencies. It needs WebRTC, WebSocket and t
 |---|---|---|
 | `media` | none | `{ audio, video }` to capture the microphone and camera now, or a `MediaStream` you captured yourself. Without it, you join receive-only and can turn devices on later. |
 | `desktopGateway` | `window.freehopGateway` | The desktop gateway bridge exposed by the [Electron preload](./desktop.mdx). Pass `null` to ignore it. |
-| `gateway` | none | A gateway description from `startGateway().info()`, when your app hands the page its own gateway some other way than the Electron preload. |
-| `stun` | none | Extra STUN URLs, added to those the gates advertise. |
+| `gateway` | none | Public gateway metadata plus a `credentialsFor(tag, peer)` broker, or the gateway object itself in privileged Node code. Never expose a signing key to the page. |
+| `stun` | none | Application-approved STUN URLs, overriding `ticket.stun`. Gate-supplied URLs are ignored. |
 | `forward` | `true` | Whether this participant may [forward](../concepts/forwarding.mdx) media for pairs that cannot connect. |
 | `log` | none | `(event, details) => void` for diagnostics. |
 | `timing`, `limits` | built-in | Overrides for the protocol's timers and limits. Leave them alone unless you test the protocol itself. |
@@ -53,7 +53,8 @@ Media is captured with echo cancellation, noise suppression and automatic gain c
 | `attach(track, element)` | Plays a remote track in an `<audio>` or `<video>` element (sets `srcObject`, autoplay, inline playback). |
 | `levels()` | Resolves to `{ [peerId]: 0..1 }`: the current speaking level of each origin peer, from inbound audio statistics. |
 | `update(ticket, { dropped })` | Applies an unexpired newer ticket with a new secret for the same app and room. Closes old links, revokes the old desktop gateway epoch and reconnects approved members. Resolves to `false` for an invalid update. |
-| `kick(peerId)` | Disconnects a peer now and revokes it on this participant's desktop gateway, without waiting for the new ticket. |
+| `disconnectPeer(peerId)` | Disconnects a peer locally and revokes its local gateway credentials. Does not revoke membership or exclude aliases. |
+| `kick(peerId)` | Throws migration guidance. Use backend `authority.kick()` and distribute replacement tickets to revoke membership. |
 | `drop(peerId)` | Disconnects a peer locally, without touching a gateway. |
 | `ticket()` | The current ticket. |
 | `stats()` | A snapshot of gates, links, paths, media counters and bridges (see below). |

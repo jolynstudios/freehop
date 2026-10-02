@@ -740,3 +740,42 @@ test('unauthenticated TURN Binding answers obey both per-source and global UDP b
     } finally {client.close();}
   }
 });
+
+test('TCP pre-authentication deadline cannot be extended by dribbling a valid frame', async t => {
+  const server = await startServer(t, {limits: {tcpPreAuthMs: 150}});
+  const socket = net.connect(listenerOf(server, 'tcp').port, '127.0.0.1');
+  socket.on('error', () => {}); t.after(() => socket.destroy());
+  await once(socket, 'connect');
+  const closed = once(socket, 'close'), start = Date.now();
+  const frame = encode({method: METHOD.ALLOCATE, cls: CLASS.REQUEST, transactionId: randomBytes(12), attributes: [{type: ATTR.REQUESTED_TRANSPORT, value: UDP_TRANSPORT}]});
+  let at = 0;
+  const trickle = setInterval(() => {if (!socket.destroyed) socket.write(frame.subarray(at, ++at));}, 25);
+  t.after(() => clearInterval(trickle));
+  await closed;
+  assert.ok(Date.now() - start < 500);
+  assert.ok(server.stats().bytesFromClients >= 3);
+  assert.equal(server.stats().tcpIdleClosed, 1);
+});
+
+test('IPv6 transition mechanisms cannot bypass the relay destination policy', () => {
+  for (const ip of ['2002:7f00:1::1', '2002:a00:1::1', '2001:0:4136:e378:8000:63bf:3fff:fdd2', '64:ff9b:1::a00:1']) assert.equal(classifyPeerAddress(ip), 'deny', ip);
+});
+
+test('room bandwidth is shared across aliases and survives allocation churn', async t => {
+  const server = await startServer(t, {allocationScope: user => user === 'carol' ? 'other-room' : 'same-room', limits: {scopeBitrate: 64_000}});
+  const peer = await udpPeer(t);
+  const a = await client(t, server), b = await client(t, server, {username: 'bob'}), c = await client(t, server, {username: 'carol'});
+  for (const p of [a, b, c]) {ok(await p.allocate()); ok(await p.permit(peer));}
+  for (let i = 0; i < 20; i++) {a.sendTo(peer, Buffer.alloc(500)); b.sendTo(peer, Buffer.alloc(500));}
+  await waitFor(() => peer.got.length + server.stats().droppedRateLimited === 40);
+  assert.ok(peer.got.length <= 18, 'aliases share one room bucket');
+  const before = peer.got.length;
+  for (let i = 0; i < 8; i++) c.sendTo(peer, Buffer.alloc(1000));
+  await waitFor(() => peer.got.length === before + 8, 'another room retains its budget');
+  ok(await a.refresh(0)); ok(await b.refresh(0));
+  const d = await client(t, server, {username: 'dave'}); ok(await d.allocate()); ok(await d.permit(peer));
+  const dropped = server.stats().droppedRateLimited;
+  for (let i = 0; i < 10; i++) d.sendTo(peer, Buffer.alloc(1000));
+  await waitFor(() => peer.got.length - before - 8 + server.stats().droppedRateLimited - dropped === 10);
+  assert.ok(peer.got.length - before - 8 < 4, 'deleting all allocations does not refill the room bucket');
+});

@@ -25,13 +25,14 @@ This is lab scenario `hard-pair-bridge`: three passes out of three with Chromium
 
 1. **Request.** The endpoint with the lower id sends `bridge-request` to every connected participant whose capabilities report a link to the other endpoint. If nothing happens within 4 seconds, the other endpoint takes over.
 2. **Offer and accept.** The first participant to answer with `bridge-offer` wins, and the endpoint confirms with `bridge-accept`.
-3. **Map, then forward.** The forwarder first tells each side which stream id belongs to which origin (`forward-map`), then adds the origin's tracks to its link with the other side, and finally sends `bridge-active` to both. The SDK's `track` events name the origin as `peer` and the forwarder as `via`, so your interface can put each stream in the right tile.
-4. **Release.** The endpoints keep retrying the cheaper routes in the background. When a direct or session route connects later, they release the bridge; the forwarder stops the forwarded transceivers (so the session description does not keep growing) and sends `forward-unmap`. If the forwarder leaves or its link drops, the endpoints escalate again.
+3. **Confirm both endpoints.** The forwarder sends `bridge-confirm` to the other endpoint and waits for `bridge-ready`. That endpoint checks eligibility and that it still needs the route.
+4. **Activate, map, then forward.** The forwarder sends `bridge-active` to both consenting endpoints, then tells each side which stream id belongs to which origin (`forward-map`) before adding the origin's tracks to its link with the other side. The SDK's `track` events name the origin as `peer` and the forwarder as `via`, so your interface can put each stream in the right tile.
+5. **Release.** The endpoints keep retrying the cheaper routes in the background. When a direct or session route connects later, they release the bridge; the forwarder stops the forwarded transceivers (so the session description does not keep growing) and sends `forward-unmap`. If the forwarder leaves or its link drops, the endpoints escalate again.
 
 ## Guard rails
 
 - A forwarder accepts `bridge-accept` only for an offer it made to that endpoint within the last 30 seconds, only while forwarding is enabled, and only under its limit of 4 bridges.
-- An endpoint that receives `bridge-active` from a second forwarder releases it at once.
+- An endpoint accepts `bridge-active` only from the eligible forwarder it already accepted. Unsolicited or conflicting activations are released. Upgrade all participants together for the consent handshake.
 - A receiver accepts `forward-map` only for an origin it cannot reach itself, and only from that pair's forwarder.
 - Forwarded video is capped at **200 kbit/s**.
 

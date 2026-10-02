@@ -13,7 +13,7 @@ const PEER_ID = /^[A-Za-z0-9_-]{22}$/;
  * joinAsGateway({ gates, secret, app, gateway, auth })
  * `gateway` is the object returned by startGateway(). Returns { id, stats(), drop(peer), rekey(secret, {auth}), close() }.
  */
-export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, auth, WebSocketImpl = globalThis.WebSocket, log = () => {} }) {
+export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, auth, WebSocketImpl = globalThis.WebSocket, departGraceMs = 8000, log = () => {} }) {
   if (!gateway?.info?.() || typeof gateway.credentialsFor !== 'function') throw new TypeError('A reachable gateway from startGateway() is required.');
   // Host nodes join through WebSocket gates; tracker gates (bt+wss://) are used by clients only.
   const usable = gates.filter(url => !url.startsWith('bt+'));
@@ -23,6 +23,7 @@ export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, 
   const stats = { peersServed: 0, envelopesSent: 0, envelopesReceived: 0, revoked: 0 };
   let room, clients = [], n = 0, closed = false, currentAuth = auth;
   const presence = new Map();    // peer -> Set(gate)
+  const lastContact = new Map();
   const greeted = new Map();     // peer -> expiry of the credentials we sent
   const sequences = new Map();   // peer -> highest envelope counter seen (replay guard)
   const tags = new Set();        // every room tag this member served (kept until close)
@@ -30,13 +31,15 @@ export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, 
 
   const capsFor = peer => {
     const info = gateway.info(), creds = gateway.credentialsFor(room.tag, peer);
+    if (!info || !creds) return null;
     return { v: 1, role: 'gateway', forward: false, peers: [],
       gateway: { urls: info.urls, username: creds.username, credential: creds.credential, external: info.external, internal: info.internal } };
   };
   async function greet(peer) {
     if (closed || peer === id || !PEER_ID.test(peer) || peer.startsWith(GATEWAY_ID_PREFIX)) return;
     const epoch = room;
-    const caps = capsFor(peer), box = await seal(epoch, id, peer, { kind: 'caps', caps, n: ++n });
+    const caps = capsFor(peer); if (!caps) return;
+    const box = await seal(epoch, id, peer, { kind: 'caps', caps, n: ++n });
     if (closed || epoch !== room) return;
     let sent = false;
     for (const gate of presence.get(peer) ?? []) sent = gate.send(peer, box) || sent;
@@ -49,19 +52,23 @@ export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, 
         if (!presence.has(peer) && presence.size >= 64) return false;
         const set = presence.get(peer) ?? new Set(); set.add(gate); presence.set(peer, set); return true;
       };
-      gate.on('joined', ({ peers }) => { for (const p of peers) seen(p); });
+      // Roster entries consume no state: clients must first prove membership.
+      gate.on('left', () => { for (const [peer, sources] of presence) { sources.delete(gate); if (!sources.size) lastContact.set(peer, Date.now()); } });
       gate.on('peer', ({ peer, on }) => {
-        if (on) { seen(peer); return; }
+        if (on) return;
         presence.get(peer)?.delete(gate);
-        if (!presence.get(peer)?.size) presence.delete(peer);
+        if (presence.has(peer) && !presence.get(peer).size) lastContact.set(peer, Date.now());
       });
       gate.on('recv', async ({ from, box }) => {
         if (closed || !PEER_ID.test(from) || from.startsWith(GATEWAY_ID_PREFIX)) return;
         const epoch = room;
         const p = await open(epoch, from, id, box);
         if (closed || epoch !== room || !p || !Number.isSafeInteger(p.n) || p.n < 1 || p.n <= (sequences.get(from) ?? 0)) return;
-        if (!sequences.has(from) && sequences.size >= 64 || !seen(from)) return;
-        sequences.set(from, p.n);
+        if (!seen(from)) return;
+        lastContact.set(from, Date.now());
+        sequences.delete(from); sequences.set(from, p.n);
+        // Keep recent departure replay guards without consuming active membership slots.
+        if (sequences.size > 256) { const stale = [...sequences.keys()].find(peer => !presence.has(peer)); if (stale) sequences.delete(stale); }
         stats.envelopesReceived++;
         if (p.kind === 'bye') { drop(from); return; }
         // Credentials only for peers that proved room membership with a sealed envelope.
@@ -73,7 +80,7 @@ export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, 
   }
   function drop(peer) {
     for (const tag of tags) stats.revoked += gateway.revokePeer(tag, peer) ?? 0;
-    greeted.delete(peer); presence.delete(peer);
+    greeted.delete(peer); presence.delete(peer); lastContact.delete(peer);
   }
   async function enter(newSecret) {
     const next = await deriveRoom(newSecret, app);
@@ -83,6 +90,13 @@ export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, 
     openGates();
   }
   await enter(secret);
+  const sweep = () => {
+    for (const [peer, sources] of presence) if (!sources.size && Date.now() - (lastContact.get(peer) ?? 0) >= departGraceMs) {
+      // A mailbox outage is not authenticated revocation: existing TURN media must survive.
+      presence.delete(peer); greeted.delete(peer); lastContact.delete(peer);
+    }
+  };
+  const sweeper = setInterval(sweep, Math.max(10, Math.min(departGraceMs, 1000))); sweeper.unref?.();
   // Renew credentials well before they expire.
   const ttl = gateway.info()?.ttlSeconds ?? 7200;
   const renew = setInterval(() => {
@@ -104,7 +118,7 @@ export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, 
         currentAuth = nextAuth;
         for (const gate of clients) gate.close();
         for (const tag of tags) gateway.revokeRoom(tag);
-        tags.clear(); presence.clear(); greeted.clear(); sequences.clear();
+        tags.clear(); presence.clear(); lastContact.clear(); greeted.clear(); sequences.clear();
         room = next; tags.add(room.tag); gateway.allowRoom(room.tag);
         openGates();
       });
@@ -112,7 +126,7 @@ export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, 
       return task;
     },
     async close() {
-      closed = true; clearInterval(renew);
+      closed = true; clearInterval(renew); clearInterval(sweeper);
       for (const peer of greeted.keys()) {
         const box = await seal(room, id, peer, { kind: 'bye', n: ++n });
         for (const gate of presence.get(peer) ?? []) gate.send(peer, box);

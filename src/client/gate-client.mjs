@@ -22,7 +22,9 @@ export class GateClient extends Emitter {
     try { ws = new this.WebSocketImpl(this.url); } catch { this.#retry(); return; }
     this.ws = ws;
     ws.onopen = async () => {
-      const auth = typeof this.auth === 'function' ? await this.auth(this.url) : this.auth;
+      let auth;
+      try { auth = typeof this.auth === 'function' ? await this.auth(this.url) : typeof this.auth === 'object' && this.auth ? this.auth[this.url] : this.auth; }
+      catch { if (ws === this.ws) { this.counters.errors++; ws.close(); } return; }
       if (ws !== this.ws) return;
       this.#raw({ t: 'hello', v: 1, ...(auth ? { auth } : {}) });
     };
@@ -32,7 +34,8 @@ export class GateClient extends Emitter {
       let m; try { m = JSON.parse(event.data); } catch { return; }
       switch (m?.t) {
         case 'welcome':
-          this.stun = Array.isArray(m.stun) ? m.stun.filter(u => typeof u === 'string' && /^stuns?:/.test(u)).slice(0, 4) : [];
+          // STUN belongs to application configuration, never to an untrusted mailbox.
+          this.stun = [];
           this.#raw({ t: 'join', room: this.room, peer: this.peer });
           break;
         case 'peers':
@@ -45,7 +48,7 @@ export class GateClient extends Emitter {
           break;
         case 'peer': if (m.room === this.room) this.emit('peer', { gate: this, peer: m.peer, on: !!m.on }); break;
         case 'recv':
-          if (m.room === this.room && typeof m.from === 'string' && typeof m.box === 'string') {
+          if (m.room === this.room && typeof m.from === 'string' && typeof m.box === 'string' && m.box.length <= 49152) {
             this.counters.received++; this.emit('recv', { gate: this, from: m.from, box: m.box });
           }
           break;

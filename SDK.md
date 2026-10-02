@@ -20,20 +20,22 @@ import { createAuthority } from 'freehop/authority';
 const authority = createAuthority({
   app: 'my-app',                                   // namespaces room keys
   gates: ['wss://example.com/freehop'],           // one or more gates (yours, community, bt+wss:// trackers)
-  gateTokenSecret: process.env.FREEHOP_GATE_TOKEN_SECRET  // same secret as your gate (optional)
+  gateTokenSecrets: { 'wss://example.com/freehop': process.env.FREEHOP_GATE_TOKEN_SECRET },
+  stun: ['stun:example.com:3478']                    // application-approved discovery servers
 });
 await authority.openRoom(roomId);                  // creates the room secret (never leaves the backend except in tickets)
 const ticket = await authority.ticket(roomId, memberId);   // for members your app admitted
 const { tickets } = await authority.kick(roomId, memberId); // rotates the secret; deliver new tickets to the rest
 ```
-A ticket (`{ v, app, roomId, epoch, gates, secret, auth?, expires }`) is a bearer credential for the
+A ticket (`{ v, app, roomId, epoch, gates, secret, auth?, stun?, expires }`) is a bearer credential for the
 room. Deliver it only to that member, over the application's own authenticated channel.
+`auth` maps exact gate URLs to audience-bound tokens; community gates without a configured signing key receive no token. `stun` lists approved STUN URLs: clients ignore gate-supplied STUN hints.
 `encodeTicket`/`decodeTicket` (`freehop/ticket`) turn it into a compact string.
 
 ## 2. Gate: run the signalling service (`bin/freehop-gate.mjs`)
 ```sh
 FREEHOP_GATE_PORT=8787 FREEHOP_GATE_PUBLIC_HOST=example.com FREEHOP_GATE_STUN=0.0.0.0:3478,[::]:3478 \
-FREEHOP_GATE_TOKEN_SECRET=… FREEHOP_GATE_TRUST_PROXY=1 node bin/freehop-gate.mjs
+FREEHOP_GATE_TOKEN_SECRET=… FREEHOP_GATE_TOKEN_AUDIENCE=wss://example.com/freehop FREEHOP_GATE_TRUST_PROXY=1 node bin/freehop-gate.mjs
 ```
 Put it behind your TLS proxy (`deploy/Caddyfile.snippet`, `deploy/freehop-gate.service`). It
 carries sealed signalling only: about 15–35 KB per peer pair at setup, roughly zero
@@ -53,6 +55,8 @@ const levels = await session.levels();                   // speaking indicators
 await session.update(newTicket, { dropped: [kickedPeerId] });   // after a kick
 await session.leave();
 ```
+`session.disconnectPeer(peerId)` removes only a local connection. It does not revoke membership. The former `session.kick()` throws a migration error; use `authority.kick()` and distribute replacement tickets for removal.
+
 Map your member ids to Freehop peer ids (`session.id`) in your backend, so that a kick can
 name the peer the remaining clients must drop.
 
@@ -63,12 +67,12 @@ import { installFreehopGateway } from 'freehop/electron';
 const freehop = installFreehopGateway({ ipcMain, allowedOrigins: ['https://play.example.com'] });
 app.on('will-quit', () => freehop.close());
 new BrowserWindow({ webPreferences: { preload: require.resolve('freehop/electron/preload'),
-  additionalArguments: ['--freehop-origins=https://example.com'], contextIsolation: true } });
+  additionalArguments: ['--freehop-origins=https://play.example.com'], contextIsolation: true } });
 ```
 `connect()` finds `window.freehopGateway` automatically. It starts the gateway (TURN plus a
 PCP/NAT-PMP/UPnP router mapping) on first use, allows that room, and offers it to the room's
 peers with per-peer credentials. Participants behind hard NATs or UDP-blocking networks can then
-reach the desktop participant without any third party.
+reach the desktop participant without any third party. The minting key stays in the main process; the renderer requests short-lived credentials through an origin-checked broker. HTTPS origins are required except for loopback development. A raw gateway integration supplies `credentialsFor(tag, peer)` alongside its public `info()` metadata, rather than sending the key to a page.
 
 ## 5. Hosts: let the session's own host relay for it (`freehop/host`)
 Whoever hosts a session can make its machine the session's gateway: an app server, a

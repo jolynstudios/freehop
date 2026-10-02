@@ -48,7 +48,7 @@ test('concurrent kicks each return a consistent, distinct epoch and room-bound t
   for (const change of changes) {
     const ticket = change.hostTicket;
     assert.equal(ticket.epoch, change.epoch);
-    assert.equal((await deriveRoom(ticket.secret, ticket.app)).tag, verifyGateToken(key, ticket.auth).room);
+    assert.equal((await deriveRoom(ticket.secret, ticket.app)).tag, verifyGateToken(key, ticket.auth[gates[0]]).room);
   }
   assert.deepEqual(a.describe('room').members, ['three']);
   const current = await a.ticket('room');
@@ -177,7 +177,7 @@ test('Electron gateway IPC rejects foreign origins, subframes and missing sender
     }
     frame.url = 'https://play.example.com/call';
     const event = {senderFrame: frame, sender};
-    assert.equal(typeof (await handlers.get('freehop:gateway-info')(event)).secret, 'string', 'trusted main frame can access its gateway');
+    assert.equal((await handlers.get('freehop:gateway-info')(event)).secret, undefined, 'the signing key never crosses IPC');
     frame.url = 'https://evil.example.com/';
     assert.equal(await handlers.get('freehop:gateway-info')(event), null, 'navigation revokes IPC access');
   } finally {await helper.close();}

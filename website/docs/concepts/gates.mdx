@@ -71,13 +71,13 @@ A ticket can list up to eight gates. Clients connect to every one of them and an
 
 ## Admission: open or token-gated
 
-A gate is either open or token-gated. With a token secret, every client must present a token minted with the same secret: `base64url(claims) "." base64url(HMAC-SHA256(secret, body))`, with claims `{ exp, room? }`. A token that names a room tag may only join that room.
+A gate is either open or token-gated. With a token secret, every client must present a token minted with the same secret: `base64url(claims) "." base64url(HMAC-SHA256(secret, body))`, with claims `{ exp, room?, aud }`. A token that names a room tag may only join that room. Its audience must match this gate’s exact public URL.
 
-You rarely mint tokens yourself: give the authority the same `gateTokenSecret` as the gate, and every ticket carries a token bound to its room. Your gate then serves only your own rooms. See [Gate service](../sdk/gate-service.mdx).
+You rarely mint tokens yourself: configure the authority’s `gateTokenSecrets` map with each gate URL and signing key, and every ticket carries a token bound to its room. Your gate then serves only your own rooms. See [Gate service](../sdk/gate-service.mdx).
 
 ## STUN on the side
 
-A gate can also answer STUN Binding requests on UDP (IPv4 and IPv6), so that peers learn their public addresses without a third-party STUN server. It answers Binding requests only, rate-limits each source address and never relays anything. The STUN URLs arrive in the gate's `welcome` frame.
+A gate can also answer STUN Binding requests on UDP (IPv4 and IPv6), so that peers learn their public addresses without a third-party STUN server. It answers Binding requests only, rate-limits each source address and never relays anything. Configure those URLs in the authority's `stun` option or the client's application options. Clients ignore `welcome.stun`, so a hostile mailbox cannot choose additional hosts for the browser to contact.
 
 ## What the gate sees, live
 

@@ -28,6 +28,7 @@ done
 [[ "${1:-}" == "--" ]] && shift
 ! ip link show pl-inet >/dev/null 2>&1 || { echo 'lab bridge already exists' >&2; exit 2; }
 rundir=$(mktemp -d /tmp/peerlane-lab.XXXXXX)
+original_ipv6_forwarding=$(sysctl -n net.ipv6.conf.all.forwarding)
 cleanup() {
   for name in "${names[@]}"; do
     for ns in "pl-$name" "pl-r$name"; do
@@ -43,6 +44,7 @@ cleanup() {
   done
   ip link del pl-inet 2>/dev/null || true
   for r in $(ip -6 route show | grep -o '^2001:db8:113:[0-9]*::/64'); do ip -6 route del "$r" 2>/dev/null || true; done
+  sysctl -q -w "net.ipv6.conf.all.forwarding=$original_ipv6_forwarding" || true
   rm -rf "$rundir"
 }
 trap cleanup EXIT INT TERM

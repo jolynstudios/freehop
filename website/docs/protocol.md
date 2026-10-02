@@ -10,7 +10,7 @@ This specification is normative for the wire formats and behaviour of Freehop ve
 
 :::
 
-Freehop connects 2 to 8 participants with audio, video and data. Its operator invariant: **no server that the application operator runs ever carries media.** Media goes peer-to-peer. When no direct route exists, it goes through a machine that belongs to the same session: a participant, a participant's own gateway or the session's host node. Volunteers may be added by configuration. The operator's servers ("gates") only introduce peers.
+Freehop connects small groups with audio, video and data. `maxPeers` defaults to eight other participants; larger supported sizes require benchmarks. Its operator invariant: **no server that the application operator runs ever carries media.** Media goes peer-to-peer. When no direct route exists, it goes through a machine that belongs to the same session: a participant, a participant's own gateway or the session's host node. Volunteers may be added by configuration. The operator's servers ("gates") only introduce peers.
 
 The [SDK reference](./sdk/authority.mdx) covers usage, and the [qualification results](./results.mdx) cover measured behaviour.
 
@@ -47,7 +47,7 @@ plaintext = JSON { kind, n, ...body }
 
 - `to` is the recipient's peer id. The AAD binds room, sender and recipient. A gate that re-labels or re-routes an envelope makes it fail authentication.
 - `n` is a per-sender counter. Receivers keep a 1024-wide replay window per sender and drop duplicates. The same envelope legitimately arrives via several gates and the mesh.
-- Kinds: `caps`, `description`, `candidate`, `bye`, `restart-request`, `bridge-request`, `bridge-offer`, `bridge-accept`, `bridge-active`, `bridge-release`, `bridge-fail`, `forward-map`, `forward-unmap`. Unknown kinds are dropped. Tracker gates add a room-broadcast `hello` (to `*`).
+- Kinds: `caps`, `description`, `candidate`, `bye`, `restart-request`, `bridge-request`, `bridge-offer`, `bridge-accept`, `bridge-confirm`, `bridge-ready`, `bridge-active`, `bridge-release`, `bridge-fail`, `forward-map`, `forward-unmap`. Unknown kinds are dropped. Tracker gates add a room-broadcast `hello` (to `*`).
 - **Admission.** Gate rosters and arrival events are unauthenticated hints. A hint only makes a peer greet the hinted id with its sealed caps, at most once per 20 s and for at most 64 hints. A peer becomes a member, with `peer` events, a link and a slot, only after an envelope from it authenticates. A gate therefore cannot inject or evict members.
 
 ## 4. Gate protocol (WebSocket, UTF-8 JSON text frames)
@@ -57,7 +57,7 @@ plaintext = JSON { kind, n, ...body }
 | Direction | Message | Notes |
 |---|---|---|
 | `C→G` | `{"t":"hello","v":1,"auth"?:string}` | Must be the first frame, within 5 s |
-| `G→C` | `{"t":"welcome","v":1,"stun":[url],"limits":{...}}` | STUN URLs the gate answers on |
+| `G→C` | `{"t":"welcome","v":1,"stun":[url],"limits":{...}}` | Informational only; clients use application/ticket STUN configuration |
 | `C→G` | `{"t":"join","room":tag,"peer":id}` | At most 4 rooms per socket |
 | `G→C` | `{"t":"peers","room":tag,"peers":[id]}` | Current members |
 | `G→C` | `{"t":"peer","room":tag,"peer":id,"on":bool}` | Arrivals and departures |
@@ -68,7 +68,7 @@ plaintext = JSON { kind, n, ...body }
 
 ### 4.2 Admission
 
-A gate is either open or token-gated. A token is `base64url(JSON claims) "." base64url(HMAC-SHA256(gateSecret, body))` with claims `{exp, room?}`. A token with `room` may only join that room tag. An application such as Redline Wars mints room-bound tokens for the members of a session, so its gate serves only its own rooms. Tokens require a future safe-integer `exp`. Expired sockets reject further requests and are closed on the next heartbeat.
+A gate is either open or token-gated. A token is `base64url(JSON claims) "." base64url(HMAC-SHA256(gateSecret, body))` with claims `{exp, room?, aud}`. A token with `room` may only join that room tag. Gate tokens include `aud`, the exact public gate URL. Tickets map each gate URL to its own token; configure `tokenAudience` behind a proxy. Clients ignore `welcome.stun`; STUN comes from application or ticket configuration. Tokens require a future safe-integer `exp`. Expired sockets reject further requests and are closed on the next heartbeat.
 
 ### 4.3 Multiple gates and tracker gates
 
@@ -124,7 +124,7 @@ Negotiation follows W3C *perfect negotiation*. The peer with the lexicographical
 
 | Phase | ICE servers | Expected route | Leaves the phase when |
 |---|---|---|---|
-| 0 ENDPOINT | Gate STUN + own gateway (internal URL) + remote peer's gateway | host/LAN, IPv6, srflx/prflx, or one endpoint's own gateway | not connected 5 s after the description, with one grace period if checks receive answers |
+| 0 ENDPOINT | Application-approved STUN + own gateway (internal URL) + remote peer's gateway | host/LAN, IPv6, srflx/prflx, or one endpoint's own gateway | not connected 5 s after the description, with one grace period if checks receive answers |
 | 1 SESSION | + gateways of connected participants and of gateway members (max 2 added) | `relay` through a session gateway | 7 s without connection |
 | 2 BRIDGED | unchanged | media forwarded by a connected participant (§9) | the direct or session route later succeeds |
 | unreachable | unchanged | none (no bridge candidate) | ICE restart retries with exponential backoff (30 s … 300 s) |
@@ -150,34 +150,35 @@ The gateway runs a TURN server (RFC 8656 subset: UDP relay allocations over UDP 
 
 `username = "<unix expiry>:<room tag[0..8]>:<label>"`, `credential = base64(HMAC-SHA1(secret, username))`. `label` is the recipient's peer id, or `self` for the owner's own allocations via the internal URL.
 
-- The secret never leaves the gateway's machine and the app's own renderer.
+- The signing key stays in the privileged gateway process. `info()` contains only public metadata; the renderer requests bounded credentials through an origin- and room-checked broker.
 - The gateway accepts only rooms it was told to serve (`allowRoom`). Individual peers can be revoked on kick or leave (`revokePeer`), which tears down their allocations. A whole room is revoked on key rotation or when the session ends, tearing down every old allocation.
 - Credentials are issued only to authenticated members, never in response to a hint.
-- Default TTL is 2 h, renewed at half-life.
+- Default TTL is 2 h, renewed at half-life, configurable from 1 second to 24 hours. The server rejects correctly signed expiries beyond this horizon. Peer revocations remain until credentials expire; reaching the revocation bound disables the affected room and prevents new grants until capacity clears.
 
 ### 8.3 Policy and hairpinning
 
-- The TURN server's default peer policy refuses loopback, link-local, multicast and private peers.
+- The TURN server's default peer policy refuses loopback, link-local, multicast and private peers, plus 6to4, Teredo and local-use NAT64 transition prefixes.
 - The gateway machine's own addresses are reachable only relay to relay. Services on the host stay unreachable.
 - Traffic between two allocations on the same gateway is delivered internally. Many home routers lack NAT hairpinning, and the owner's own `self` allocation therefore reaches remote allocations without it.
 - The TURN server bounds unauthenticated UDP errors and Binding answers per source and globally to limit reflection.
-- It bounds TCP connections per source address (16), with a 10 s pre-authentication timeout.
+- It bounds TCP connections per source address (16), with a 10 s absolute pre-authentication deadline, unaffected by incoming bytes.
 - Media stays DTLS-SRTP encrypted end to end. The gateway relays ciphertext.
 
 ## 9. Participant bridging
 
 When a pair (A, B) has no route, and no untried session gateway, the lower id asks connected participants that report a link to the other peer (`bridge-request`). The first `bridge-offer` wins (`bridge-accept`). Forwarder C then:
 
-1. sends `bridge-active` to both endpoints to establish the forwarding relationship;
-2. sends `forward-map {origin, stream}` to each side before renegotiating;
-3. adds the origin's received tracks to its link with the other side, which re-encodes them.
+1. asks the second endpoint with `bridge-confirm` and waits for `bridge-ready`; that endpoint checks eligibility and that it still needs the route;
+2. sends `bridge-active` to both endpoints to establish the forwarding relationship;
+3. sends `forward-map {origin, stream}` to each side before renegotiating;
+4. adds the origin's received tracks to its link with the other side, which re-encodes them.
 
 Receivers attribute tracks by stream id. When the direct route later connects, an endpoint sends `bridge-release`. C removes the forwarded tracks, stopping their transceivers so SDP does not grow, and sends `forward-unmap`. If C leaves or its link drops, the endpoints re-escalate.
 
 Hardening:
 
 - A forwarder accepts `bridge-accept` only for an offer it made to that endpoint, within 30 s, while forwarding is enabled and under its bridge limit.
-- An endpoint that receives `bridge-active` from a second forwarder releases it at once.
+- An endpoint accepts `bridge-active` only from the eligible forwarder it already accepted. Pending consent expires after 30 seconds. Upgrade all three participants together for this handshake.
 - `forward-map` is accepted only for an origin the receiver cannot reach itself, and only from that pair's forwarder.
 
 A forwarder is a participant of the same call, so it already receives both media streams. Bridging exposes nothing new to it. Forwarded video is capped at 200 kbit/s.
@@ -186,10 +187,10 @@ A forwarder is a participant of the same call, so it already receives both media
 
 The [SDK](./sdk/authority.mdx) describes how applications consume the protocol:
 
-- an **authority** (application backend) issues per-member **tickets** `{v, app, roomId, epoch, gates, secret, auth?, expires}` and rotates the room on kick;
+- an **authority** (application backend) issues per-member **tickets** `{v, app, roomId, epoch, gates, secret, auth?, stun?, expires}` and rotates the room on kick;
 - clients `connect(ticket)` and `update(newTicket, {dropped})`;
 - hosts run `hostSession(ticket)` (gateway member);
-- desktop apps expose their gateway through the Electron preload (`window.freehopGateway`, restricted by exact HTTP(S) origins in both the preload and main-process IPC handlers; subframes are rejected).
+- desktop apps expose their gateway through the Electron preload (`window.freehopGateway`, restricted by exact HTTPS origins (HTTP only on loopback) in both the preload and main-process IPC handlers; subframes are rejected).
 
 ## 10. Media profile (defaults)
 
@@ -202,7 +203,7 @@ The [SDK](./sdk/authority.mdx) describes how applications consume the protocol:
 
 - **Gates** learn: socket IP addresses, opaque room tags and peer ids, envelope sizes and timing. They cannot read SDP, ICE candidates, caps or credentials. They cannot forge or re-route envelopes without detection, and cannot inject peers into a room. A hostile gate can drop or delay traffic; using several gates mitigates that.
 - **Room members** are mutually trusted for signalling: any member can forge envelopes in the room's name. Per-peer signatures are a possible v2 addition. Removal requires a secret rotation (§2). SDK ticket expiry does not erase copies of the shared secret or end established media; it is not a replacement for rotation.
-- **Gateways**: credentials are per peer and short-lived. The peer policy prevents use as a proxy into private networks. Quotas: 6 allocations per username, 4 Mbit/s per allocation, 40 Mbit/s in total. A room member could still use a gateway's credentials to relay traffic to arbitrary public hosts until the credentials expire. Operators can shorten the TTL.
+- **Gateways**: credentials are per peer and short-lived. The peer policy prevents use as a proxy into private networks. Quotas: 6 allocations per username, 4 Mbit/s per allocation, 32 allocations and 20 Mbit/s per room, 40 Mbit/s in total. A room member could still use a gateway's credentials to relay traffic to arbitrary public hosts until the credentials expire. Operators can shorten the TTL.
 - **IP privacy**: as with any WebRTC call, participants learn each other's addresses. Relay-only operation could hide them at the cost of the cost rule. This is not a default.
 
 ## 12. Known limits

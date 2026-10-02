@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Gate admission tokens: base64url(JSON claims) "." base64url(HMAC-SHA256(secret, body)).
-// Claims: { exp: unix seconds, room?: room tag }. A room-bound token admits only that room.
+// Claims: { exp: unix seconds, room?: room tag, aud?: exact gate URL }. A room-bound token admits only that room.
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 const TAG = /^[A-Za-z0-9_-]{22,43}$/;
@@ -20,5 +20,6 @@ export function verifyGateToken(secret, token, now = Date.now()) {
   let claims; try { claims = JSON.parse(Buffer.from(body, 'base64url').toString('utf8')); } catch { return null; }
   if (!claims || typeof claims !== 'object' || !Number.isSafeInteger(claims.exp) || claims.exp * 1000 <= now) return null;
   if (claims.room !== undefined && (typeof claims.room !== 'string' || !TAG.test(claims.room))) return null;
+  if (claims.aud !== undefined && (typeof claims.aud !== 'string' || claims.aud.length > 320)) return null;
   return claims;
 }

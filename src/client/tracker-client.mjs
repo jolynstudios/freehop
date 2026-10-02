@@ -85,7 +85,7 @@ export class TrackerClient extends Emitter {
     if (typeof payload !== 'string' || !payload.startsWith(PREFIX) || typeof m.peer_id !== 'string' || m.peer_id === this.trackerPeerId) return;
     const rest = payload.slice(PREFIX.length), split = rest.indexOf(':');
     const from = rest.slice(0, split), box = rest.slice(split + 1);
-    if (split !== 22 || !PEER_ID.test(from) || from === this.peer || !/^[A-Za-z0-9_-]+$/.test(box)) return;
+    if (box.length > 49152 || split !== 22 || !PEER_ID.test(from) || from === this.peer || !/^[A-Za-z0-9_-]+$/.test(box)) return;
     // The tracker address is remembered only once the room authenticated this sender (bind()),
     // so a swarm member cannot redirect envelopes by impersonating a peer id.
     this.counters.received++;

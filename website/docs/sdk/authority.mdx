@@ -10,9 +10,12 @@ The authority is the part of Freehop that your backend embeds. It owns each room
 import { createAuthority } from 'freehop/authority';
 
 const authority = createAuthority({
-  app: 'my-game',
+  app: 'my-app',
   gates: ['wss://gate-1.example.com/freehop', 'wss://gate-2.example.com/freehop'],
-  gateTokenSecret: process.env.FREEHOP_GATE_TOKEN_SECRET
+  gateTokenSecrets: {
+    'wss://gate-1.example.com/freehop': process.env.FREEHOP_GATE_TOKEN_SECRET
+  },
+  stun: ['stun:gate-1.example.com:3478']
 });
 ```
 
@@ -22,7 +25,9 @@ const authority = createAuthority({
 |---|---|---|
 | `app` | required | Your application's name (at most 64 characters). It namespaces room tags and keys, so two applications never collide. |
 | `gates` | required | One to eight gate URLs: `wss://` (or `ws://` for local tests) for Freehop gates, `bt+wss://` for public WebTorrent trackers. |
-| `gateTokenSecret` | none | The same secret as your gate's `FREEHOP_GATE_TOKEN_SECRET`. When set, every ticket carries a gate token bound to its room. |
+| `gateTokenSecrets` | `{}` | Map from exact gate URL to its signing key. Only configured gates receive a token, bound to both room and audience. |
+| `gateTokenSecret` | none | Fallback signing key for all WebSocket gates; use the per-URL map when mixing private and community gates. Trackers never receive gate tokens. |
+| `stun` | `[]` | Up to four application-approved STUN URLs. Clients ignore STUN URLs supplied by gates. |
 | `ticketTtlSeconds` | `21600` (6 h) | Lifetime written into each ticket and its gate token. |
 | `maxRooms` | `10000` | Upper bound on open rooms. |
 
@@ -46,12 +51,13 @@ A ticket is everything a client needs to enter one room:
 ```json
 {
   "v": 1,
-  "app": "my-game",
+  "app": "my-app",
   "roomId": "room-42",
   "epoch": 1,
   "gates": ["wss://gate-1.example.com/freehop", "wss://gate-2.example.com/freehop"],
   "secret": "base64url, 32 random bytes",
-  "auth": "gate token, only with gateTokenSecret",
+  "auth": {"wss://gate-1.example.com/freehop": "gate-specific token"},
+  "stun": ["stun:gate-1.example.com:3478"],
   "expires": 1800000000
 }
 ```
@@ -67,7 +73,7 @@ const text = encodeTicket(ticket);   // base64url of the JSON
 const again = decodeTicket(text);    // throws TypeError on a malformed or invalid ticket
 ```
 
-`connect()` and `hostSession()` accept either form. A ticket is valid when its version is 1, `app` has at most 64 characters, `roomId` at most 128, `epoch` is a positive integer, it lists one to eight gate URLs, the secret is 22 to 128 characters long, `auth` (if present) is at most 2048 characters, and `expires` is a safe integer Unix timestamp in the future.
+`connect()` and `hostSession()` accept either form. A ticket is valid when its version is 1, `app` has at most 64 characters, `roomId` at most 128, `epoch` is a positive integer, it lists one to eight gate URLs, the secret is 22 to 128 characters long, `auth` (if present) maps configured WebSocket gate URLs to tokens of at most 2048 characters each (a legacy string is allowed only with one WebSocket gate), and `expires` is a safe integer Unix timestamp in the future.
 
 ## Kicking a member
 

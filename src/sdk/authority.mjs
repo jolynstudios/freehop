@@ -12,10 +12,14 @@ import { deriveRoom } from '../client/crypto.mjs';
 import { mintGateToken } from '../shared/tokens.mjs';
 import { validTicket } from './ticket.mjs';
 
-export function createAuthority({ app, gates, gateTokenSecret, ticketTtlSeconds = 6 * 3600, maxRooms = 10000 } = {}) {
-  if (!app || !validTicket({ v: 1, app, gates, roomId: '', epoch: 1, secret: 'x'.repeat(22), expires: Math.floor(Date.now() / 1000) + 60 }) ||
+export function createAuthority({ app, gates, gateTokenSecret, gateTokenSecrets = {}, stun = [], ticketTtlSeconds = 6 * 3600, maxRooms = 10000 } = {}) {
+  if (!app || !validTicket({ v: 1, app, gates, stun, roomId: '', epoch: 1, secret: 'x'.repeat(22), expires: Math.floor(Date.now() / 1000) + 60 }) ||
       !Number.isSafeInteger(ticketTtlSeconds) || ticketTtlSeconds < 1 || !Number.isSafeInteger(maxRooms) || maxRooms < 1)
     throw new TypeError('createAuthority needs valid { app, gates, ticketTtlSeconds, maxRooms }.');
+  gates = [...gates]; stun = [...stun];
+  if (!gateTokenSecrets || typeof gateTokenSecrets !== 'object' || Array.isArray(gateTokenSecrets) || Object.keys(gateTokenSecrets).some(url => !gates.includes(url) || url.startsWith('bt+'))) throw new TypeError('gateTokenSecrets must map configured WebSocket gates to secrets');
+  const gateKeys = gates.filter(url => !url.startsWith('bt+')).map(url => [url, gateTokenSecrets[url] ?? gateTokenSecret]).filter(([, key]) => key !== undefined);
+  if (gateKeys.some(([, key]) => typeof key !== 'string' || !key.length)) throw new TypeError('Gate token secrets must be nonempty strings');
   const rooms = new Map();   // roomId -> { secret, tag, epoch, members: Set, previousTags: [] }
   const pending = new Map();
   // Mutations and ticket issuance for one room must observe one complete epoch at a time.
@@ -32,8 +36,8 @@ export function createAuthority({ app, gates, gateTokenSecret, ticketTtlSeconds 
   }
   function issue(roomId, room) {
     const expires = Math.floor(Date.now() / 1000) + ticketTtlSeconds;
-    const ticket = { v: 1, app, roomId, epoch: room.epoch, gates: [...gates], secret: room.secret, expires,
-      ...(gateTokenSecret ? { auth: mintGateToken(gateTokenSecret, { exp: expires, room: room.tag }) } : {}) };
+    const ticket = { v: 1, app, roomId, epoch: room.epoch, gates: [...gates], stun: [...stun], secret: room.secret, expires,
+      ...(gateKeys.length ? { auth: Object.fromEntries(gateKeys.map(([url, key]) => [url, mintGateToken(key, { exp: expires, room: room.tag, aud: url })])) } : {}) };
     if (!validTicket(ticket)) throw new Error('Refusing to issue an invalid ticket (check gate URLs and app name).');
     return ticket;
   }

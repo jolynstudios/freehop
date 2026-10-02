@@ -33,8 +33,8 @@ app.whenReady().then(() => {
 
 | Parameter | Meaning |
 |---|---|
-| `ipcMain` | Electron's `ipcMain`. The helper registers four handlers on it. |
-| `allowedOrigins` | Required array of exact HTTP(S) origins. Use the same origins in the preload argument. Only the main frame may invoke gateway IPC. |
+| `ipcMain` | Electron's `ipcMain`. The helper registers five handlers on it. |
+| `allowedOrigins` | Required array of exact HTTPS origins (HTTP only on loopback). Use the same origins in the preload argument. Only the main frame may invoke gateway IPC. |
 | `options` | Passed to the gateway (see below). Optional. |
 | `log` | `(event, details) => void`, for example to forward port-mapping results to your logs. Optional. |
 
@@ -49,21 +49,22 @@ It returns `{ gateway, close() }`. `gateway` stays `null` until a page first ask
 | `relayPortRange` | `[49160, 49359]` | Ports for relay allocations, mapped on demand |
 | `portMapping` | `true` | Ask the router for mappings (PCP, then NAT-PMP, then UPnP IGD). `false` disables it |
 | `externalAddress` | none | With `portMapping: false`: the public address of ports you forwarded by hand |
-| `credentialTtlSeconds` | `7200` | Lifetime of the per-peer credentials |
-| `limits` | built-in | TURN quotas; by default 6 allocations per username, 4 Mbit/s per allocation, 40 Mbit/s in total |
+| `credentialTtlSeconds` | `7200` | Lifetime of per-peer credentials, bounded to 1–86400 seconds |
+| `limits` | built-in | TURN quotas; by default 6 allocations per username, 4 Mbit/s per allocation, 32 allocations and 20 Mbit/s per room, 40 Mbit/s in total |
 
 ## Preload: window.freehopGateway
 
-The preload (`freehop/electron/preload`) exposes `window.freehopGateway` **only** to pages whose origin appears in `--freehop-origins=`, a comma-separated list you pass through `additionalArguments`. Any other page in the window, such as a link a participant opens, never sees the gateway or its secret.
+The preload (`freehop/electron/preload`) exposes `window.freehopGateway` **only** to pages whose origin appears in `--freehop-origins=`, a comma-separated list you pass through `additionalArguments`. Any other page in the window, such as a link a participant opens, never sees the gateway. The signing key stays in the main process, including for trusted pages.
 
 | Method | What it does |
 |---|---|
 | `info()` | Starts the gateway if needed and resolves to its description, or `null` when this machine cannot be reached from outside |
+| `credentialsFor(tag, peer)` | Returns bounded credentials for a room granted to this renderer and current origin; never returns the signing key |
 | `allowRoom(tag)` | Lets the gateway serve a room tag |
 | `revokePeer(tag, peer)` | Revokes one peer's credentials and allocations in a room |
 | `revokeRoom(tag)` | Revokes a whole room |
 
-The main process validates the sending frame and its current origin, as well as every argument (room tags and peer ids must be base64url of the expected length) before it touches the gateway. The IPC channels are `freehop:gateway-info`, `freehop:allow-room`, `freehop:revoke-peer` and `freehop:revoke-room`.
+The main process validates the sending frame and its current origin, as well as every argument (room tags and peer ids must be base64url of the expected length) before it touches the gateway. The IPC channels are `freehop:gateway-info`, `freehop:allow-room`, `freehop:credentials`, `freehop:revoke-peer` and `freehop:revoke-room`.
 
 ## In your page
 
@@ -76,11 +77,11 @@ const session = await connect(ticket, { media: { audio: true } });
 
 When `info()` resolves to `null` (no public address, no router that grants a mapping, or a router whose own external address is private), the app joins as an ordinary peer. Nothing fails; the other steps of the ladder stay available.
 
-For kicks, `session.update(newTicket, { dropped })` drops old links and revokes the entire previous room epoch on this participant's gateway, including unreported aliases. To remove someone before the new ticket arrives, call `session.kick(peerId)`, which does the same for one peer right away.
+For kicks, `session.update(newTicket, { dropped })` drops old links and revokes the entire previous room epoch on this participant's gateway, including unreported aliases. `session.disconnectPeer(peerId)` drops one local connection and its local gateway credentials; it does not revoke membership or stop another alias. `session.kick()` now throws with migration guidance. Use `authority.kick()` plus replacement tickets to revoke membership.
 
 ## Other Node.js programs
 
-Outside Electron, `startGateway()` from `freehop/relay` runs the same gateway. The application must revoke the old room with `gateway.revokeRoom(oldTag)` on key rotation when using a raw gateway without the Electron bridge. Pass its `info()` to the client as the `gateway` option of `connect()` or `join()`. A session host that should offer its gateway without joining the call uses [host sessions](./host.mdx) instead.
+Outside Electron, `startGateway()` from `freehop/relay` runs the same gateway. The application must revoke the old room with `gateway.revokeRoom(oldTag)` on key rotation when using a raw gateway without the Electron bridge. In a privileged Node client, pass the gateway object itself as the `gateway` option of `connect()` or `join()`. Across a process boundary, send only public `info()` metadata plus a bounded `credentialsFor(tag, peer)` broker, using the Electron helper as the reference. Never send a signing key to a page. A session host that should offer its gateway without joining the call uses [host sessions](./host.mdx) instead.
 
 ## Next
 

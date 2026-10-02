@@ -31,7 +31,7 @@ Freehop follows the W3C *perfect negotiation* pattern. Each pair escalates throu
 
 | Phase | ICE servers in use | Expected route | Moves on when |
 |---|---|---|---|
-| 0, endpoint | The gate's STUN, the peer's own gateway, the other peer's gateway | <PathBadge kind="direct" /> or <PathBadge kind="gateway" /> | Not connected **5 s** after the description; one more 5 s if connectivity checks are getting answers |
+| 0, endpoint | Application-approved STUN, the peer's own gateway, the other peer's gateway | <PathBadge kind="direct" /> or <PathBadge kind="gateway" /> | Not connected **5 s** after the description; one more 5 s if connectivity checks are getting answers |
 | 1, session | Plus up to **2** gateways of connected participants or gateway members | <PathBadge kind="relay" /> | **7 s** without a connection |
 | 2, bridged | Unchanged | <PathBadge kind="bridged" /> | The direct or session route later succeeds |
 | no route | Unchanged | <PathBadge kind="unreachable" /> | Never gives up: ICE restarts after **30 s, 60 s, 120 s, 240 s**, then every **300 s** |

@@ -23,7 +23,8 @@ const ALLOW = Object.freeze({ ownOnly: false }), OWN_ONLY = Object.freeze({ ownO
 
 const prefix = (address, bits) => ({ bytes: ipToBytes(address), bits });
 const DENY = [prefix('0.0.0.0', 8), prefix('127.0.0.0', 8), prefix('169.254.0.0', 16), prefix('224.0.0.0', 4), prefix('240.0.0.0', 4),
-  prefix('::', 96), prefix('fe80::', 10), prefix('ff00::', 8)];
+  prefix('::', 96), prefix('fe80::', 10), prefix('ff00::', 8),
+  prefix('2002::', 16), prefix('2001::', 32), prefix('64:ff9b:1::', 48)];
 const PRIVATE = [prefix('10.0.0.0', 8), prefix('172.16.0.0', 12), prefix('192.168.0.0', 16), prefix('100.64.0.0', 10), prefix('fc00::', 7)];
 const MAPPED = prefix('::ffff:0:0', 96), NAT64 = prefix('64:ff9b::', 96);
 
@@ -99,12 +100,13 @@ function bucket(bitsPerSecond) {
   const cap = bitsPerSecond / 8;
   return { rate: cap / 1000, cap, tokens: cap, last: Date.now() };
 }
-function take(a, b, n) {
+function take(a, b, n, scope) {
   const now = Date.now();
-  for (const k of [a, b]) if (k) { k.tokens = Math.min(k.cap, k.tokens + (now - k.last) * k.rate); k.last = now; }
-  if ((a && a.tokens < n) || (b && b.tokens < n)) return false;
+  for (const k of [a, b, scope]) if (k) { k.tokens = Math.min(k.cap, k.tokens + (now - k.last) * k.rate); k.last = now; }
+  if ((a && a.tokens < n) || (b && b.tokens < n) || (scope && scope.tokens < n)) return false;
   if (a) a.tokens -= n;
   if (b) b.tokens -= n;
+  if (scope) scope.tokens -= n;
   return true;
 }
 const u32Value = v => { const b = Buffer.alloc(4); b.writeUInt32BE(v >>> 0); return b; };
@@ -146,7 +148,7 @@ export async function createTurnServer(options = {}) {
     droppedRateLimited: 0, droppedNoPermission: 0, droppedNoAllocation: 0, droppedNoChannel: 0, droppedPolicy: 0, droppedBackpressure: 0,
     droppedBusy: 0, relayedInternally: 0, peersDenied: 0, malformed: 0, authFailures: 0, staleNonces: 0, retransmissions: 0, bindings: 0,
     sendErrors: 0, tcpRejected: 0, tcpIdleClosed: 0, tlsErrors: 0, errors: 0, droppedErrorRate: 0 };
-  const listeners = [], allocations = new Map(), byUser = new Map(), relayIndex = new Map(), wildcardPorts = new Map();
+  const listeners = [], allocations = new Map(), byUser = new Map(), byScope = new Map(), relayIndex = new Map(), wildcardPorts = new Map();
   const conns = new Set(), rawSockets = new Set(), relaySockets = new Set(), pendingCloses = new Set();
   const responseCache = new Map(), inflight = new Set(), nonceSecret = randomBytes(32);
   const globalUp = bucket(limits.totalBitrate), globalDown = bucket(limits.totalBitrate);
@@ -213,7 +215,7 @@ export async function createTurnServer(options = {}) {
     responseBudget.at = now;
     if (responseBudget.level < 1) { counters.droppedErrorRate++; return false; }
     let b = errorBudget.get(ctx.address);
-    if (!b) { if (errorBudget.size > 10000) errorBudget.clear(); b = { level: limits.errorBurst, at: now }; errorBudget.set(ctx.address, b); }
+    if (!b) { if (errorBudget.size > 10000) errorBudget.delete(errorBudget.keys().next().value); b = { level: limits.errorBurst, at: now }; errorBudget.set(ctx.address, b); }
     b.level = Math.min(limits.errorBurst, b.level + (now - b.at) / 1000 * limits.errorRate); b.at = now;
     if (b.level < 1) { counters.droppedErrorRate++; return false; }
     b.level -= 1; responseBudget.level -= 1; return true;
@@ -371,11 +373,22 @@ export async function createTurnServer(options = {}) {
     if (!family || !relayHosts[family]) return failure(440, 'Address Family not Supported');
     if (allocations.size >= limits.maxAllocations) return failure(508, 'Insufficient Capacity');
     if ((byUser.get(auth.username)?.size ?? 0) >= limits.maxAllocationsPerUsername) return failure(486, 'Allocation Quota Reached');
+    let scope = null, scopeKey = null;
+    if (options.allocationScope) {
+      scopeKey = options.allocationScope(auth.username);
+      if (typeof scopeKey !== 'string' || !scopeKey.length || scopeKey.length > 128) return failure(403, 'Invalid allocation scope');
+      for (const [key, old] of byScope) if (!old.allocations.size && Date.now() - old.idleAt >= 1000) byScope.delete(key);
+      scope = byScope.get(scopeKey);
+      if (!scope && byScope.size >= limits.maxAllocations * 2) return failure(508, 'Scope capacity reached');
+      if ((scope?.allocations.size ?? 0) >= (limits.maxAllocationsPerScope ?? 32)) return failure(486, 'Room Allocation Quota Reached');
+      if (!scope) { scope = { allocations: new Set(), up: bucket(limits.scopeBitrate ?? 20_000_000), down: bucket(limits.scopeBitrate ?? 20_000_000) }; byScope.set(scopeKey, scope); }
+    }
     const lifetime = lifetimeFrom(getAttr(msg, ATTR.LIFETIME)) || limits.defaultLifetime;
-    const alloc = { key: ctx.tupleKey, ctx, username: auth.username, family, ready: false, closed: false, stream: !!ctx.conn,
+    const alloc = { key: ctx.tupleKey, ctx, scope, scopeKey, username: auth.username, family, ready: false, closed: false, stream: !!ctx.conn,
       fingerprint: hadFingerprint, permissions: new Map(), channels: new Map(), peerChannels: new Map(), indexKeys: [],
       up: bucket(limits.allocationBitrate), down: bucket(limits.allocationBitrate), expires: Infinity };
     allocations.set(alloc.key, alloc);
+    scope?.allocations.add(alloc);
     if (!byUser.has(alloc.username)) byUser.set(alloc.username, new Set());
     byUser.get(alloc.username).add(alloc);
     const socket = await bindRelaySocket(family, !!even);
@@ -403,7 +416,7 @@ export async function createTurnServer(options = {}) {
     socket.on('message', (m, r) => { try { onPeerMessage(alloc, m, r); } catch (e) { fault(e, 'relay'); } });
     alloc.ready = true; alloc.expires = Date.now() + lifetime * 1000;
     counters.allocationsCreated++;
-    if (ctx.conn) { ctx.conn.alloc = alloc; ctx.conn.socket.setTimeout(0); }
+    if (ctx.conn) { ctx.conn.alloc = alloc; clearTimeout(ctx.conn.preAuthTimer); ctx.conn.socket.setTimeout(0); }
     log('allocation', { username: alloc.username, transport: ctx.transport, client: `${ctx.address}:${ctx.port}`,
       relayed: `${advertised}:${externalPort}`, internal: `${localAddress}:${localPort}`, lifetime });
     return success([
@@ -513,7 +526,7 @@ export async function createTurnServer(options = {}) {
     if (selfEndpoints.has(`${ip}|${port}`)) { counters.droppedPolicy++; return; }
     const target = relayTarget(ip, port, alloc.family);
     if (!target && ownOnly) { counters.droppedPolicy++; return; }
-    if (!take(alloc.up, globalUp, data.length)) { counters.droppedRateLimited++; return; }
+    if (!take(alloc.up, globalUp, data.length, alloc.scope?.up)) { counters.droppedRateLimited++; return; }
     counters.bytesToPeers += data.length;
     if (!target) { alloc.socket.send(data, port, ip, onSendDone); return; }
     if (!target.ready || target.closed) return;
@@ -531,7 +544,7 @@ export async function createTurnServer(options = {}) {
     toClient(alloc, ip, rinfo.port, data);
   }
   function toClient(alloc, ip, port, data) {
-    if (!take(alloc.down, globalDown, data.length)) { counters.droppedRateLimited++; return; }
+    if (!take(alloc.down, globalDown, data.length, alloc.scope?.down)) { counters.droppedRateLimited++; return; }
     const n = alloc.peerChannels.get(`${ip}|${port}`), ch = n === undefined ? null : alloc.channels.get(n);
     let buf;
     if (ch && ch.expires > Date.now()) buf = encodeChannelData(n, data, { pad: alloc.stream });
@@ -548,6 +561,7 @@ export async function createTurnServer(options = {}) {
     if (alloc.closed) return;
     alloc.closed = true;
     if (allocations.get(alloc.key) === alloc) allocations.delete(alloc.key);
+    if (alloc.scope) { alloc.scope.allocations.delete(alloc); if (!alloc.scope.allocations.size) alloc.scope.idleAt = Date.now(); }
     const owned = byUser.get(alloc.username);
     if (owned) { owned.delete(alloc); if (!owned.size) byUser.delete(alloc.username); }
     for (const k of alloc.indexKeys) if (relayIndex.get(k) === alloc) relayIndex.delete(k);
@@ -568,6 +582,7 @@ export async function createTurnServer(options = {}) {
       const now = Date.now();
       for (const a of [...allocations.values()]) if (a.ready && !a.closed) { if (a.expires <= now) tearDown(a, 'expired'); else prune(a, now); }
       for (const [k, v] of responseCache) { if (v.expires > now) break; responseCache.delete(k); }
+      for (const [key, scope] of byScope) if (!scope.allocations.size && now - scope.idleAt >= 1000) byScope.delete(key);
       if (now - addressesAt >= ADDRESS_REFRESH_MS) refreshOwnAddresses();
     } catch (e) { fault(e, 'sweep'); }
   }
@@ -622,6 +637,8 @@ export async function createTurnServer(options = {}) {
     conns.add(conn);
     socket.setNoDelay(true);
     // Until an allocation exists the connection gets a short leash (pre-authentication).
+    conn.preAuthTimer = setTimeout(() => { if (!conn.alloc) { counters.tcpIdleClosed++; socket.destroy(); } }, limits.tcpPreAuthMs);
+    conn.preAuthTimer.unref?.();
     socket.setTimeout(limits.tcpPreAuthMs, () => { counters.tcpIdleClosed++; socket.destroy(); });
     socket.on('data', chunk => {
       try {
@@ -638,6 +655,7 @@ export async function createTurnServer(options = {}) {
     socket.on('drain', () => { if (conn.writeBlocked) { conn.writeBlocked = false; updateFlow(conn); } });
     socket.on('error', () => {});
     socket.on('close', () => {
+      clearTimeout(conn.preAuthTimer);
       conn.closed = true; conn.backlog.length = 0; conns.delete(conn);
       if (conn.alloc) deleteAllocation(conn.alloc, 'connection-closed');
     });

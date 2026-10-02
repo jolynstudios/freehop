@@ -31,6 +31,8 @@ The service is configured with environment variables:
 | `FREEHOP_GATE_PUBLIC_HOST` | none | Public host name advertised in the `stun:` URLs. Needed when STUN binds a wildcard address. |
 | `FREEHOP_GATE_STUN` | none | STUN responders to start, for example `0.0.0.0:3478,[::]:3478` (IPv4 and IPv6). |
 | `FREEHOP_GATE_TOKEN_SECRET` | none | Makes the gate token-gated: only clients with a token minted with this secret get in. Use the same value as the authority's `gateTokenSecret`. |
+| `FREEHOP_GATE_TOKEN_AUDIENCE` | required with a secret | Exact public WebSocket URL, e.g. `wss://gate.example.com/freehop`. Must match the authority’s URL and token audience. |
+| `FREEHOP_GATE_ALLOW_ANONYMOUS` | off | Set `1` explicitly to run a public community gate without admission tokens. |
 | `FREEHOP_GATE_TRUST_PROXY` | off | `1` behind a local reverse proxy: per-address limits then use the last `X-Forwarded-For` hop. |
 
 ## Deploy with systemd and Caddy
@@ -44,6 +46,8 @@ cd /opt/freehop && sudo npm install --omit=dev
 sudo install -d -m 700 /etc/freehop
 echo "FREEHOP_GATE_TOKEN_SECRET=$(openssl rand -base64 32)" | sudo tee /etc/freehop/gate.env > /dev/null
 ```
+
+Add `FREEHOP_GATE_TOKEN_AUDIENCE=wss://gate.example.com/freehop` to the environment file, matching your public host and path. Public listeners and reverse-proxy configurations require a secret or explicit anonymous mode. Configure STUN URLs in the application’s authority too; clients do not trust gate-supplied STUN hints.
 
 Keep the token secret out of the unit file: the unit reads it from `/etc/freehop/gate.env`, and your backend needs the same value.
 
@@ -115,7 +119,7 @@ Expect tiny numbers: about 15 to 35 KB per pair of peers at call setup, and almo
 
 ## Open or token-gated
 
-Without `FREEHOP_GATE_TOKEN_SECRET` the gate is open: any client that speaks the protocol can use it, though it still only ever sees sealed envelopes. With a token secret, clients must present a token minted with that secret. Give the authority the same value as `gateTokenSecret`, and every ticket carries a token bound to its own room tag, so your gate serves only your rooms.
+With explicit `FREEHOP_GATE_ALLOW_ANONYMOUS=1` a public gate is open: any client that speaks the protocol can use it, though it still only ever sees sealed envelopes. With a token secret, clients must present a token minted with that secret. Configure the authority’s `gateTokenSecrets` map for this URL, and every ticket carries a token bound to its room and this gate’s audience, so your gate serves only your rooms.
 
 ## More than one gate
 
@@ -143,6 +147,7 @@ const gate = await createGate({
   stun: [{ host: '0.0.0.0', port: 3478 }, { host: '::', port: 3478 }],
   publicHost: 'gate.example.com',
   tokenSecret: process.env.FREEHOP_GATE_TOKEN_SECRET,
+  tokenAudience: 'wss://gate.example.com/freehop',
   trustProxy: true
 });
 console.log(gate.url(), gate.stats());

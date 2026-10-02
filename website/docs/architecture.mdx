@@ -53,10 +53,10 @@ Ana and Ben join `room-42`. Ana is on a home router; Ben is on a phone hotspot.
 
 1. **Tickets.** Your backend opens the room (a 32-byte secret) and sends each of them a ticket over your own authenticated channel.
 2. **Keys.** Each client derives the room tag and the envelope key from the secret with HKDF. It picks a fresh random peer id.
-3. **Gates.** Each client connects to every gate in its ticket: `hello`, then `welcome` (with the gate's STUN URLs), then `join` with the room tag and its peer id. The gate answers with the peers already present.
+3. **Gates.** Each client connects to every gate in its ticket: `hello`, then `welcome` (STUN hints are ignored), then `join` with the room tag and its peer id. The gate answers with the peers already present.
 4. **Greeting.** Every peer on a gate's roster is only a hint, so Ana greets Ben with sealed capabilities, and Ben greets Ana. When Ana's first envelope authenticates at Ben's side, Ben admits her as a member (`peer` event), and the other way round.
 5. **Offer.** The peer with the lower id opens the link and makes the offer; the other side waits for it. Descriptions and ICE candidates travel as sealed envelopes through every gate both are on.
-6. **Endpoint phase.** ICE gathers against the gate's STUN and any gateways named in the capabilities. Ana and Ben have 5 seconds (plus one grace period while checks get answers) to connect.
+6. **Endpoint phase.** ICE gathers against application-approved STUN and any gateways named in the capabilities. Ana and Ben have 5 seconds (plus one grace period while checks get answers) to connect.
 7. **Escalation, if needed.** If they do not connect, the pair moves to the session phase (session gateways, 7 seconds), then bridging through a participant, then `unreachable` with slow retries. See [paths and escalation](./concepts/paths.mdx).
 8. **Connected.** The link's data channel opens, and from now on Ana and Ben send each other envelopes over it. The gate's part is over: apart from 30-second keepalive pings, it carries nothing for this pair.
 9. **Path.** Each side reads its selected candidate pair and reports the path (`direct`, `gateway`, `relay` or `bridged`) to your interface.

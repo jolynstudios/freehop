@@ -42,18 +42,20 @@ test('gateway credentials are scoped to allowed rooms and revocable per peer', a
     const ok = gw.credentialsFor(tagA, 'peer-one');
     assert.equal((await client.allocate(ok.username, ok.credential)).cls, stun.CLASS.SUCCESS);
     const otherRoom = gw.credentialsFor(tagB, 'peer-one');
-    assert.equal((await client.allocate(otherRoom.username, otherRoom.credential)).code, 401, 'a room the gateway does not serve');
+    assert.equal(otherRoom, null, 'cannot mint for a room the gateway does not serve');
     const expired = { username: `${Math.floor(Date.now() / 1000) - 5}:${tagA.slice(0, 8)}:peer-two` };
     assert.equal((await client.allocate(expired.username, 'irrelevant')).code, 401, 'expired credentials');
     assert.equal(gw.revokePeer(tagA, 'peer-one') >= 1, true, 'revocation tears down the live allocation');
     const again = gw.credentialsFor(tagA, 'peer-one');
-    assert.equal((await client.allocate(again.username, again.credential)).code, 401, 'revoked peer cannot allocate again');
+    assert.equal(again, null, 'cannot mint for a revoked peer');
+    assert.equal((await client.allocate(ok.username, ok.credential)).code, 401, 'old credential cannot allocate again');
     gw.allowRoom(tagB);
     const later = gw.credentialsFor(tagB, 'peer-three');
     assert.equal((await client.allocate(later.username, later.credential)).cls, stun.CLASS.SUCCESS);
     gw.revokeRoom(tagB);
     const gone = gw.credentialsFor(tagB, 'peer-four');
-    assert.equal((await client.allocate(gone.username, gone.credential)).code, 401, 'revoked room');
+    assert.equal(gone, null, 'cannot mint for a revoked room');
+    assert.equal((await client.allocate(later.username, later.credential)).code, 401, 'old room credential rejected');
     assert.equal(gw.info().external[0], '198.51.100.7');
   } finally { client.close(); await gw.close(); }
 });
@@ -94,4 +96,52 @@ test('gateway member rotation revokes all old-room allocations, including an unk
     const next = gw.credentialsFor(nextTag, 'remaining-member');
     assert.equal((await client.allocate(next.username, next.credential)).cls, stun.CLASS.SUCCESS);
   } finally {client.close(); await member.close(); await gw.close();}
+});
+
+test('gateway rejects correctly signed credentials beyond its lifetime and never exports its key', async () => {
+  const tag = 'Lifetime' + 'x'.repeat(35);
+  const gw = await startGateway({host: '127.0.0.1', port: 0, portMapping: false, externalAddress: '198.51.100.7', rooms: [tag], credentialTtlSeconds: 60});
+  const c = await turnClient(gw.turn.addresses().find(a => a.transport === 'udp').port);
+  try {
+    assert.equal(gw.info().secret, undefined);
+    const clock = Date.now;
+    let future;
+    try { Date.now = () => clock() + 86400000; future = gw.credentialsFor(tag, 'future'); } finally {Date.now = clock;}
+    assert.equal((await c.allocate(future.username, future.credential)).code, 401, 'a valid HMAC cannot bypass the lifetime bound');
+    const valid = gw.credentialsFor(tag, 'current');
+    assert.equal((await c.allocate(valid.username, valid.credential)).cls, stun.CLASS.SUCCESS);
+  } finally {c.close(); await gw.close();}
+});
+
+test('revocation saturation fails closed for the affected room without reviving old credentials', async () => {
+  const tag = 'RevokeAA' + 'x'.repeat(35), other = 'RevokeBB' + 'y'.repeat(35);
+  const gw = await startGateway({host: '127.0.0.1', port: 0, portMapping: false, externalAddress: '198.51.100.7', rooms: [tag, other]});
+  const c = await turnClient(gw.turn.addresses().find(a => a.transport === 'udp').port);
+  try {
+    const first = gw.credentialsFor(tag, 'first');
+    gw.revokePeer(tag, 'first');
+    for (let i = 0; i < 4100; i++) gw.revokePeer(tag, `peer-${i}`);
+    assert.equal((await c.allocate(first.username, first.credential)).code, 401);
+    assert.equal(gw.credentialsFor(tag, 'fresh-alias'), null);
+    assert.throws(() => gw.allowRoom(tag), /revocation capacity/);
+    const valid = gw.credentialsFor(other, 'remaining');
+    assert.equal((await c.allocate(valid.username, valid.credential)).cls, stun.CLASS.SUCCESS);
+  } finally {c.close(); await gw.close();}
+});
+
+test('room allocation quota counts different peer identities together and preserves another room', async () => {
+  const tags = ['QuotaAAA' + 'x'.repeat(35), 'QuotaBBB' + 'y'.repeat(35)];
+  const gw = await startGateway({host: '127.0.0.1', port: 0, portMapping: false, externalAddress: '198.51.100.7', rooms: tags, limits: {maxAllocationsPerScope: 2}});
+  const clients = await Promise.all(Array.from({length: 4}, () => turnClient(gw.turn.addresses().find(a => a.transport === 'udp').port)));
+  try {
+    for (let i = 0; i < 3; i++) {
+      const credential = gw.credentialsFor(tags[0], `alias-${i}`);
+      const result = await clients[i].allocate(credential.username, credential.credential);
+      assert.equal(result.code, i === 2 ? 486 : 0);
+    }
+    const other = gw.credentialsFor(tags[1], 'peer');
+    assert.equal((await clients[3].allocate(other.username, other.credential)).code, 0);
+    gw.revokeRoom(tags[0]);
+    assert.equal(gw.turn.stats().allocations, 1);
+  } finally {for (const c of clients) c.close(); await gw.close();}
 });

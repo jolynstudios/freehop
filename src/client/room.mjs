@@ -7,6 +7,7 @@
 import { deriveRoom, seal, open, randomId } from './crypto.mjs';
 import { Emitter, GateClient } from './gate-client.mjs';
 import { TrackerClient } from './tracker-client.mjs';
+import { validIceUrl, validStunUrls } from './ice-urls.mjs';
 import { PeerLink, PHASE } from './peer.mjs';
 
 const PEER_ID = /^[A-Za-z0-9_-]{22}$/;
@@ -16,7 +17,7 @@ const pairKey = (a, b) => a < b ? `${a}|${b}` : `${b}|${a}`;
 // prefix is only a hint; their gateway is learned from sealed caps like anything else.
 const isGatewayMember = id => id.startsWith('gw_');
 const KINDS = new Set(['caps', 'description', 'candidate', 'bye', 'restart-request', 'bridge-request', 'bridge-offer', 'bridge-accept',
-  'bridge-active', 'bridge-release', 'bridge-fail', 'forward-map', 'forward-unmap']);
+  'bridge-confirm', 'bridge-ready', 'bridge-active', 'bridge-release', 'bridge-fail', 'forward-map', 'forward-unmap']);
 
 export const DEFAULT_TIMING = Object.freeze({ capsWaitMs: 150, politeWaitMs: 1500, endpointMs: 5000, sessionMs: 7000,
   bridgedRetryMs: 30000, maxRetryMs: 300000, restartFallbackMs: 2500, mediaWatchMs: 5000,
@@ -31,7 +32,7 @@ export async function join(options) {
   return room;
 }
 
-const turnUrls = list => (Array.isArray(list) ? list : []).filter(u => typeof u === 'string' && /^turns?:[^\s]{1,200}$/.test(u)).slice(0, 4);
+const turnUrls = list => (Array.isArray(list) ? list : []).filter(u => validIceUrl(u, 'turn')).slice(0, 4);
 const addresses = list => (Array.isArray(list) ? list : []).filter(a => typeof a === 'string' && IP.test(a)).slice(0, 4);
 
 // A gateway as shared by another peer: TURN URLs plus credentials minted for us.
@@ -43,24 +44,18 @@ function cleanGateway(g) {
     internal: typeof g.internal === 'string' && IP.test(g.internal) ? g.internal : null };
 }
 
-// Our own gateway as described by the local gateway agent (desktop app): it holds the secret
-// from which we mint short-lived per-peer, per-room TURN credentials (TURN REST convention).
+// Public gateway metadata plus a credential broker. The signing key never enters the room.
 function cleanOwnGateway(g) {
-  if (!g || typeof g.secret !== 'string' || g.secret.length < 16) return null;
-  const urls = turnUrls(g.urls);
+  if (!g || typeof g.credentialsFor !== 'function') return null;
+  const info = typeof g.info === 'function' ? g.info() : g;
+  if (!info) return null;
+  const urls = turnUrls(info.urls);
   if (!urls.length) return null;
-  return { urls, internalUrls: turnUrls(g.internalUrls), secret: g.secret, ttlSeconds: Math.min(Math.max(Number(g.ttlSeconds) || 7200, 600), 86400),
-    external: addresses(g.external), internal: typeof g.internal === 'string' && IP.test(g.internal) ? g.internal : null };
+  return { urls, internalUrls: turnUrls(info.internalUrls), credentialsFor: g.credentialsFor.bind(g), ttlSeconds: info.ttlSeconds ?? 7200,
+    external: addresses(info.external), internal: typeof info.internal === 'string' && IP.test(info.internal) ? info.internal : null };
 }
 
 const sameGateway = (a, b) => !!a && !!b && a.urls.join() === b.urls.join() && a.external.join() === b.external.join();
-
-async function turnCredential(secret, username) {
-  const key = await globalThis.crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']);
-  const mac = new Uint8Array(await globalThis.crypto.subtle.sign('HMAC', key, new TextEncoder().encode(username)));
-  let bin = ''; for (const b of mac) bin += String.fromCharCode(b);
-  return btoa(bin);
-}
 
 // Some WebKit builds reject "?transport=" in TURN URLs (WebKit bug 320931). Detect once and
 // degrade to the default (UDP) form instead of failing the whole peer connection.
@@ -79,6 +74,8 @@ export class Room extends Emitter {
   constructor(options) {
     super();
     if (!Array.isArray(options?.gates) || !options.gates.length) throw new TypeError('At least one gate URL is required.');
+    if (options.stun !== undefined && !validStunUrls(options.stun)) throw new TypeError('Invalid application STUN URLs');
+    if (typeof options.auth === 'string' && options.gates.length !== 1) throw new TypeError('Use per-gate auth tokens for multiple gates');
     this.options = options;
     this.app = options.app ?? 'peerlane';
     this.RTCPeerConnection = options.RTCPeerConnection ?? globalThis.RTCPeerConnection;
@@ -90,6 +87,7 @@ export class Room extends Emitter {
     do { this.id = randomId(16); } while (isGatewayMember(this.id));
     this.links = new Map(); this.caps = new Map(); this.known = new Set(); this.departed = new Map(); this.gatewayMembers = new Set();
     this.presence = new Map();    // peer -> Set(gate) — unauthenticated hints from gates
+    this.hintedAt = new Map(); // first unauthenticated hint; repeated rosters cannot refresh its lifetime
     this.lastContact = new Map(); // peer -> time of the last presence, authenticated envelope or live link
     this.greeted = new Map();     // peer -> time we last sent it our caps
     this.outbox = new Map();      // peer -> [{ box, until }] envelopes waiting for a route
@@ -99,6 +97,7 @@ export class Room extends Emitter {
     this.forward = options.forward !== false;
     this.bridges = new Map();     // as an endpoint: pairKey -> { peer, via, state, requestedAt }
     this.relaying = new Map();    // as a forwarder: pairKey -> { a, b }
+    this.bridgePending = new Map(); // forwarding awaits consent from the second endpoint
     this.bridgeOffers = new Map();// as a forwarder: pairKey -> { a, b, at } offers we made
     this.counters = { sent: 0, viaMesh: 0, viaGate: 0, viaIntroducer: 0, queued: 0, undeliverable: 0, received: 0, rejected: 0, duplicates: 0,
       meshForwarded: 0, candidateErrors: 0, negotiationErrors: 0, linkErrors: 0, escalations: 0, bridgesUsed: 0, bridgesServed: 0,
@@ -134,9 +133,9 @@ export class Room extends Emitter {
         g.bind?.(from, route);
         this.hint(from, g);
       });
-      gate.on('joined', ({ peers, stun }) => {
+      gate.on('joined', ({ peers }) => {
         if (this.closed || epoch !== this.crypto) return;
-        for (const u of stun) this.stunUrls.add(u);
+        // Gate messages cannot choose servers the browser will contact.
         this.emit('gate', { url, state: 'joined' });
         for (const p of peers) this.hint(p, gate);
       });
@@ -169,9 +168,9 @@ export class Room extends Emitter {
     for (const t of this.pendingLinks.values()) clearTimeout(t);
     for (const id of this.gatewayMembers) this.emit('gateway', { id, available: false });
     this.crypto = next; this.tag = next.tag;
-    this.gates = []; this.presence.clear(); this.caps.clear(); this.gatewayMembers.clear();
+    this.gates = []; this.presence.clear(); this.hintedAt.clear(); this.caps.clear(); this.gatewayMembers.clear();
     this.pendingLinks.clear(); this.early.clear(); this.sequences.clear(); this.greeted.clear(); this.lastContact.clear();
-    this.outbox.clear(); this.bridges.clear(); this.relaying.clear(); this.bridgeOffers.clear(); this.sendProgress.clear(); this.meshBudget.clear();
+    this.outbox.clear(); this.bridges.clear(); this.relaying.clear(); this.bridgeOffers.clear(); this.bridgePending.clear(); this.sendProgress.clear(); this.meshBudget.clear();
     this.gatewayCreds.clear(); if (this.ownGateway) await this.gatewayCredsFor('self');
     if (!this.closed) this.openGates();
     this.scheduleCapsBroadcast();
@@ -200,10 +199,13 @@ export class Room extends Emitter {
     if (gate) {
       let set = this.presence.get(peer);
       if (!set) {
-        if (this.presence.size >= this.limits.maxHints) return;
+        const budget = Math.max(1, Math.floor(this.limits.maxHints / this.options.gates.length));
+        const used = [...this.presence].filter(([id, sources]) => !this.known.has(id) && !this.gatewayMembers.has(id) && sources.has(gate)).length;
+        if (this.presence.size >= this.limits.maxHints || !this.known.has(peer) && !this.gatewayMembers.has(peer) && used >= budget) return;
         set = new Set(); this.presence.set(peer, set);
       }
       set.add(gate);
+      if (!this.known.has(peer) && !this.gatewayMembers.has(peer) && !this.hintedAt.has(peer)) this.hintedAt.set(peer, Date.now());
       this.lastContact.set(peer, Date.now());
       this.flushOutbox(peer);
     }
@@ -218,6 +220,7 @@ export class Room extends Emitter {
   admit(peer) {
     if (this.known.has(peer)) return true;
     if (isGatewayMember(peer) || this.closed || this.blocked(peer) || this.known.size >= this.limits.maxPeers) return false;
+    this.hintedAt.delete(peer);
     this.known.add(peer); this.emit('peer', { id: peer });
     if (!this.greeted.has(peer) || Date.now() - this.greeted.get(peer) > 2000) { this.greeted.set(peer, Date.now()); this.sendCaps(peer); }
     if (!this.links.has(peer) && !this.pendingLinks.has(peer)) {
@@ -240,6 +243,10 @@ export class Room extends Emitter {
   sweep() {
     if (this.closed) return;
     const now = Date.now();
+    for (const [peer, at] of this.hintedAt) {
+      if (this.known.has(peer) || this.gatewayMembers.has(peer)) { this.hintedAt.delete(peer); continue; }
+      if (now - at >= this.timing.greetMs) { this.presence.delete(peer); this.hintedAt.delete(peer); this.lastContact.delete(peer); this.outbox.delete(peer); }
+    }
     for (const peer of [...this.known, ...this.gatewayMembers]) {
       const link = this.links.get(peer);
       if (this.presence.has(peer) || link?.connected) { this.lastContact.set(peer, now); continue; }
@@ -252,6 +259,10 @@ export class Room extends Emitter {
       if (live.length) this.outbox.set(peer, live); else this.outbox.delete(peer);
     }
     for (const [key, offer] of this.bridgeOffers) if (now - offer.at > 30000) this.bridgeOffers.delete(key);
+    for (const [key, pending] of this.bridgePending) if (now - pending.at >= 30000) {
+      this.bridgePending.delete(key);
+      for (const to of [pending.a, pending.b]) this.signalTo(to, {kind: 'bridge-fail', a: pending.a, b: pending.b});
+    }
   }
 
   ensureLink(peer, forOffer = false) {
@@ -259,7 +270,8 @@ export class Room extends Emitter {
     if (this.closed || this.blocked(peer) || !this.known.has(peer)) return null;
     let link = this.links.get(peer);
     if (!link) {
-      link = new PeerLink(this, peer, { forOffer });
+      try { link = new PeerLink(this, peer, { forOffer }); }
+      catch (error) { this.log('peer-link-error', {peer, message: error.message}); this.emit('path', {peer, kind: 'unreachable'}); return null; }
       this.links.set(peer, link);
       for (const c of this.early.get(peer) ?? []) link.enqueue(() => link.onCandidate({ candidate: c }));
       this.early.delete(peer);
@@ -271,12 +283,14 @@ export class Room extends Emitter {
     if (!this.known.has(peer) && !this.links.has(peer)) return;
     clearTimeout(this.pendingLinks.get(peer)); this.pendingLinks.delete(peer);
     this.links.get(peer)?.close(); this.links.delete(peer);
-    this.known.delete(peer); this.caps.delete(peer); this.presence.delete(peer); this.early.delete(peer); this.outbox.delete(peer);
+    this.known.delete(peer); this.hintedAt.delete(peer); this.caps.delete(peer); this.presence.delete(peer); this.early.delete(peer); this.outbox.delete(peer);
+    this.sendProgress.delete(peer); this.meshBudget.delete(peer);
     this.lastContact.delete(peer); this.gatewayCreds.delete(`${this.tag8}:${peer}`);
     // The replay window survives a soft departure: a returning peer keeps its counter.
     if (reason !== 'gone') this.sequences.delete(peer);
     this.departed.set(peer, { at: Date.now(), reason });
     if (this.departed.size > 256) this.departed.delete(this.departed.keys().next().value);
+    for (const [key, b] of this.bridgePending) if (b.a === peer || b.b === peer) this.bridgePending.delete(key);
     for (const [key, b] of [...this.relaying]) if (b.a === peer || b.b === peer) this.endRelayBridge(key, 'peer-left');
     for (const [key, b] of [...this.bridges]) if (b.via === peer || b.peer === peer) { this.bridges.delete(key); if (b.via === peer) this.rescueLink(b.peer); }
     for (const link of this.links.values()) for (const [stream, origin] of [...link.forwardMap]) if (origin === peer) link.forwardMap.delete(stream);
@@ -422,9 +436,15 @@ export class Room extends Emitter {
     const name = `${this.tag8}:${label}`;
     const cached = this.gatewayCreds.get(name);
     if (cached && cached.expiry * 1000 - Date.now() > g.ttlSeconds * 500) return cached;
-    const expiry = Math.floor(Date.now() / 1000) + g.ttlSeconds;
-    const username = `${expiry}:${name}`;
-    const creds = { username, credential: await turnCredential(g.secret, username), expiry };
+    const epoch = this.crypto, tag = this.tag;
+    let minted;
+    try { minted = await g.credentialsFor(tag, label); }
+    catch (error) { this.log('gateway-credentials-unavailable', {message: error.message}); return null; }
+    if (this.closed || epoch !== this.crypto || !minted || typeof minted.username !== 'string' || typeof minted.credential !== 'string') return null;
+    const [rawExpiry, scope, owner, extra] = minted.username.split(':');
+    const expiry = Number(rawExpiry);
+    if (extra !== undefined || scope !== this.tag8 || owner !== label || !Number.isSafeInteger(expiry) || expiry * 1000 <= Date.now()) return null;
+    const creds = {...minted, expiry};
     this.gatewayCreds.set(name, creds);
     if (this.gatewayCreds.size > this.limits.maxHints * 2) this.gatewayCreds.delete(this.gatewayCreds.keys().next().value);
     return creds;
@@ -435,7 +455,7 @@ export class Room extends Emitter {
     // Gateway credentials go only to admitted members, never to an unauthenticated hint.
     if (this.ownGateway && (this.known.has(peer) || this.gatewayMembers.has(peer))) {
       const c = await this.gatewayCredsFor(peer);
-      gateway = { urls: this.ownGateway.urls, username: c.username, credential: c.credential, external: this.ownGateway.external, internal: this.ownGateway.internal };
+      if (c) gateway = { urls: this.ownGateway.urls, username: c.username, credential: c.credential, external: this.ownGateway.external, internal: this.ownGateway.internal };
     }
     return { v: 1, forward: this.forward, peers: [...this.links.values()].filter(l => l.connected && l.control.readyState === 'open').map(l => l.id), gateway };
   }
@@ -609,7 +629,7 @@ export class Room extends Emitter {
 
   canForward(a, b, key) {
     const la = this.links.get(a), lb = this.links.get(b);
-    return this.forward && !!la?.connected && !!lb?.connected && (this.relaying.has(key) || this.relaying.size < this.limits.maxBridges);
+    return this.forward && !!la?.connected && !!lb?.connected && (this.relaying.has(key) || this.bridgePending.has(key) || this.relaying.size + this.bridgePending.size < this.limits.maxBridges);
   }
 
   async onBridgeMessage(from, p) {
@@ -636,12 +656,27 @@ export class Room extends Emitter {
         this.bridgeOffers.delete(key);
         return this.startRelayBridge(key, a, b);
       }
+      case 'bridge-confirm': {
+        if (b !== this.id) return;
+        const link = this.links.get(a), existing = this.bridges.get(key);
+        if (!link || link.connected || existing?.via && existing.via !== from || !this.bridgeCandidates(link).some(l => l.id === from)) {
+          return this.signalTo(from, {kind: 'bridge-release', a, b});
+        }
+        this.bridges.set(key, {peer: a, via: from, state: 'accepted', requestedAt: Date.now()});
+        return this.signalTo(from, {kind: 'bridge-ready', a, b});
+      }
+      case 'bridge-ready': {
+        const pending = this.bridgePending.get(key);
+        if (!pending || pending.a !== a || pending.b !== b || from !== b || Date.now() - pending.at >= 30000 || !this.canForward(a, b, key)) return;
+        this.bridgePending.delete(key);
+        return this.activateRelayBridge(key, a, b);
+      }
       case 'bridge-active': {
         if (a !== this.id && b !== this.id) return;
         const peer = a === this.id ? b : a;
         const link = this.links.get(peer), bridge = this.bridges.get(key);
         // A second forwarder (both endpoints asked) or a stale one is released at once.
-        if (!link || link.connected || bridge?.via && bridge.via !== from || !this.bridgeCandidates(link).some(l => l.id === from)) { this.signalTo(from, { kind: 'bridge-release', a, b }); return; }
+        if (!link || link.connected || !bridge || bridge.via !== from || !['accepted', 'active'].includes(bridge.state) || !this.bridgeCandidates(link).some(l => l.id === from)) { this.signalTo(from, { kind: 'bridge-release', a, b }); return; }
         this.bridges.set(key, { peer, via: from, state: 'active', requestedAt: bridge?.requestedAt ?? Date.now() });
         this.counters.bridgesUsed++;
         if (link.phase < PHASE.BRIDGED) link.phase = PHASE.BRIDGED;
@@ -650,6 +685,11 @@ export class Room extends Emitter {
         return;
       }
       case 'bridge-release': {
+        const pending = this.bridgePending.get(key);
+        if (pending && (from === pending.a || from === pending.b)) {
+          this.bridgePending.delete(key);
+          this.signalTo(from === pending.a ? pending.b : pending.a, {kind: 'bridge-fail', a, b});
+        }
         const bridge = this.relaying.get(key);
         if (bridge && (from === bridge.a || from === bridge.b)) this.endRelayBridge(key, 'released');
         return;
@@ -683,24 +723,37 @@ export class Room extends Emitter {
   }
 
   async startRelayBridge(key, a, b) {
+    if (!this.canForward(a, b, key)) return;
+    this.bridgePending.set(key, {a, b, at: Date.now()});
+    await this.signalTo(b, {kind: 'bridge-confirm', a, b});
+  }
+
+  async activateRelayBridge(key, a, b) {
     const la = this.links.get(a), lb = this.links.get(b);
     if (!la?.connected || !lb?.connected) return this.signalTo(a, { kind: 'bridge-fail', a, b });
     if (!this.relaying.has(key)) { this.relaying.set(key, { a, b }); this.counters.bridgesServed++; }
+    const bridge = this.relaying.get(key);
+    const current = () => !this.closed && this.relaying.get(key) === bridge && la.connected && lb.connected;
     // Establish the authenticated forwarding relationship before sending attribution maps.
     await this.signalTo(a, { kind: 'bridge-active', a, b });
+    if (!current()) return;
     await this.signalTo(b, { kind: 'bridge-active', a, b });
+    if (!current()) return;
     await this.forwardTracks(la, lb);
+    if (!current()) return;
     await this.forwardTracks(lb, la);
   }
 
   async forwardTracks(fromLink, toLink) {
+    const key = pairKey(fromLink.id, toLink.id), bridge = this.relaying.get(key);
+    if (!bridge) return;
     const tracks = fromLink.ownTracks();
     const entry = toLink.forwardSenders.get(fromLink.id);
     const stream = entry?.stream ?? new MediaStream();
     if (!entry) toLink.forwardSenders.set(fromLink.id, { stream, senders: new Map() });
     // The receiver must learn the stream's origin before the renegotiation that carries it.
     await this.signalTo(toLink.id, { kind: 'forward-map', a: fromLink.id, b: toLink.id, origin: fromLink.id, stream: stream.id });
-    if (tracks.length) toLink.addForward(fromLink.id, tracks);
+    if (!this.closed && this.relaying.get(key) === bridge && fromLink.connected && toLink.connected && tracks.length) toLink.addForward(fromLink.id, tracks);
   }
 
   endRelayBridge(key, reason) {

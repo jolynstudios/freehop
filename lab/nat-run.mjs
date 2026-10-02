@@ -21,6 +21,7 @@ export const SCENARIOS = {
   'udpblock-gateway': { peers: 'a=udpblock g=upnp', gateways: ['g'], expect: { 'a-g': ['gateway'] } },
   'udpblock-pair-gateway': { peers: 'a=udpblock b=udpblock g=upnp', gateways: ['g'], expect: { 'a-g': ['gateway'], 'b-g': ['gateway'], 'a-b': ['relay'] } },
   'hard-pair-host-node': { peers: 'a=random b=random h=public', members: ['h'], expect: { 'a-b': ['relay'] } },
+  'host-node-gates-down': { peers: 'a=random b=random h=public', members: ['h'], expect: { 'a-b': ['relay'] }, closeGates: true },
   'udpblock-pair-host-node': { peers: 'a=udpblock b=udpblock h=public', members: ['h'], expect: { 'a-b': ['relay'] } },
   'ipv6-direct': { peers: 'a=v6 b=v6', expect: { 'a-b': ['direct'] }, requireIpv6: true },
   'gate-only': { peers: 'a=gateonly b=eim c=public', expect: { 'a-b': 'none', 'a-c': 'none', 'b-c': ['direct'] }, observeMs: 25000 }
@@ -62,14 +63,20 @@ try {
       { stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, NODE_TLS_REJECT_UNAUTHORIZED: '0' } });
     const lines = createInterface({ input: child.stdout });
     const logs = []; createInterface({ input: child.stderr }).on('line', l => { if (logs.length < 200) logs.push(l); });
-    const messages = [];
-    lines.on('line', l => { try { messages.push(JSON.parse(l)); } catch {} });
+    const messages = [], pending = new Map();
+    let requestId = 0;
+    const credentialsFor = (tag, peer) => new Promise((resolve, reject) => {
+      const id = ++requestId, timer = setTimeout(() => {pending.delete(id); reject(new Error('Credential broker timed out'));}, 5000);
+      pending.set(id, value => {clearTimeout(timer); resolve(value);});
+      child.stdin.write(JSON.stringify({type: 'credentials', requestId: id, tag, peer}) + '\n');
+    });
+    lines.on('line', l => { try { const m = JSON.parse(l); messages.push(m); if (m.type === 'credentials') {pending.get(m.requestId)?.(m.credentials); pending.delete(m.requestId);} } catch {} });
     const ready = await new Promise((resolve, reject) => {
       const t = setTimeout(() => reject(new Error('gateway did not start: ' + logs.join(' | '))), 20000);
       lines.on('line', l => { try { const m = JSON.parse(l); if (m.type === 'ready') { clearTimeout(t); resolve(m); } } catch {} });
       child.on('exit', code => { clearTimeout(t); reject(new Error('gateway exited ' + code + ': ' + logs.join(' | '))); });
     });
-    gatewayProcs.set(name, { child, messages, logs, info: ready.info, startStats: ready.stats, member: ready.member ?? null });
+    gatewayProcs.set(name, { child, messages, logs, credentialsFor, info: ready.info, startStats: ready.stats, member: ready.member ?? null });
     report.peers[name] = { gateway: { info: ready.info ? { urls: ready.info.urls, external: ready.info.external, internal: ready.info.internal } : null, mappings: ready.stats?.mappings ?? [] } };
     assert(ready.info, `gateway ${name} must obtain a public mapping`);
   }
@@ -84,7 +91,8 @@ try {
   report.phase = 'join';
   const t0 = Date.now();
   for (const p of launched) {
-    await openAndJoin(p, services.origin, { gates: [services.gateUrl], secret, app: 'lab', media: { audio: true, video: true },
+    if ((scenario.gateways ?? []).includes(p.name)) await p.page.exposeFunction('freehopTestCredentials', gatewayProcs.get(p.name).credentialsFor);
+    await openAndJoin(p, services.origin, { gates: [services.gateUrl], stun: services.gate.stunUrls, secret, app: 'lab', media: { audio: true, video: true },
       gateway: (scenario.gateways ?? []).includes(p.name) ? gatewayProcs.get(p.name).info : undefined });
   }
   const idName = Object.fromEntries([...launched.map(p => [p.id, p.name]), ...[...gatewayProcs].filter(([, g]) => g.member).map(([n, g]) => [g.member, n])]);
@@ -120,6 +128,16 @@ try {
   } else {
     const end = Date.now() + 75000;
     while (Date.now() < end) { result = evaluate(await sample()); if (satisfied(result)) break; await sleep(1000); }
+  }
+  if (scenario.closeGates) {
+    assert(satisfied(result), 'media must flow before the outage');
+    await services.gate.close();
+    await sleep(12000); // exceed the gateway member's departure grace period
+    const after = evaluate(await sample());
+    for (const pair of pairs) for (const [name, side] of Object.entries(after[pair])) {
+      assert(side.connected && side.audioPackets > result[pair][name].audioPackets + 100 && side.videoFrames > result[pair][name].videoFrames + 30, 'host relay media must survive all gates disappearing');
+    }
+    report.afterGatesClosed = after; result = after;
   }
   report.elapsedMs = Date.now() - t0;
   report.pairs = result;

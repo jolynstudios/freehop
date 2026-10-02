@@ -20,11 +20,11 @@ export async function connect(ticket, options = {}) {
   // Desktop apps expose their gateway through the Freehop preload (window.freehopGateway).
   const desktop = options.desktopGateway === undefined ? globalThis.freehopGateway : options.desktopGateway;
   let gateway = options.gateway;
-  if (!gateway && desktop?.info) { try { gateway = await desktop.info(); } catch { gateway = null; } }
+  if (!gateway && desktop?.info && desktop?.credentialsFor) { try { const info = await desktop.info(); if (info) gateway = {...info, credentialsFor: (tag, peer) => desktop.credentialsFor(tag, peer)}; } catch { gateway = null; } }
   const allow = async secret => { if (gateway && desktop?.allowRoom) await desktop.allowRoom((await deriveRoom(secret, ticket.app)).tag).catch(() => {}); };
   await allow(ticket.secret);
 
-  const room = await join({ ...options, gates: ticket.gates, secret: ticket.secret, app: ticket.app, auth: ticket.auth, gateway: gateway ?? undefined });
+  const room = await join({ ...options, gates: ticket.gates, stun: options.stun ?? ticket.stun, secret: ticket.secret, app: ticket.app, auth: ticket.auth, gateway: gateway ?? undefined });
   let current = ticket;
   let updating = Promise.resolve();
   const trackPeers = new Map();   // remote track id -> origin peer (direct or forwarded)
@@ -56,8 +56,10 @@ export async function connect(ticket, options = {}) {
       updating = task.catch(() => {});
       return task;
     },
-    /** Remove a peer locally right away (kick), and revoke it on the desktop gateway. */
-    async kick(peer) { await remove(peer); },
+    /** Local disconnection only. Membership removal requires authority.kick() and update() on all remaining members. */
+    async disconnectPeer(peer) { await remove(peer); },
+    /** Fail closed on the old, misleading name: local removal cannot revoke room membership. */
+    async kick() { throw new Error('session.kick() cannot revoke membership. Use authority.kick() and distribute replacement tickets; use disconnectPeer() for local removal.'); },
     /** Attach a remote track to a media element (muted video elements still need play()). */
     attach(track, element) {
       element.srcObject = new MediaStream([track]);

@@ -87,7 +87,7 @@ test('token admission and room binding', async () => {
     assert.equal(bad.error, 'auth');
     const expired = mintGateToken(secret, { exp: Math.floor(Date.now() / 1000) - 5 });
     assert.equal(verifyGateToken(secret, expired), null);
-    const bound = mintGateToken(secret, { exp: Math.floor(Date.now() / 1000) + 60, room });
+    const bound = mintGateToken(secret, { exp: Math.floor(Date.now() / 1000) + 60, room, aud: gate.url() });
     const ok = await joined(gate.url(), room, randomTag(), { t: 'hello', v: 1, auth: bound });
     assert.equal(ok.peers.t, 'peers');
     const wrong = await joined(gate.url(), other, randomTag(), { t: 'hello', v: 1, auth: bound });
@@ -169,7 +169,7 @@ test('an admitted socket loses access when its gate token expires', async () => 
   const secret = 'expiry-regression', expires = Math.floor(Date.now() / 1000) + 2;
   const gate = await createGate({port: 0, tokenSecret: secret, limits: {pingMs: 50}});
   try {
-    const ws = await joined(gate.url(), randomTag(32), randomTag(), {t: 'hello', v: 1, auth: mintGateToken(secret, {exp: expires})});
+    const ws = await joined(gate.url(), randomTag(32), randomTag(), {t: 'hello', v: 1, auth: mintGateToken(secret, {exp: expires, aud: gate.url()})});
     assert.equal(ws.peers.t, 'peers');
     const event = await Promise.race([ws.closed, new Promise((_, reject) => setTimeout(() => reject(new Error('expired socket stayed open')), 3000))]);
     assert.equal(event.code, 1008);
@@ -209,4 +209,16 @@ test('STUN Binding answers obey the global reflection budget', async () => {
     assert.equal(responder.stats().responses, 2);
     assert.equal(responder.stats().rateLimited, 8);
   } finally {socket.close(); await responder.close();}
+});
+
+test('a gate rejects a valid token minted for another gate with the same signing key', async () => {
+  const secret = randomTag(32), room = randomTag(32);
+  const a = await createGate({port: 0, tokenSecret: secret}), b = await createGate({port: 0, tokenSecret: secret});
+  try {
+    const token = mintGateToken(secret, {exp: Math.floor(Date.now() / 1000) + 60, room, aud: a.url()});
+    const wrong = await joined(b.url(), room, randomTag(), {t: 'hello', v: 1, auth: token});
+    assert.equal(wrong.error, 'auth');
+    const right = await joined(a.url(), room, randomTag(), {t: 'hello', v: 1, auth: token});
+    assert.equal(right.peers.t, 'peers'); right.close(); wrong.close();
+  } finally {await a.close(); await b.close();}
 });

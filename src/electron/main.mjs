@@ -14,14 +14,21 @@ const TAG = /^[A-Za-z0-9_-]{8,64}$/, PEER = /^[A-Za-z0-9_-]{22}$/;
 
 export function installFreehopGateway({ ipcMain, allowedOrigins, options = {}, log = () => {} }) {
   if (!Array.isArray(allowedOrigins) || !allowedOrigins.length || !allowedOrigins.every(origin => {
-    try { const url = new URL(origin); return ['http:', 'https:'].includes(url.protocol) && url.origin === origin; }
+    try { const url = new URL(origin); return (url.protocol === 'https:' || url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) && url.origin === origin; }
     catch { return false; }
-  })) throw new TypeError('Specify allowedOrigins as exact HTTP(S) origins for the gateway renderer.');
+  })) throw new TypeError('Specify allowedOrigins as exact HTTPS origins (HTTP is allowed only on loopback) for the gateway renderer.');
   const origins = new Set(allowedOrigins);
   // Validate at the privileged boundary too: a preload check alone cannot authorize IPC.
   const trusted = event => {
-    try { return event.senderFrame === event.sender.mainFrame && origins.has(new URL(event.senderFrame.url).origin); }
+    try { return !closed && event.senderFrame === event.sender.mainFrame && origins.has(new URL(event.senderFrame.url).origin); }
     catch { return false; }
+  };
+  const grants = new WeakMap();
+  const roomsFor = event => {
+    const origin = new URL(event.senderFrame.url).origin;
+    let grant = grants.get(event.sender);
+    if (!grant || grant.origin !== origin) { grant = {origin, tags: new Set()}; grants.set(event.sender, grant); }
+    return grant.tags;
   };
   let gateway = null, starting = null, closed = false;
   const ensure = () => {
@@ -31,16 +38,21 @@ export function installFreehopGateway({ ipcMain, allowedOrigins, options = {}, l
     return starting;
   };
   ipcMain.handle('freehop:gateway-info', async event => { if (!trusted(event)) return null; try { const g = await ensure(); return trusted(event) ? g.info() : null; } catch (error) { log('gateway-unavailable', { message: error.message }); return null; } });
-  ipcMain.handle('freehop:allow-room', async (event, tag) => { if (trusted(event) && typeof tag === 'string' && TAG.test(tag)) { const g = await ensure(); if (trusted(event)) g.allowRoom(tag); } });
-  ipcMain.handle('freehop:revoke-peer', async (event, tag, peer) => {
-    if (trusted(event) && gateway && typeof tag === 'string' && TAG.test(tag) && typeof peer === 'string' && PEER.test(peer)) gateway.revokePeer(tag, peer);
+  ipcMain.handle('freehop:allow-room', async (event, tag) => { if (trusted(event) && typeof tag === 'string' && TAG.test(tag)) { const origin = new URL(event.senderFrame.url).origin; const g = await ensure(); if (trusted(event) && new URL(event.senderFrame.url).origin === origin) { const rooms = roomsFor(event); if (rooms.size >= 64 && !rooms.has(tag)) return; g.allowRoom(tag); rooms.add(tag); } } });
+  ipcMain.handle('freehop:credentials', async (event, tag, peer) => {
+    if (!trusted(event) || typeof tag !== 'string' || !TAG.test(tag) || typeof peer !== 'string' || !(peer === 'self' || PEER.test(peer)) || !roomsFor(event).has(tag)) return null;
+    const g = await ensure();
+    return trusted(event) && roomsFor(event).has(tag) ? g.credentialsFor(tag, peer) : null;
   });
-  ipcMain.handle('freehop:revoke-room', async (event, tag) => { if (trusted(event) && gateway && typeof tag === 'string' && TAG.test(tag)) gateway.revokeRoom(tag); });
+  ipcMain.handle('freehop:revoke-peer', async (event, tag, peer) => {
+    if (trusted(event) && gateway && typeof tag === 'string' && TAG.test(tag) && roomsFor(event).has(tag) && typeof peer === 'string' && PEER.test(peer)) gateway.revokePeer(tag, peer);
+  });
+  ipcMain.handle('freehop:revoke-room', async (event, tag) => { if (trusted(event) && gateway && typeof tag === 'string' && TAG.test(tag) && roomsFor(event).has(tag)) { gateway.revokeRoom(tag); roomsFor(event).delete(tag); } });
   return {
     get gateway() { return gateway; },
     async close() {
       closed = true;
-      for (const channel of ['freehop:gateway-info', 'freehop:allow-room', 'freehop:revoke-peer', 'freehop:revoke-room']) ipcMain.removeHandler(channel);
+      for (const channel of ['freehop:gateway-info', 'freehop:credentials', 'freehop:allow-room', 'freehop:revoke-peer', 'freehop:revoke-room']) ipcMain.removeHandler(channel);
       const g = gateway ?? await starting?.catch(() => null);
       await g?.close();
     }

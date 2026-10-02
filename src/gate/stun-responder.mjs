@@ -8,7 +8,7 @@ export async function createStunResponder({ host = '0.0.0.0', port = 3478, rateP
   const type = host.includes(':') ? 'udp6' : 'udp4';
   const socket = dgram.createSocket({ type, ipv6Only: type === 'udp6' });
   const stats = { requests: 0, responses: 0, bytesIn: 0, bytesOut: 0, dropped: 0, rateLimited: 0 };
-  let buckets = new Map();
+  const buckets = new Map();
   const total = { level: totalBurst, at: Date.now() };
   const allow = address => {
     const now = Date.now();
@@ -16,7 +16,7 @@ export async function createStunResponder({ host = '0.0.0.0', port = 3478, rateP
     if (total.level < 1) return false;
     let b = buckets.get(address);
     if (!b) {
-      if (buckets.size > 50000) buckets = new Map();
+      if (buckets.size > 50000) buckets.delete(buckets.keys().next().value);
       b = { level: burst, at: now }; buckets.set(address, b);
     }
     b.level = Math.min(burst, b.level + (now - b.at) / 1000 * ratePerSec); b.at = now;

@@ -12,6 +12,7 @@ const record = e => { if (events.length < 2000) events.push({ ms: Math.round(per
 window.peerlaneTest = {
   events,
   async join(options) {
+    if (options.gateway) options.gateway.credentialsFor = window.freehopTestCredentials;
     const room = await join({ ...options, log: (name, d) => record({ t: 'log', name, message: d?.message }) });
     window.room = room;
     room.on('peer', e => record({ t: 'peer', id: e.id }));
