@@ -1,0 +1,1400 @@
+/*
+ * Hopper's meeting: a dark charcoal stage, signal-yellow accents (speaking ring, off states,
+ * the "built on Freehop" badge) and coral only for leaving and muted microphones.
+ */
+
+.stage {
+  --hp-stage: #1e1e1e;
+  --hp-tile: #333333;
+  --hp-raise: #3a3a3a;
+  --hp-raise-hover: #4b4b4b;
+  --hp-split: #2c2c2c;
+  --hp-line: #4a4a4a;
+  --hp-soft: #d4d4dc;
+  --hp-gap: 12px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: calc(100vh - var(--ifm-navbar-height));
+  height: calc(100dvh - var(--ifm-navbar-height));
+  min-height: 540px;
+  padding: 12px clamp(10px, 2vw, 22px) 14px;
+  background: var(--hp-stage);
+  color: #ffffff;
+  overflow: hidden;
+}
+
+/* ---------- Top bar ---------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand svg {
+  flex: none;
+}
+
+.markTile {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--fh-yellow);
+}
+
+.brandName {
+  font-family: var(--fh-display);
+  font-size: 1.6rem;
+  line-height: 1;
+  color: #ffffff;
+  letter-spacing: 0.01em;
+}
+
+.builtOn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: none;
+  background: var(--fh-yellow);
+  color: var(--fh-charcoal);
+  border-radius: var(--fh-round);
+  padding: 0.3rem 0.85rem 0.3rem 0.8rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 0.15s var(--fh-ease), transform 0.15s var(--fh-ease);
+}
+
+.builtOn img {
+  display: block;
+}
+
+.builtOn strong {
+  font-family: var(--fh-display);
+  font-weight: 400;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.builtOn:hover {
+  color: var(--fh-charcoal);
+  background: #ffffff;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.builtOn:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+/* ---------- Banners ---------- */
+
+.banners {
+  display: grid;
+  gap: 8px;
+}
+
+.banner {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  background: var(--fh-yellow);
+  color: var(--fh-charcoal);
+  border-radius: 12px;
+  padding: 0.5rem 0.55rem 0.5rem 0.95rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.banner > span {
+  flex: 1 1 16rem;
+}
+
+.bannerWarn {
+  background: #ffffff;
+  border-left: 6px solid var(--fh-coral);
+  padding: 0.6rem 0.95rem;
+}
+
+.bannerClose,
+.bannerAction {
+  font: inherit;
+  cursor: pointer;
+  border: 0;
+}
+
+.bannerClose {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--fh-charcoal);
+}
+
+.bannerClose:hover {
+  background: rgba(51, 51, 51, 0.12);
+}
+
+.bannerAction {
+  flex: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: var(--fh-round);
+  background: var(--fh-charcoal);
+  color: var(--fh-yellow);
+}
+
+.banner :focus-visible {
+  outline: 3px solid var(--fh-charcoal);
+  outline-offset: 2px;
+}
+
+/* ---------- Stage body and tiles ---------- */
+
+.body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  gap: var(--hp-gap);
+}
+
+.tilesArea {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.tiles {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: var(--hp-gap);
+}
+
+.tile {
+  position: relative;
+  flex: none;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--hp-tile);
+  container-type: size;
+  isolation: isolate;
+}
+
+/* The speaking ring sits above the video, in Freehop yellow. */
+.tile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 4px solid var(--fh-yellow);
+  opacity: 0;
+  transition: opacity 0.15s var(--fh-ease);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.speaking::after {
+  opacity: 1;
+}
+
+.video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #2a2a2a;
+}
+
+.mirrored {
+  transform: scaleX(-1);
+}
+
+.hiddenVideo {
+  visibility: hidden;
+}
+
+.avatarWrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px 44px;
+  text-align: center;
+}
+
+.avatar {
+  width: clamp(48px, 34cqmin, 132px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--fh-display);
+  font-size: clamp(1.2rem, 13cqmin, 3.1rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  padding-top: 0.06em;
+}
+
+.tone_yellow {
+  background: var(--fh-yellow);
+  color: var(--fh-charcoal);
+}
+
+.tone_azure {
+  background: var(--fh-azure);
+  color: #ffffff;
+}
+
+.tone_coral {
+  background: var(--fh-coral);
+  color: #ffffff;
+}
+
+.tone_white {
+  background: #ffffff;
+  color: var(--fh-charcoal);
+}
+
+.avatarStatus {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--hp-soft);
+  max-width: 22rem;
+}
+
+@container (max-height: 150px) {
+  .avatarStatus {
+    display: none;
+  }
+}
+
+.tileTop {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  max-width: calc(100% - 58px);
+}
+
+.pathBadge {
+  font-size: 0.82rem;
+}
+
+.tileState {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+}
+
+.mutedBadge,
+.talkBadge {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+.mutedBadge {
+  display: grid;
+  place-items: center;
+  background: var(--fh-coral);
+  color: #ffffff;
+}
+
+.talkBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: var(--fh-yellow);
+}
+
+/* Three dots that hop while someone talks. */
+.talkBadge i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--fh-charcoal);
+  animation: hop 0.9s var(--fh-ease) infinite;
+}
+
+.talkBadge i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.talkBadge i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes hop {
+  0%,
+  60%,
+  100% {
+    transform: translateY(2px);
+  }
+  30% {
+    transform: translateY(-4px);
+  }
+}
+
+.nameTag {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  max-width: calc(100% - 20px);
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--fh-round);
+  background: rgba(24, 24, 24, 0.84);
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.nameText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.youText {
+  flex: none;
+  font-family: var(--fh-mono);
+  font-size: 0.72rem;
+  color: var(--fh-yellow);
+}
+
+.soundButton {
+  position: absolute;
+  left: 50%;
+  bottom: 48px;
+  z-index: 4;
+  transform: translateX(-50%);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  padding: 0.5rem 1rem;
+  border: 0;
+  border-radius: var(--fh-round);
+  background: var(--fh-yellow);
+  color: var(--fh-charcoal);
+  cursor: pointer;
+}
+
+.soundButton:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+/* Your own view floats in a corner when exactly one other person is here. */
+.pip {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 5;
+  width: clamp(132px, 24%, 300px);
+  aspect-ratio: 16 / 9;
+  border: 3px solid var(--hp-stage);
+  border-radius: 16px;
+}
+
+.pip .nameTag {
+  left: 7px;
+  bottom: 7px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+}
+
+.pip .tileState {
+  top: 7px;
+  right: 7px;
+}
+
+/* ---------- Waiting for others ---------- */
+
+.invite {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 1.25rem;
+  border-radius: 18px;
+  border: 2px dashed #575757;
+  background: #262626;
+  text-align: center;
+  overflow: hidden;
+  container-type: size;
+}
+
+.inviteArt {
+  width: min(190px, 58cqw);
+  height: auto;
+  overflow: visible;
+}
+
+.inviteHop {
+  animation: inviteHop 1.5s cubic-bezier(0.33, 0, 0.3, 1) infinite;
+}
+
+.inviteShadow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: inviteShadow 1.5s cubic-bezier(0.33, 0, 0.3, 1) infinite;
+}
+
+@keyframes inviteHop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(-30px);
+  }
+}
+
+@keyframes inviteShadow {
+  0%,
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  45% {
+    transform: scaleX(0.6);
+    opacity: 0.6;
+  }
+}
+
+.inviteTitle {
+  margin: 0.2rem 0 0;
+  font-family: var(--fh-display);
+  font-weight: 400;
+  font-size: clamp(1.45rem, 8cqmin, 2.4rem);
+  line-height: 1;
+  color: #ffffff;
+  text-wrap: balance;
+}
+
+.inviteText {
+  margin: 0;
+  max-width: 27rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--hp-soft);
+}
+
+.inviteCode {
+  margin: 0.1rem 0;
+  font-family: var(--fh-mono);
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  color: var(--fh-yellow);
+}
+
+.inviteCopy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  padding: 0.6rem 1.15rem 0.6rem 0.95rem;
+  border: 0;
+  border-radius: var(--fh-round);
+  background: var(--fh-yellow);
+  color: var(--fh-charcoal);
+  cursor: pointer;
+  transition: transform 0.15s var(--fh-ease);
+}
+
+.inviteCopy:hover {
+  transform: translateY(-2px) rotate(-1deg);
+}
+
+.inviteCopy:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+@container (max-height: 330px) {
+  .inviteArt {
+    display: none;
+  }
+}
+
+@container (max-height: 250px) {
+  .inviteText {
+    display: none;
+  }
+}
+
+/* ---------- New message toast ---------- */
+
+.toast {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 6;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  max-width: min(26rem, calc(100% - 24px));
+  padding: 0.6rem 0.95rem;
+  border: 0;
+  border-radius: 14px;
+  background: #ffffff;
+  color: var(--fh-charcoal);
+  font: inherit;
+  font-size: 0.9375rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.toast strong {
+  flex: none;
+  font-weight: 600;
+}
+
+.toast span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Dock ---------- */
+
+.dock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding-top: 2px;
+}
+
+.dockInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--fh-mono);
+  font-size: 0.875rem;
+  color: var(--hp-soft);
+  white-space: nowrap;
+}
+
+.dockDivider {
+  flex: none;
+  width: 1px;
+  height: 1rem;
+  background: var(--hp-line);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.side {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--hp-raise);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.15s var(--fh-ease), transform 0.15s var(--fh-ease);
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--hp-raise-hover);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.btn:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.btnOff {
+  background: var(--fh-yellow);
+  color: var(--fh-charcoal);
+}
+
+.btnOff:hover:not(:disabled) {
+  background: #fff176;
+}
+
+.btnActive {
+  background: #ffffff;
+  color: var(--fh-charcoal);
+}
+
+.btnActive:hover:not(:disabled) {
+  background: #ececf3;
+}
+
+.leave {
+  width: 68px;
+  border-radius: var(--fh-round);
+  background: var(--fh-coral);
+}
+
+.leave:hover:not(:disabled) {
+  background: #d22d1f;
+}
+
+.split {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--fh-round);
+  background: var(--hp-split);
+}
+
+.caret {
+  width: 30px;
+  border-radius: var(--fh-round) 0 0 var(--fh-round);
+  background: transparent;
+  color: var(--hp-soft);
+}
+
+.caret:hover:not(:disabled) {
+  background: #383838;
+}
+
+.count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 5px;
+  border-radius: 11px;
+  border: 2px solid var(--hp-stage);
+  background: var(--fh-yellow);
+  color: var(--fh-charcoal);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+}
+
+.unread {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--hp-raise);
+  background: var(--fh-coral);
+}
+
+/* Tooltips: shown on hover (pointer devices) and on keyboard focus. */
+.btn[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translate(-50%, 4px);
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--fh-charcoal);
+  font-family: var(--fh-sans);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s var(--fh-ease), transform 0.12s var(--fh-ease);
+  z-index: 20;
+}
+
+@media (hover: hover) {
+  .btn[data-tip]:hover::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.btn[data-tip]:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.side .btn:last-child[data-tip]::after {
+  left: auto;
+  right: 0;
+  transform: translate(0, 4px);
+}
+
+.side .btn:last-child[data-tip]:focus-visible::after {
+  transform: translate(0, 0);
+}
+
+@media (hover: hover) {
+  .side .btn:last-child[data-tip]:hover::after {
+    transform: translate(0, 0);
+  }
+}
+
+/* ---------- Side panel ---------- */
+
+.panel {
+  flex: 0 0 360px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #ffffff;
+  color: var(--fh-charcoal);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.85rem 0.7rem 0.45rem 1.15rem;
+}
+
+.panelTitle {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--fh-ink);
+}
+
+.panelTitle:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.panelClose {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--fh-charcoal);
+  cursor: pointer;
+}
+
+.panelClose:hover {
+  background: var(--fh-surface);
+}
+
+.panelBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 0.3rem 1.15rem 1.1rem;
+}
+
+.panelLead {
+  margin: 0 0 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.056em;
+  text-transform: uppercase;
+  color: var(--fh-fog);
+}
+
+.panelHint {
+  margin: 0.8rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--fh-fog);
+}
+
+/* People */
+
+.people {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--fh-lavender);
+}
+
+.miniAvatar {
+  flex: none;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  border: 2px solid var(--fh-charcoal);
+  display: grid;
+  place-items: center;
+  font-family: var(--fh-display);
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.personMain {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.6rem;
+}
+
+.personName {
+  font-weight: 500;
+  color: var(--fh-ink);
+  overflow-wrap: anywhere;
+}
+
+.personYou {
+  color: var(--fh-fog);
+  font-weight: 400;
+}
+
+.linkButton {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--fh-azure-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.micState {
+  flex: none;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--fh-fog);
+}
+
+.micStateOff {
+  background: var(--fh-coral);
+  color: #ffffff;
+}
+
+.micStateTalk {
+  background: var(--fh-yellow);
+  color: var(--fh-charcoal);
+}
+
+.renameForm {
+  display: flex;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.renameInput {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: inherit;
+  font-size: 0.9375rem;
+  padding: 0.4rem 0.6rem;
+  border: 2px solid var(--fh-charcoal);
+  border-radius: 8px;
+  color: var(--fh-ink);
+}
+
+.smallPrimary,
+.primarySmall {
+  font: inherit;
+  font-weight: 600;
+  border: 0;
+  border-radius: var(--fh-round);
+  background: var(--fh-charcoal);
+  color: var(--fh-yellow);
+  cursor: pointer;
+}
+
+.smallPrimary {
+  flex: none;
+  font-size: 0.875rem;
+  padding: 0.4rem 0.9rem;
+}
+
+.smallPrimary:disabled {
+  background: var(--fh-lavender);
+  color: var(--fh-fog);
+  cursor: not-allowed;
+}
+
+/* Chat */
+
+.chat {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chatNote {
+  margin: 0 0 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  background: var(--fh-surface);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--fh-slate);
+}
+
+.messages {
+  flex: 1 1 auto;
+  min-height: 7rem;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0 0.1rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.noMessages {
+  margin: auto 0;
+  text-align: center;
+  font-size: 0.9375rem;
+  color: var(--fh-fog);
+}
+
+.message {
+  margin: 0.7rem 0 0;
+}
+
+.messageGrouped {
+  margin-top: 0.15rem;
+}
+
+.messageHead {
+  margin: 0 0 0.1rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.messageHead strong {
+  font-weight: 600;
+  color: var(--fh-ink);
+  overflow-wrap: anywhere;
+}
+
+.message[data-mine] .messageHead strong {
+  color: var(--fh-azure-text);
+}
+
+.messageHead time {
+  flex: none;
+  font-family: var(--fh-mono);
+  font-size: 0.75rem;
+  color: var(--fh-fog);
+}
+
+.messageText {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--fh-slate);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.chatForm {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  padding: 0.4rem 0.4rem 0.4rem 0.6rem;
+  border: 2px solid var(--fh-lavender);
+  border-radius: 16px;
+  background: var(--fh-surface);
+  transition: border-color 0.15s var(--fh-ease);
+}
+
+.chatForm:focus-within {
+  border-color: var(--fh-charcoal);
+}
+
+.chatInput {
+  flex: 1 1 auto;
+  min-width: 0;
+  resize: none;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--fh-ink);
+  padding: 0.35rem 0.2rem;
+}
+
+.chatInput:focus {
+  outline: none;
+}
+
+.sendButton {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fh-charcoal);
+  color: var(--fh-yellow);
+  cursor: pointer;
+}
+
+.sendButton:disabled {
+  background: var(--fh-lavender);
+  color: var(--fh-fog);
+  cursor: not-allowed;
+}
+
+.chatMeta {
+  margin: 0.4rem 0 0;
+  min-height: 1.2em;
+  font-size: 0.75rem;
+  color: var(--fh-fog);
+}
+
+/* Meeting details */
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.infoHeading {
+  margin: 0.9rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.056em;
+  text-transform: uppercase;
+  color: var(--fh-fog);
+}
+
+.info > .infoHeading:first-child {
+  margin-top: 0;
+}
+
+.linkField {
+  width: 100%;
+  font-family: var(--fh-mono);
+  font-size: 0.8125rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--fh-lavender);
+  border-radius: 8px;
+  background: var(--fh-surface);
+  color: var(--fh-ink);
+}
+
+.primarySmall {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9375rem;
+  padding: 0.55rem 1.05rem 0.55rem 0.85rem;
+}
+
+.infoCode {
+  margin: 0.15rem 0 0;
+  font-size: 0.875rem;
+  color: var(--fh-slate);
+}
+
+.steps {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--fh-slate);
+}
+
+.steps li {
+  margin: 0;
+}
+
+.steps strong {
+  color: var(--fh-ink);
+  font-weight: 600;
+}
+
+.trackers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.tracker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.5rem;
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.trackerDot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  border: 2px solid var(--fh-charcoal);
+  background: #ffffff;
+}
+
+.gate_joined .trackerDot {
+  background: var(--fh-teal);
+}
+
+.gate_connecting .trackerDot,
+.gate_reconnecting .trackerDot {
+  background: var(--fh-yellow);
+}
+
+.trackerName {
+  font-family: var(--fh-mono);
+  color: var(--fh-ink);
+}
+
+.trackerState {
+  color: var(--fh-fog);
+}
+
+.infoFoot {
+  margin: 0.9rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--fh-lavender);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--fh-slate);
+}
+
+.infoFoot a {
+  color: var(--fh-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Audio and video */
+
+.devices {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.deviceField {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.deviceLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--fh-ink);
+}
+
+.deviceSelect {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+  font-size: 0.9375rem;
+  padding: 0.55rem 0.7rem;
+  border: 2px solid var(--fh-lavender);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--fh-ink);
+  text-overflow: ellipsis;
+}
+
+.deviceSelect:hover {
+  border-color: var(--fh-mist);
+}
+
+/* ---------- Smaller screens ---------- */
+
+@media (max-width: 1023px) {
+  .panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(360px, 100%);
+    z-index: 8;
+  }
+}
+
+@media (max-width: 720px) {
+  .stage {
+    --hp-gap: 8px;
+  }
+  .dock {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+  .dockInfo {
+    display: none;
+  }
+  .controls,
+  .side {
+    gap: 6px;
+  }
+  .btn {
+    width: 44px;
+    height: 44px;
+  }
+  .caret {
+    width: 24px;
+  }
+  .leave {
+    width: 56px;
+  }
+  .controls .split:first-child .btn:first-child[data-tip]::after {
+    left: 0;
+    transform: translate(0, 4px);
+  }
+  .controls .split:first-child .btn:first-child[data-tip]:focus-visible::after {
+    transform: translate(0, 0);
+  }
+  .pip {
+    width: 30%;
+    aspect-ratio: 3 / 4;
+    right: 8px;
+    bottom: 8px;
+  }
+  .panel {
+    left: 0;
+    width: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .brandName {
+    display: none;
+  }
+  .builtOn {
+    font-size: 0.75rem;
+    padding: 0.28rem 0.7rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .btn {
+    width: 42px;
+    height: 42px;
+  }
+  .caret {
+    width: 22px;
+  }
+  .leave {
+    width: 52px;
+  }
+  .builtOnWide {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .talkBadge i,
+  .inviteHop,
+  .inviteShadow {
+    animation: none;
+  }
+  .btn,
+  .btn[data-tip]::after,
+  .tile::after,
+  .builtOn,
+  .inviteCopy,
+  .chatForm {
+    transition: none;
+  }
+  .inviteCopy:hover,
+  .builtOn:hover {
+    transform: none;
+  }
+}

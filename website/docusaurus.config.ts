@@ -122,6 +122,7 @@ const config: Config = {
         {to: '/demos', label: 'Demos', position: 'left'},
         {to: '/docs/protocol', label: 'Protocol', position: 'left'},
         {to: '/demo', label: 'Live call', position: 'right', className: 'navbar-live-call'},
+        {to: '/hopper', label: 'Hopper', position: 'right', className: 'navbar-hopper'},
         {href: GITHUB, label: 'GitHub', position: 'right', className: 'navbar-github'},
       ],
     },

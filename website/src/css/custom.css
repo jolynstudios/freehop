@@ -278,6 +278,52 @@ svg.fh-offscreen * {
   }
 }
 
+/* Hopper, the Meet(up)-like demo: a white pill with the hopper mark, next to Live call. */
+.navbar__item.navbar__link.navbar-hopper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--fh-white);
+  color: var(--fh-charcoal);
+  border: 2px solid var(--fh-charcoal);
+  border-radius: var(--fh-round);
+  padding: calc(0.45rem - 2px) 1rem calc(0.45rem - 2px) 0.5rem;
+  margin-left: 0.5rem;
+  font-weight: 600;
+  transition: transform 0.18s var(--fh-ease), background-color 0.18s var(--fh-ease);
+}
+
+.navbar__item.navbar__link.navbar-hopper::before,
+.navbar-sidebar .menu__link.navbar-hopper::before {
+  content: '';
+  flex: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin: -0.3rem 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' width='64' height='64'%3E%3Cpath d='M4 58 Q4 47 10.5 41' fill='none' stroke='%23007fff' stroke-width='4.6' stroke-linecap='round' stroke-dasharray='0.1 7.2'/%3E%3Cg stroke='%23333333' stroke-width='4' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M27 23 C19 18 14.5 9.5 17.5 5.5 C21 2 28.5 10 31.5 20 Z' fill='%23ffe600'/%3E%3Cpath d='M33.5 21 C31.5 11 33.5 3 38.5 3 C43.5 4 41.5 14 38.5 22 Z' fill='%23ffe600'/%3E%3Cpath d='M27 47.5 C22 51 18 53 15 53.5' fill='none' stroke-width='5'/%3E%3Cpath d='M33 51 C30 55 27 57.5 24 58.5' fill='none' stroke-width='5'/%3E%3Ccircle cx='37.5' cy='35.5' r='16' fill='%23ffe600'/%3E%3Ccircle cx='44' cy='31.5' r='5.4' fill='%23ffffff' stroke-width='3'/%3E%3C/g%3E%3Ccircle cx='45.4' cy='32.1' r='2.5' fill='%23333333'/%3E%3Ccircle cx='53' cy='38.5' r='2.8' fill='%23ef3b2c'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.navbar__item.navbar__link.navbar-hopper:hover,
+.navbar__item.navbar__link.navbar-hopper.navbar__link--active {
+  background: var(--fh-yellow);
+  color: var(--fh-charcoal);
+}
+
+.navbar__item.navbar__link.navbar-hopper:hover {
+  transform: translateY(-1px);
+}
+
+html.fh-home:not(.fh-scrolled) .navbar__item.navbar__link.navbar-hopper:hover {
+  background: var(--fh-white);
+}
+
+.navbar-sidebar .menu__link.navbar-hopper {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 600;
+}
+
 .navbar__item.navbar__link.navbar-github {
   display: inline-flex;
   align-items: center;
@@ -313,11 +359,31 @@ svg.fh-offscreen * {
     gap: 0.4rem;
     margin-left: 0;
   }
+  .navbar__item.navbar__link.navbar-hopper {
+    font-size: 0;
+    gap: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    margin-left: 0.4rem;
+    justify-content: center;
+  }
+  .navbar__item.navbar__link.navbar-hopper::before {
+    width: 1.55rem;
+    height: 1.55rem;
+    margin: 0;
+  }
   .navbar__title {
     font-size: 1.65rem;
   }
   .navbar__brand {
     margin-right: 0.5rem;
+  }
+}
+
+@media (max-width: 359px) {
+  .navbar__item.navbar__link.navbar-hopper {
+    display: none;
   }
 }
 
@@ -798,5 +864,11 @@ a:hover > .fh-chevron::after,
   }
   .navbar__item.navbar__link.navbar-live-call::before {
     animation: none;
+  }
+  .navbar__item.navbar__link.navbar-hopper {
+    transition: none;
+  }
+  .navbar__item.navbar__link.navbar-hopper:hover {
+    transform: none;
   }
 }
