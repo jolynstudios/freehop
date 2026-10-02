@@ -263,3 +263,18 @@
     animation: none;
   }
 }
+
+.runtime {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  margin: 0 0 0.65rem;
+  color: var(--fh-slate);
+  font-size: 0.8125rem;
+}
+
+.runtime strong {
+  font-weight: 500;
+}

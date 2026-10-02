@@ -9,20 +9,33 @@ import styles from './Quickstart.module.css';
 const TABS = [
   {
     id: 'client',
-    step: 'Clients join with a ticket',
-    note: 'connect() does the rest: gates, sealed signalling, the path ladder.',
+    label: 'Browser',
+    runtime: 'Runs in the participant’s browser',
+    step: 'Browser: join the call',
+    note: 'Your frontend gets a ticket from your API, opens the microphone and plays incoming audio.',
     file: 'call.js',
     language: 'js',
     code: `import { connect } from 'freehop';
 
+// This authenticated API endpoint is supplied by your app.
+const response = await fetch('/api/rooms/room-42/ticket', { method: 'POST' });
+if (!response.ok) throw new Error('Could not join the room');
+const ticket = await response.json();
 const session = await connect(ticket, { media: { audio: true } });
-session.on('track', ({ peer, track }) => session.attach(track, el(peer)));
-session.on('path', ({ peer, kind }) => show(peer, kind));
-session.on('peer-left', ({ id }) => remove(id));`,
+
+session.on('track', ({ track }) => {
+  if (track.kind !== 'audio') return;
+  const audio = document.createElement('audio');
+  audio.controls = true;
+  document.body.append(audio);
+  session.attach(track, audio);
+});`,
   },
   {
     id: 'backend',
-    step: 'Your backend issues tickets',
+    label: 'Backend',
+    runtime: 'Runs on your application backend · Node.js',
+    step: 'Backend: admit participants',
     note: 'It decides who is in a room. A kick rotates the room secret.',
     file: 'server.mjs',
     language: 'js',
@@ -31,7 +44,10 @@ session.on('peer-left', ({ id }) => remove(id));`,
 const authority = createAuthority({
   app: 'my-app',
   gates: ['wss://gate.example.com/freehop'],
-  gateTokenSecret: process.env.FREEHOP_GATE_TOKEN_SECRET,
+  gateTokenSecrets: {
+    'wss://gate.example.com/freehop': process.env.FREEHOP_GATE_TOKEN_SECRET,
+  },
+  stun: ['stun:gate.example.com:3478'],
 });
 
 await authority.openRoom('room-42');
@@ -40,20 +56,25 @@ const { tickets } = await authority.kick('room-42', 'user-3'); // new secret for
   },
   {
     id: 'gate',
-    step: 'Run a gate, or several',
-    note: 'Signalling only. Public WebTorrent trackers work as gates too.',
+    label: 'Gate',
+    runtime: 'Runs on a gate server · terminal',
+    step: 'Gate: introduce the browsers',
+    note: 'Use your own signalling service or a public tracker. A tracker needs no gate server of yours.',
     file: 'terminal',
     language: 'bash',
     code: `FREEHOP_GATE_PORT=8787 \\
 FREEHOP_GATE_PUBLIC_HOST=gate.example.com \\
-FREEHOP_GATE_STUN=0.0.0.0:3478,[::]:3478 \\
-FREEHOP_GATE_TOKEN_SECRET=change-me \\
+FREEHOP_GATE_STUN='0.0.0.0:3478,[::]:3478' \\
+FREEHOP_GATE_TOKEN_SECRET="$FREEHOP_GATE_TOKEN_SECRET" \\
+FREEHOP_GATE_TOKEN_AUDIENCE=wss://gate.example.com/freehop \\
 FREEHOP_GATE_TRUST_PROXY=1 \\
 node bin/freehop-gate.mjs`,
   },
   {
     id: 'desktop',
-    step: 'Desktop apps open their front door',
+    label: 'Desktop',
+    runtime: 'Runs in the Electron main process · Node.js',
+    step: 'Desktop: offer a gateway',
     note: 'Optional. TURN on the participant’s machine plus a router port mapping.',
     file: 'electron-main.mjs',
     language: 'js',
@@ -66,7 +87,9 @@ app.on('will-quit', () => freehop.close());
   },
   {
     id: 'host',
-    step: 'Hosts lend their gateway',
+    label: 'Session host',
+    runtime: 'Runs on a session-owned desktop or community server · Node.js',
+    step: 'Session host: relay when needed',
     note: 'Optional. The machine that hosts the session joins without media.',
     file: 'host.mjs',
     language: 'js',
@@ -106,11 +129,11 @@ export default function Quickstart() {
     <Section tone="surface" labelledBy="quickstart">
       <Eyebrow>Quickstart</Eyebrow>
       <Title id="quickstart" className={styles.title}>
-        Five lines in the browser.
+        Where each piece runs.
       </Title>
       <div className={styles.grid}>
         <div className={styles.copy}>
-          <p className={styles.intro}>Five pieces make an integration. Only the first three are required.</p>
+          <p className={styles.intro}>The browser handles the call. Your backend decides who can join. A gate introduces participants; desktop and session-host gateways are optional.</p>
           <ol className={styles.steps}>
             {TABS.map((t, i) => (
               <li key={t.id}>
@@ -135,11 +158,12 @@ export default function Quickstart() {
                 aria-selected={active === t.id}
                 className={clsx(styles.tab, active === t.id && styles.tabOn)}
                 onClick={() => setActive(t.id)}>
-                {t.file}
+                {t.label}
               </button>
             ))}
           </div>
-          <div className={styles.code} key={tab.id}>
+          <div className={styles.code} key={tab.id} role="tabpanel" aria-label={`${tab.label} example`}>
+            <p className={styles.runtime}><strong>{tab.runtime}</strong><code>{tab.file}</code></p>
             <CodeBlock language={tab.language}>{tab.code}</CodeBlock>
           </div>
           <div className={styles.legend}>
@@ -164,7 +188,7 @@ export default function Quickstart() {
               {copied ? 'Copied' : 'Copy'}
             </button>
           </div>
-          <p className={styles.installNote}>Alpha, not on the npm registry yet. Node 22 or newer; the browser client has no dependencies.</p>
+          <p className={styles.installNote}>Install into your app, then bundle the browser import with your frontend build. Node 22+ is for backend, gate and gateway processes. Alpha; not on the npm registry yet.</p>
           <Link className={styles.more} to="/docs/quickstart">
             <Chevron>Walk through the full quickstart</Chevron>
           </Link>
