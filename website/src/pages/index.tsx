@@ -9,7 +9,8 @@ import Compare from '@site/src/components/home/Compare';
 import Quickstart from '@site/src/components/home/Quickstart';
 import Redline from '@site/src/components/home/Redline';
 import Honest from '@site/src/components/home/Honest';
-import {CostSection, FinalCta} from '@site/src/components/home/Closing';
+import {FinalCta} from '@site/src/components/home/Closing';
+import YourCost from '@site/src/components/home/YourCost';
 
 export default function Home() {
   return (
@@ -24,7 +25,7 @@ export default function Home() {
         <Explainer />
         <Problem />
         <Ladder />
-        <CostSection />
+        <YourCost />
         <Proof />
         <Compare />
         <Quickstart />

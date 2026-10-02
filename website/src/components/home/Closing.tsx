@@ -1,26 +1,7 @@
 import Link from '@docusaurus/Link';
-import CostCalculator from '../demos/CostCalculator';
 import {C, HopArc, Mover, PaperPlane, arc, useMotionAllowed} from '../illustrations';
 import Section, {Chevron, Eyebrow, Title} from './Section';
 import styles from './Closing.module.css';
-
-export function CostSection() {
-  return (
-    <Section tone="paper" labelledBy="cost">
-      <div className={styles.costHead}>
-        <div>
-          <Eyebrow>Your bill</Eyebrow>
-          <Title id="cost">Run the numbers for your app.</Title>
-        </div>
-        <p className={styles.costLede}>
-          Change any assumption. The classic setup pays per relayed gigabyte; with Freehop the relayed share moves to machines
-          inside each session, and your gates only pass envelopes.
-        </p>
-      </div>
-      <CostCalculator />
-    </Section>
-  );
-}
 
 export function FinalCta() {
   const motion = useMotionAllowed();

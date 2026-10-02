@@ -1,21 +1,3 @@
-.costHead {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1rem 4rem;
-  align-items: end;
-  margin-bottom: 1.5rem;
-}
-
-.costHead h2 {
-  margin-bottom: 0;
-}
-
-.costLede {
-  margin: 0;
-  font-size: 1.0625rem;
-  line-height: 1.65;
-}
-
 .final {
   position: relative;
   overflow: hidden;
@@ -99,12 +81,6 @@
 .secondary:hover {
   color: var(--fh-charcoal);
   transform: translateY(-2px) rotate(1deg);
-}
-
-@media (max-width: 996px) {
-  .costHead {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 @media (max-width: 640px) {
