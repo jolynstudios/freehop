@@ -1,0 +1,292 @@
+/* Shared look for the interactive demos: SST paper cards with Karl-style toys inside. */
+
+.card {
+  position: relative;
+  border: 1px solid var(--fh-lavender);
+  border-radius: 14px;
+  background: #ffffff;
+  margin: 1.5rem 0 2.5rem;
+  overflow: hidden;
+  font-size: 1rem;
+  color: var(--fh-slate);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1.1rem 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--fh-lavender);
+  background: #fbfbfe;
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  font-family: var(--fh-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.056em;
+  text-transform: uppercase;
+  color: var(--fh-ink);
+}
+
+.cardTitle::before {
+  content: '';
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: var(--fh-yellow);
+  border: 2px solid var(--fh-charcoal);
+}
+
+.cardBody {
+  padding: 1.25rem;
+}
+
+.ghostButton {
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--fh-slate);
+  background: #ffffff;
+  border: 1px solid var(--fh-lavender);
+  border-radius: var(--fh-r-xs);
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  transition: border-color 0.15s var(--fh-ease), color 0.15s var(--fh-ease), transform 0.15s var(--fh-ease);
+}
+
+.ghostButton:hover {
+  border-color: var(--fh-ink);
+  color: var(--fh-ink);
+}
+
+.ghostButton:active {
+  transform: translateY(1px);
+}
+
+/* Fieldsets of chips */
+
+.fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.legend {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--fh-ink);
+  margin-bottom: 0.6rem;
+  padding: 0;
+}
+
+.legendNote {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--fh-fog);
+  margin-top: 0.1rem;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.chip {
+  position: relative;
+}
+
+.chip input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.chip span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.42rem 0.8rem;
+  border-radius: var(--fh-round);
+  border: 2px solid var(--fh-charcoal);
+  background: #ffffff;
+  color: var(--fh-charcoal);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.16s var(--fh-ease), background-color 0.16s var(--fh-ease), color 0.16s var(--fh-ease);
+}
+
+.chip span:hover {
+  transform: translateY(-2px);
+  background: #fffbd1;
+}
+
+.chip input:active + span {
+  transform: translateY(1px) scale(0.97);
+}
+
+.chip input:checked + span {
+  background: var(--fh-charcoal);
+  color: var(--fh-yellow);
+}
+
+.chip input:focus-visible + span {
+  outline: 3px solid var(--fh-azure);
+  outline-offset: 2px;
+}
+
+/* Switches */
+
+.switches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.25rem;
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--fh-slate);
+  user-select: none;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.track {
+  position: relative;
+  width: 2.6rem;
+  height: 1.5rem;
+  border-radius: var(--fh-round);
+  border: 2px solid var(--fh-charcoal);
+  background: #ffffff;
+  flex: none;
+  transition: background-color 0.18s var(--fh-ease);
+}
+
+.track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(1.5rem - 8px);
+  height: calc(1.5rem - 8px);
+  border-radius: 50%;
+  background: var(--fh-charcoal);
+  transition: transform 0.22s cubic-bezier(0.3, 1.5, 0.5, 1), background-color 0.18s var(--fh-ease);
+}
+
+.switch input:checked + .track {
+  background: var(--fh-yellow);
+}
+
+.switch input:checked + .track::after {
+  transform: translateX(1.1rem);
+}
+
+.switch input:focus-visible + .track {
+  outline: 3px solid var(--fh-azure);
+  outline-offset: 2px;
+}
+
+.switch:hover .track {
+  background: #fffbd1;
+}
+
+.switch input:checked:hover + .track {
+  background: var(--fh-yellow);
+}
+
+/* Stage: the illustrated area inside a demo */
+
+.stage {
+  position: relative;
+  background: var(--fh-yellow);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.stageSvg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Outcome */
+
+.pop {
+  animation: pop 0.42s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.82);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.fadeIn {
+  animation: fadeIn 0.5s var(--fh-ease);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.mono {
+  font-family: var(--fh-mono);
+  letter-spacing: -0.021em;
+}
+
+.kbd {
+  font-family: var(--fh-mono);
+  font-size: 0.8125em;
+  background: var(--fh-surface);
+  border: 1px solid var(--fh-lavender);
+  border-radius: 4px;
+  padding: 0.05em 0.35em;
+  color: var(--fh-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pop,
+  .fadeIn {
+    animation: none;
+  }
+  .chip span,
+  .track::after {
+    transition: none;
+  }
+}

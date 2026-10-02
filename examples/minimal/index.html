@@ -1,0 +1,54 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Freehop example</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
+<style>
+  :root { color-scheme: light dark; font: 15px/1.4 system-ui, sans-serif; }
+  body { margin: 16px; } form, .bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  #peers { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .tile { border: 1px solid #8884; border-radius: 8px; padding: 8px; } video { width: 100%; background: #000; border-radius: 4px; }
+  .path { font-size: 12px; opacity: .75; } .level { height: 4px; background: #3a7; width: 0; transition: width .2s; }
+</style>
+<form id="join"><input id="room" value="lobby" aria-label="Room"><button>Join with mic + camera</button></form>
+<div class="bar"><button id="mic" disabled>Mute</button><button id="cam" disabled>Camera off</button><button id="leave" disabled>Leave</button><span id="state"></span></div>
+<div id="peers"></div>
+<script type="module">
+import { connect } from '/peerlane/sdk/client.mjs';
+const $ = id => document.getElementById(id);
+const demo = window.demo = { state: 'idle', peers: {} };
+const tile = peer => {
+  let el = document.querySelector(`[data-peer="${peer}"]`);
+  if (!el) {
+    el = Object.assign(document.createElement('div'), { className: 'tile' }); el.dataset.peer = peer;
+    el.innerHTML = '<video muted></video><audio></audio><div class="level"></div><div class="path">connecting…</div>';
+    $('peers').append(el);
+  }
+  return el;
+};
+$('join').onsubmit = async event => {
+  event.preventDefault();
+  const { member, ticket } = await (await fetch('/api/join', { method: 'POST', body: JSON.stringify({ room: $('room').value }) })).json();
+  demo.member = member;
+  const session = demo.session = await connect(ticket, { media: { audio: true, video: true } });
+  demo.state = 'joined'; $('state').textContent = 'joined as ' + session.id.slice(0, 6);
+  await fetch('/api/peer', { method: 'POST', body: JSON.stringify({ member, peer: session.id }) });
+  session.on('peer', ({ id }) => { tile(id); demo.peers[id] = { path: 'connecting' }; });
+  session.on('peer-left', ({ id }) => { document.querySelector(`[data-peer="${id}"]`)?.remove(); delete demo.peers[id]; });
+  session.on('track', ({ peer, track }) => session.attach(track, tile(peer).querySelector(track.kind === 'video' ? 'video' : 'audio')));
+  session.on('path', ({ peer, kind, via }) => { tile(peer).querySelector('.path').textContent = kind + (via ? ' via ' + via.slice(0, 6) : ''); (demo.peers[peer] ??= {}).path = kind; });
+  $('mic').disabled = $('cam').disabled = $('leave').disabled = false; $('join').hidden = true;
+  let mic = true, cam = true;
+  $('mic').onclick = async () => { mic = !mic; await session.setMicrophone(mic); $('mic').textContent = mic ? 'Mute' : 'Unmute'; };
+  $('cam').onclick = async () => { cam = !cam; await session.setCamera(cam); $('cam').textContent = cam ? 'Camera off' : 'Camera on'; };
+  $('leave').onclick = async () => { await session.leave(); demo.state = 'left'; $('state').textContent = 'left'; };
+  // Your app delivers rotated tickets however it likes; this example simply polls.
+  demo.poll = setInterval(async () => {
+    const res = await fetch('/api/ticket?member=' + member);
+    if (res.status === 403) { clearInterval(demo.poll); await session.leave(); demo.state = 'kicked'; $('state').textContent = 'removed from room'; return; }
+    const { ticket: next, dropped } = await res.json();
+    if (await session.update(next, { dropped })) demo.epoch = next.epoch;
+  }, 1500);
+  setInterval(async () => { for (const [peer, level] of Object.entries(await session.levels())) { const bar = document.querySelector(`[data-peer="${peer}"] .level`); if (bar) bar.style.width = Math.round(level * 100) + '%'; } }, 300);
+};
+</script>

@@ -1,0 +1,90 @@
+---
+title: Gates
+sidebar_label: Gates
+description: A gate is a blind rendezvous mailbox that passes sealed signalling envelopes between peers and never carries media.
+---
+
+import { GateScene } from '@site/src/components/scenes';
+import GateSees from '@site/src/components/demos/GateSees';
+
+<GateScene caption="The gate is a mailbox: it passes sealed envelopes along, and it cannot open them." />
+
+A gate is the only server an operator runs for Freehop. It is a blind rendezvous mailbox: peers that announce the same opaque room tag can post sealed envelopes to each other through it, and that is all it does.
+
+## What a gate does
+
+When Ana and Ben join the same room, their clients connect to the gates listed in their tickets and announce the room. The gate tells each of them who else is there, and forwards the envelopes they address to each other. Those envelopes carry everything WebRTC needs to set up a call (session descriptions, ICE candidates, capabilities), sealed with a key that only room members can derive.
+
+Here is the whole conversation from the gate's side, using the frames of the [gate protocol](../protocol.md):
+
+```json
+{"t":"hello","v":1}
+{"t":"welcome","v":1,"stun":["stun:gate.example.com:3478"],"limits":{"box":49152,"peersPerRoom":16}}
+{"t":"join","room":"Xq3v…43 characters…","peer":"k2Pz…22 characters…"}
+{"t":"peers","room":"Xq3v…","peers":["n8Wd…"]}
+{"t":"send","room":"Xq3v…","to":"n8Wd…","box":"ylq0Hc9…opaque base64url…"}
+{"t":"recv","room":"Xq3v…","from":"n8Wd…","box":"Cq9Lr2T…opaque base64url…"}
+```
+
+The room tag is derived from the room secret with HKDF, so the gate cannot work out which room, match or application it belongs to. Peer ids are 16 random bytes, fresh for every join.
+
+## What a gate sees, and what it cannot see
+
+| The gate learns | The gate never learns |
+|---|---|
+| The IP addresses of the sockets that connect to it | The room secret, or anything derived from it except the tag |
+| Opaque room tags and random peer ids | Session descriptions (SDP) and ICE candidates |
+| Envelope sizes and timing | Capabilities and gateway credentials |
+| The claims of a gate token, if you use them (expiry, room tag) | Your users' names or your application's member ids |
+| | A single byte of media |
+
+A gate also cannot forge or re-route an envelope without detection. Every envelope is bound to its room, sender and recipient, so an envelope that a gate relabels fails authentication at the recipient. A gate cannot add members to a room either: its roster is only a hint, and a peer becomes a member only after an envelope from it authenticates. What a hostile gate *can* do is drop or delay traffic. Listing several gates in your tickets protects against that. The [security model](./security.mdx) has the details.
+
+## How much traffic a gate carries
+
+Signalling is small, and it only flows while a pair of peers sets up its connection:
+
+- About **15 to 35 KB per pair of peers** at call setup.
+- **Roughly zero afterwards.** Every link carries a pre-negotiated data channel, and once it is open the peers send each other's envelopes over it instead of through the gate.
+- In the [qualification lab](../results.mdx) the gate's total for a whole scenario run was **30 to 210 KB**, including the retries of pairs that never connected.
+
+The gate enforces this by construction. Its byte budgets make media tunnelling impractical: a single five-peer join needs about 100 KB, while media needs megabytes per minute.
+
+| Bound | Value |
+|---|---|
+| WebSocket frame | 64 KiB |
+| Sealed envelope (`box`) | 48 KiB |
+| Bytes a socket makes the gate forward (fan-out included) | 512 KiB burst, refilled at 2 KiB/s |
+| Messages per socket | 40 per second, burst 400 |
+| Rooms per socket / peers per room | 4 / 16 |
+| Sockets per source address | 32 |
+| `hello` deadline / idle timeout | 5 s / 90 s |
+| Unread send buffer before the socket is closed | 1 MiB |
+
+## Many gates, and no gates at all
+
+A ticket can list up to eight gates. Clients connect to every one of them and announce the room on each, and gates are interchangeable: any one of them may disappear.
+
+- **Peers on different gates still meet.** Say Ana only reaches `gate-1`, Ben only reaches `gate-2`, and Cleo reaches both. Cleo connects to both of them and reports her links in her sealed capabilities. Ana's envelopes for Ben then travel through Cleo's data channel, forwarded once, until Ana and Ben have their own link.
+- **Calls survive a total gate outage.** An established call does not depend on any gate. In the lab, peers kept exchanging media (about 600 audio packets per peer in 6 seconds) after every gate was shut down.
+- **A public WebTorrent tracker works as a gate.** A gate URL of the form `bt+wss://tracker.openwebtorrent.com` makes the client use that tracker as its mailbox. The swarm's `info_hash` is the first 20 hex characters of the room tag, and the envelopes ride in the offer and answer fields that trackers already relay. A tracker sees exactly as little as a Freehop gate. The [live call](/demo) on this site uses public trackers as its only gates.
+
+## Admission: open or token-gated
+
+A gate is either open or token-gated. With a token secret, every client must present a token minted with the same secret: `base64url(claims) "." base64url(HMAC-SHA256(secret, body))`, with claims `{ exp, room? }`. A token that names a room tag may only join that room.
+
+You rarely mint tokens yourself: give the authority the same `gateTokenSecret` as the gate, and every ticket carries a token bound to its room. Your gate then serves only your own rooms. See [Gate service](../sdk/gate-service.mdx).
+
+## STUN on the side
+
+A gate can also answer STUN Binding requests on UDP (IPv4 and IPv6), so that peers learn their public addresses without a third-party STUN server. It answers Binding requests only, rate-limits each source address and never relays anything. The STUN URLs arrive in the gate's `welcome` frame.
+
+## What the gate sees, live
+
+Type a message below. Your browser seals it exactly the way Freehop seals signalling (HKDF room key, AES-256-GCM, room and peers bound as additional data) and shows you the frame the gate receives. Then tamper with it the way a hostile gate would, and watch the recipient reject it.
+
+<GateSees />
+
+## Next
+
+Gates only introduce peers. [Paths and escalation](./paths.mdx) explains how the peers then find a route for their media.

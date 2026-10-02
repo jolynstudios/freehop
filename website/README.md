@@ -1,0 +1,99 @@
+# Freehop website
+
+The documentation and project site for Freehop, published at
+https://jolynstudios.github.io/freehop/. It is a [Docusaurus 3](https://docusaurus.io/) site
+(classic preset, TypeScript, React 19) that lives next to the SDK in this repository.
+
+## Requirements
+
+- Node.js 20 or newer
+- npm
+
+## Develop
+
+```sh
+cd website
+npm install
+npm start          # http://localhost:3000/freehop/
+```
+
+`npm start` and `npm run build` first run `scripts/copy-lib.mjs`, which copies Freehop's own
+browser modules (`../src/client/*.mjs`, `../src/sdk/client.mjs`, `../src/sdk/ticket.mjs`) into
+`static/lib/`. The live call (`/demo`) and the "what the gate sees" demo load that real code at
+runtime with `import(/* webpackIgnore: true */ url)`, so the site always runs the SDK it
+documents. `static/lib/` is generated and git-ignored; run `npm run copy-lib` after changing
+the SDK while the dev server is running.
+
+Docusaurus computes theme overrides when the dev server starts. After adding a new file under
+`src/theme/`, restart `npm start`.
+
+## Build and preview
+
+```sh
+npm run build      # writes build/; fails on any broken link or anchor
+npm run serve      # serves build/ at http://localhost:3000/freehop/
+npm run typecheck  # optional: TypeScript check of the site code
+```
+
+The build is strict: `onBrokenLinks`, `onBrokenAnchors` and `onBrokenMarkdownLinks` all throw.
+
+## Deploy
+
+The site is static. Deploy the contents of `build/` to GitHub Pages for the
+`jolynstudios/freehop` repository, for example with a GitHub Actions workflow that runs
+`npm ci && npm run build` in `website/` and publishes `website/build` with
+`actions/upload-pages-artifact` and `actions/deploy-pages`. The site expects to be served at
+`/freehop/` (`baseUrl` in `docusaurus.config.ts`). `static/.nojekyll` keeps GitHub Pages from
+ignoring files that start with an underscore. Whatever hosts the site must serve the `.mjs`
+files in `lib/` with a JavaScript MIME type: browsers refuse module scripts otherwise.
+`npm run serve` does; check `curl -I <site>/lib/client/peerlane.mjs` after the first deploy.
+
+## Layout
+
+| Path | What |
+|---|---|
+| `docs/` | Documentation pages (MDX). Sidebar order: `sidebars.ts` |
+| `src/pages/index.tsx` | Home page, assembled from `src/components/home/` |
+| `src/pages/demos.tsx` | All interactive demos on one page |
+| `src/pages/demo.tsx` | The live call, rendered only in the browser |
+| `src/components/illustrations/` | Flat illustration primitives: `House`, `Globe`, `Mailbox`, `Envelope`, `PaperPlane`, `HopArc` and `Mover`, `Lighthouse`, `Cloud`, `Wall`, plus `Person`, `Ball`, `Key`, `Bubble`, `NameTag`, `RelayTower` and `Coin` |
+| `src/components/scenes/` | One illustrated scene per concept page, composed from the primitives |
+| `src/components/demos/` | Path finder (`pathRules.ts` holds its rules), escalation timeline, gate demo, cost calculator, live call |
+| `src/components/home/` | Home page sections and the hero planet |
+| `src/theme/Footer/` | The site footer (replaces the classic theme's footer) |
+| `src/css/custom.css` | Design tokens and global styles |
+| `scripts/copy-lib.mjs` | Copies the SDK's browser modules into `static/lib/` |
+
+## Design system
+
+Two layers, used deliberately:
+
+- **Scenes** (home page and illustrations): Signal Yellow `#ffe600`, Globe Azure `#007fff`,
+  Roof Coral `#ef3b2c` (illustrations only), Charcoal Ink `#333333` and white. Display type is
+  Changa One. Flat fills with chunky outlines: no gradients, no shadows.
+- **Documentation**: white paper, Ink `#303055`, Slate `#403f53`, Fog, Mist and Lavender Mist
+  `#e8e8f2`; Rubik for text and IBM Plex Mono for code. Code colours appear only inside code.
+  The code card carries the only shadow.
+
+All tokens are CSS custom properties at the top of `src/css/custom.css`. The site is light
+mode only, so the illustration palette stays intact. Never put white text on yellow: use
+charcoal on yellow and white only on azure, at large sizes.
+
+Illustrations draw around their own origin and are placed with `x`, `y`, `rotate` and
+`scale`, so scenes are plain SVG composition. Every animation stops for visitors who prefer
+reduced motion: CSS animations through a media query, and SVG motion (`Mover`) only renders
+after hydration when `useMotionAllowed()` allows it.
+
+## Writing rules
+
+- Facts only, from `SDK.md`, `PROTOCOL.md`, `RESULTS.md` and the code. Freehop is alpha and
+  lab-qualified; say what is not verified yet.
+- Say "Freehop" in prose. "Peerlane" is the codename and appears only where wire identifiers
+  carry it (`peerlane/v1/` salt, `peerlane/v1|` AAD prefix, TURN realm, data channel label).
+- Copyright line: "© 2026 Jolyn Studios". Code is Apache-2.0; documentation and the protocol
+  specification are CC BY 4.0. Freehop is provided as is, without warranty of any kind.
+
+## License
+
+The site's code is licensed under Apache-2.0 and its documentation under CC BY 4.0, like the
+rest of Freehop. © 2026 Jolyn Studios.

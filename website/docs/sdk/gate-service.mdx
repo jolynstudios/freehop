@@ -1,0 +1,155 @@
+---
+title: Gate service and deployment
+sidebar_label: Gate service
+description: Run and deploy the Freehop gate, the signalling-only service an operator runs, with its configuration, systemd unit, Caddy proxy, firewall rules and logs.
+---
+
+The gate is the only server you run for Freehop, and it is small: a WebSocket service that passes sealed envelopes, plus an optional STUN responder. It never carries media, so it needs no TURN ports, no relay port ranges and no media bandwidth. [Gates](../concepts/gates.mdx) explains what it sees.
+
+## Run it
+
+```bash
+node bin/freehop-gate.mjs          # from a checkout of the repository
+npx freehop-gate                   # in a project that depends on freehop
+```
+
+It prints one line when it is ready:
+
+```json
+{"event":"listening","url":"ws://127.0.0.1:8787/freehop","stun":["stun:gate.example.com:3478"]}
+```
+
+## Configuration
+
+The service is configured with environment variables:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `FREEHOP_GATE_HOST` | `127.0.0.1` | Address the WebSocket server listens on. Keep it on loopback behind a TLS proxy. |
+| `FREEHOP_GATE_PORT` | `8787` | WebSocket port |
+| `FREEHOP_GATE_PATH` | `/freehop` | WebSocket path. Clients connect to `wss://<your host><path>`. |
+| `FREEHOP_GATE_PUBLIC_HOST` | none | Public host name advertised in the `stun:` URLs. Needed when STUN binds a wildcard address. |
+| `FREEHOP_GATE_STUN` | none | STUN responders to start, for example `0.0.0.0:3478,[::]:3478` (IPv4 and IPv6). |
+| `FREEHOP_GATE_TOKEN_SECRET` | none | Makes the gate token-gated: only clients with a token minted with this secret get in. Use the same value as the authority's `gateTokenSecret`. |
+| `FREEHOP_GATE_TRUST_PROXY` | off | `1` behind a local reverse proxy: per-address limits then use the last `X-Forwarded-For` hop. |
+
+## Deploy with systemd and Caddy
+
+A gate fits next to anything else on a small server. These steps install it under `/opt/freehop` and run it as an unprivileged user, on loopback, behind Caddy.
+
+```bash
+sudo useradd --system --home-dir /opt/freehop --shell /usr/sbin/nologin freehop
+sudo git clone https://github.com/jolynstudios/freehop /opt/freehop
+cd /opt/freehop && sudo npm install --omit=dev
+sudo install -d -m 700 /etc/freehop
+echo "FREEHOP_GATE_TOKEN_SECRET=$(openssl rand -base64 32)" | sudo tee /etc/freehop/gate.env > /dev/null
+```
+
+Keep the token secret out of the unit file: the unit reads it from `/etc/freehop/gate.env`, and your backend needs the same value.
+
+```ini title="/etc/systemd/system/freehop-gate.service"
+[Unit]
+Description=Freehop gate (signalling only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=freehop
+Group=freehop
+WorkingDirectory=/opt/freehop
+Environment=FREEHOP_GATE_HOST=127.0.0.1
+Environment=FREEHOP_GATE_PORT=8787
+Environment=FREEHOP_GATE_PATH=/freehop
+Environment=FREEHOP_GATE_PUBLIC_HOST=gate.example.com
+Environment=FREEHOP_GATE_STUN=0.0.0.0:3478,[::]:3478
+Environment=FREEHOP_GATE_TRUST_PROXY=1
+EnvironmentFile=-/etc/freehop/gate.env
+ExecStart=/usr/bin/node /opt/freehop/bin/freehop-gate.mjs
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+MemoryMax=256M
+LimitNOFILE=8192
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now freehop-gate
+```
+
+Caddy terminates TLS and forwards the WebSocket path. The gate can have its own host name, or share your application's origin by adding the `handle` block to the existing site:
+
+```text title="Caddyfile"
+gate.example.com {
+	handle /freehop {
+		reverse_proxy 127.0.0.1:8787
+	}
+}
+```
+
+Clients, and the authority's `gates` list, then use `wss://gate.example.com/freehop`.
+
+### Firewall
+
+| Port | Why |
+|---|---|
+| TCP 443 | Your HTTPS proxy (already open for any website) |
+| UDP 3478 | The gate's STUN responder, if you enabled it |
+
+Nothing else. There are no TURN or relay ports to open on a gate host, because a gate never relays media.
+
+## Operate it
+
+- **Health check.** `GET /healthz` on the gate's own port answers `ok`.
+- **Statistics.** Every five minutes the service prints a JSON line with `"event":"stats"`: open sockets, rooms, joins, frames and bytes in and out, envelopes forwarded, refusals, rate limits, and STUN counters.
+- **Events.** Notable events go to standard error as JSON lines with a timestamp.
+- **Shutdown.** `SIGINT` and `SIGTERM` close every socket and the STUN responders cleanly.
+
+Expect tiny numbers: about 15 to 35 KB per pair of peers at call setup, and almost nothing once the pair is connected. The gate's [bounds](../concepts/gates.mdx#how-much-traffic-a-gate-carries) (byte budgets, message rates, sockets per address) make it impractical to tunnel media through it.
+
+## Open or token-gated
+
+Without `FREEHOP_GATE_TOKEN_SECRET` the gate is open: any client that speaks the protocol can use it, though it still only ever sees sealed envelopes. With a token secret, clients must present a token minted with that secret. Give the authority the same value as `gateTokenSecret`, and every ticket carries a token bound to its own room tag, so your gate serves only your rooms.
+
+## More than one gate
+
+List several gates in the authority's `gates` option (up to eight). Clients connect to all of them, peers on different gates still meet through the mesh, and established calls keep running if every gate goes down. Gates can be yours, a community's, or public WebTorrent trackers:
+
+```js
+createAuthority({
+  app: 'my-app',
+  gates: ['wss://gate.example.com/freehop', 'bt+wss://tracker.openwebtorrent.com']
+});
+```
+
+A room whose tickets list only tracker gates runs without any server of yours. Host nodes, however, only use Freehop gates, so keep at least one `wss://` gate in tickets for hosted rooms.
+
+## Embed the gate
+
+The service is a thin wrapper around `createGate()` from `freehop/gate`, which you can embed in an existing Node.js server:
+
+```js title="server.mjs"
+import { createGate } from 'freehop/gate';
+
+const gate = await createGate({
+  server,                                   // an existing http(s).Server, or host + port
+  path: '/freehop',
+  stun: [{ host: '0.0.0.0', port: 3478 }, { host: '::', port: 3478 }],
+  publicHost: 'gate.example.com',
+  tokenSecret: process.env.FREEHOP_GATE_TOKEN_SECRET,
+  trustProxy: true
+});
+console.log(gate.url(), gate.stats());
+```
+
+Other options: `stunUrls` (advertise your own STUN URLs), `authorize(hello, request)` (your own admission hook, used instead of tokens), `limits` and `log`. The [reference example](../quickstart.mdx#run-the-reference-example) runs the gate on the same server as its backend this way.
+
+## Next
+
+The [protocol specification](../protocol.md) defines every frame the gate speaks.

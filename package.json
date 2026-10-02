@@ -1,0 +1,80 @@
+{
+  "name": "freehop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Peer-to-peer voice, video and data where your servers never carry or pay for media: blind gates for signalling, session-owned gateways and forwarding instead of operator relays.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": "./src/sdk/client.mjs",
+    "./client": "./src/client/peerlane.mjs",
+    "./gate": "./src/gate/gate.mjs",
+    "./relay": "./src/relay/agent.mjs",
+    "./turn": "./src/relay/turn-server.mjs",
+    "./port-mapper": "./src/relay/port-mapper.mjs",
+    "./member": "./src/relay/member.mjs",
+    "./stun": "./src/shared/stun.mjs",
+    "./sdk": "./src/sdk/client.mjs",
+    "./authority": "./src/sdk/authority.mjs",
+    "./host": "./src/sdk/host.mjs",
+    "./ticket": "./src/sdk/ticket.mjs",
+    "./electron": "./src/electron/main.mjs",
+    "./electron/preload": "./src/electron/preload.cjs",
+    "./tokens": "./src/shared/tokens.mjs"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "test:browsers": "node test/browser/smoke.mjs chromium,firefox,webkit --tls && node test/browser/multigate.mjs && node test/browser/rekey.mjs && node test/browser/example-app.mjs",
+    "gate": "node bin/freehop-gate.mjs",
+    "example": "node examples/minimal/server.mjs"
+  },
+  "author": "Jolyn Studios",
+  "homepage": "https://jolynstudios.github.io/freehop/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jolynstudios/freehop.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jolynstudios/freehop/issues"
+  },
+  "keywords": [
+    "webrtc",
+    "p2p",
+    "peer-to-peer",
+    "voice-chat",
+    "video-chat",
+    "nat-traversal",
+    "turn",
+    "stun",
+    "upnp",
+    "pcp",
+    "nat-pmp",
+    "signalling",
+    "games",
+    "sdk"
+  ],
+  "bin": {
+    "freehop-gate": "bin/freehop-gate.mjs"
+  },
+  "files": [
+    "src/",
+    "bin/",
+    "deploy/",
+    "README.md",
+    "ARCHITECTURE.md",
+    "PROTOCOL.md",
+    "SDK.md",
+    "LICENSE",
+    "LICENSE-docs",
+    "NOTICE"
+  ],
+  "dependencies": {
+    "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "playwright": "1.62.0"
+  }
+}

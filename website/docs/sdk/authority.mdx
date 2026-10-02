@@ -1,0 +1,95 @@
+---
+title: Authority and tickets
+sidebar_label: Authority & tickets
+description: Reference for createAuthority, the backend piece that owns room secrets, issues tickets to admitted members and rotates rooms on kick.
+---
+
+The authority is the part of Freehop that your backend embeds. It owns each room's secret, issues a ticket to every member your application admits, and rotates the secret when a member is removed. It never sees media and never needs to: it only hands out keys.
+
+```js title="backend.mjs"
+import { createAuthority } from 'freehop/authority';
+
+const authority = createAuthority({
+  app: 'my-game',
+  gates: ['wss://gate-1.example.com/freehop', 'wss://gate-2.example.com/freehop'],
+  gateTokenSecret: process.env.FREEHOP_GATE_TOKEN_SECRET
+});
+```
+
+## createAuthority(options)
+
+| Option | Default | Meaning |
+|---|---|---|
+| `app` | required | Your application's name (at most 64 characters). It namespaces room tags and keys, so two applications never collide. |
+| `gates` | required | One to eight gate URLs: `wss://` (or `ws://` for local tests) for Freehop gates, `bt+wss://` for public WebTorrent trackers. |
+| `gateTokenSecret` | none | The same secret as your gate's `FREEHOP_GATE_TOKEN_SECRET`. When set, every ticket carries a gate token bound to its room. |
+| `ticketTtlSeconds` | `21600` (6 h) | Lifetime written into each ticket and its gate token. |
+| `maxRooms` | `10000` | Upper bound on open rooms. |
+
+The authority keeps its rooms in memory, in the process that created it.
+
+## Methods
+
+| Method | Returns | What it does |
+|---|---|---|
+| `openRoom(roomId)` | `{ roomId, tag, epoch, members }` | Creates the room and its secret (32 random bytes). Idempotent. Never returns the secret. |
+| `ticket(roomId, member?)` | ticket | Issues a ticket. With a `member`, that member is recorded as part of the room. Without one (for a host node), nobody is added. |
+| `kick(roomId, member)` | `{ epoch, previousTags, tickets, hostTicket }` | Removes the member, rotates the secret and increments `epoch`. `tickets` is a `Map` from each remaining member to its new ticket. |
+| `leave(roomId, member)` | | A member left on its own. No rotation is needed: it cannot rejoin without a new ticket. |
+| `closeRoom(roomId)` | `boolean` | Forgets the room. |
+| `describe(roomId)` | `{ roomId, tag, epoch, members }` or `null` | Public facts about a room, for your own bookkeeping. |
+
+## The ticket
+
+A ticket is everything a client needs to enter one room:
+
+```json
+{
+  "v": 1,
+  "app": "my-game",
+  "roomId": "match-42",
+  "epoch": 1,
+  "gates": ["wss://gate-1.example.com/freehop", "wss://gate-2.example.com/freehop"],
+  "secret": "base64url, 32 random bytes",
+  "auth": "gate token, only with gateTokenSecret",
+  "expires": 1790000000
+}
+```
+
+It carries the room secret, so it is as sensitive as room membership itself. Send it only to the member it was issued for, over your application's own authenticated channel: your API response, your websocket, the lobby join response. Never put it in a room listing or a link.
+
+`freehop/ticket` turns tickets into compact strings and back:
+
+```js
+import { encodeTicket, decodeTicket, validTicket } from 'freehop/ticket';
+
+const text = encodeTicket(ticket);   // base64url of the JSON
+const again = decodeTicket(text);    // throws TypeError on a malformed or invalid ticket
+```
+
+`connect()` and `hostSession()` accept either form. A ticket is valid when its version is 1, `app` has at most 64 characters, `roomId` at most 128, `epoch` is a positive integer, it lists one to eight gate URLs, the secret is 22 to 128 characters long, `auth` (if present) is at most 2048 characters, and `expires` is a number.
+
+## Kicking a member
+
+A kick is a key rotation. Your backend needs to know which Freehop peer id belongs to which of your members, so have each client report `session.id` after it connects.
+
+```js title="backend.mjs"
+// When a client connects, it reports its Freehop peer id: peerIds.set(member, peerId)
+const { tickets, hostTicket } = await authority.kick('match-42', 'player-3');
+const dropped = [peerIds.get('player-3')];
+
+for (const [member, ticket] of tickets) sendTo(member, { ticket, dropped });
+await host?.update(hostTicket, { dropped });   // if this room has a host node
+```
+
+```js title="client"
+onMessage(async ({ ticket, dropped }) => {
+  await session.update(ticket, { dropped });   // false if the ticket is not newer
+});
+```
+
+Each remaining client disconnects the removed peer, moves to the new room tag and keeps its links up. The removed peer still holds the old secret, but nobody uses it any more. See the [security model](../concepts/security.mdx) for the details of the switch.
+
+## Next
+
+[Client: connect](./client.mdx) is the other side of the ticket.

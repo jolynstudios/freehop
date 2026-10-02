@@ -1,0 +1,76 @@
+// SPDX-License-Identifier: Apache-2.0
+// Gateway agent: room-scoped, revocable TURN credentials and the default peer policy.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import dgram from 'node:dgram';
+import { randomBytes } from 'node:crypto';
+import { startGateway } from '../src/relay/agent.mjs';
+import * as stun from '../src/shared/stun.mjs';
+
+// Minimal long-term-credential TURN client over UDP.
+async function turnClient(port, host = '127.0.0.1') {
+  const socket = dgram.createSocket('udp4');
+  await new Promise(r => socket.bind(0, '127.0.0.1', r));
+  const waiters = new Map();
+  socket.on('message', buf => { const m = stun.decode(buf); const w = m && waiters.get(m.transactionId.toString('hex')); if (w) { waiters.delete(m.transactionId.toString('hex')); w(m); } });
+  const request = (method, attributes, key) => new Promise((resolve, reject) => {
+    const transactionId = randomBytes(12);
+    waiters.set(transactionId.toString('hex'), resolve);
+    socket.send(stun.encode({ method, cls: stun.CLASS.REQUEST, transactionId, attributes }, key ? { integrityKey: key } : {}), port, host);
+    setTimeout(() => reject(new Error('timeout')), 2000);
+  });
+  return {
+    async allocate(username, password) {
+      const transport = { type: stun.ATTR.REQUESTED_TRANSPORT, value: Buffer.from([17, 0, 0, 0]) };
+      const first = await request(stun.METHOD.ALLOCATE, [transport]);
+      const realm = stun.getAttr(first, stun.ATTR.REALM), nonce = stun.getAttr(first, stun.ATTR.NONCE);
+      const key = stun.longTermKey(username, realm.toString(), password);
+      const res = await request(stun.METHOD.ALLOCATE, [transport, { type: stun.ATTR.USERNAME, value: Buffer.from(username) },
+        { type: stun.ATTR.REALM, value: realm }, { type: stun.ATTR.NONCE, value: nonce }], key);
+      return { cls: res.cls, code: res.cls === stun.CLASS.ERROR ? stun.decodeErrorCode(stun.getAttr(res, stun.ATTR.ERROR_CODE))?.code : 0, key, realm, nonce };
+    },
+    request, close: () => socket.close()
+  };
+}
+
+test('gateway credentials are scoped to allowed rooms and revocable per peer', async () => {
+  const tagA = 'AAAAAAAA' + 'x'.repeat(35), tagB = 'BBBBBBBB' + 'y'.repeat(35);
+  const gw = await startGateway({ host: '127.0.0.1', port: 0, portMapping: false, externalAddress: '198.51.100.7', rooms: [tagA] });
+  const port = gw.turn.addresses().find(a => a.transport === 'udp').port;
+  const client = await turnClient(port);
+  try {
+    const ok = gw.credentialsFor(tagA, 'peer-one');
+    assert.equal((await client.allocate(ok.username, ok.credential)).cls, stun.CLASS.SUCCESS);
+    const otherRoom = gw.credentialsFor(tagB, 'peer-one');
+    assert.equal((await client.allocate(otherRoom.username, otherRoom.credential)).code, 401, 'a room the gateway does not serve');
+    const expired = { username: `${Math.floor(Date.now() / 1000) - 5}:${tagA.slice(0, 8)}:peer-two` };
+    assert.equal((await client.allocate(expired.username, 'irrelevant')).code, 401, 'expired credentials');
+    assert.equal(gw.revokePeer(tagA, 'peer-one') >= 1, true, 'revocation tears down the live allocation');
+    const again = gw.credentialsFor(tagA, 'peer-one');
+    assert.equal((await client.allocate(again.username, again.credential)).code, 401, 'revoked peer cannot allocate again');
+    gw.allowRoom(tagB);
+    const later = gw.credentialsFor(tagB, 'peer-three');
+    assert.equal((await client.allocate(later.username, later.credential)).cls, stun.CLASS.SUCCESS);
+    gw.revokeRoom(tagB);
+    const gone = gw.credentialsFor(tagB, 'peer-four');
+    assert.equal((await client.allocate(gone.username, gone.credential)).code, 401, 'revoked room');
+    assert.equal(gw.info().external[0], '198.51.100.7');
+  } finally { client.close(); await gw.close(); }
+});
+
+test('gateway refuses permissions towards loopback (no access to services on its own machine)', async () => {
+  const tag = 'CCCCCCCC' + 'z'.repeat(35);
+  const gw = await startGateway({ host: '127.0.0.1', port: 0, portMapping: false, externalAddress: '198.51.100.8', rooms: [tag] });
+  const port = gw.turn.addresses().find(a => a.transport === 'udp').port;
+  const client = await turnClient(port);
+  try {
+    const creds = gw.credentialsFor(tag, 'peer');
+    const alloc = await client.allocate(creds.username, creds.credential);
+    assert.equal(alloc.cls, stun.CLASS.SUCCESS);
+    const transactionId = randomBytes(12);
+    const peer = { type: stun.ATTR.XOR_PEER_ADDRESS, value: stun.encodeXorAddress({ family: 4, address: '127.0.0.1', port: 11211 }, transactionId) };
+    const res = await client.request(stun.METHOD.CREATE_PERMISSION, [peer, { type: stun.ATTR.USERNAME, value: Buffer.from(creds.username) },
+      { type: stun.ATTR.REALM, value: alloc.realm }, { type: stun.ATTR.NONCE, value: alloc.nonce }], alloc.key).catch(e => e);
+    assert.equal(stun.decodeErrorCode(stun.getAttr(res, stun.ATTR.ERROR_CODE))?.code, 403);
+  } finally { client.close(); await gw.close(); }
+});

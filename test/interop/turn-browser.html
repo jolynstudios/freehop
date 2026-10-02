@@ -1,0 +1,70 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!doctype html>
+<meta charset="utf-8">
+<title>peerlane TURN interop</title>
+<script>
+// Test glue only: signalling is relayed by the Playwright driver through window.peerlaneSignal.
+window.peerlane = {
+  log: [], errors: [], received: [], pending: [], remoteSet: false, dc: null, pc: null,
+  async start({ config, initiator, media }) {
+    const pc = this.pc = new RTCPeerConnection(config);
+    pc.onicecandidate = e => { if (e.candidate?.candidate) window.peerlaneSignal({ type: 'candidate', candidate: e.candidate.toJSON() }); };
+    pc.onicecandidateerror = e => this.log.push(`candidate-error ${e.errorCode} ${e.errorText} ${e.url ?? ''}`);
+    pc.oniceconnectionstatechange = () => this.log.push(`ice ${pc.iceConnectionState}`);
+    pc.onconnectionstatechange = () => this.log.push(`pc ${pc.connectionState}`);
+    pc.ontrack = e => {
+      if (this.sink) return;
+      const v = this.sink = document.createElement('video');
+      Object.assign(v, { autoplay: true, playsInline: true, muted: false, srcObject: e.streams[0] });
+      document.body.append(v);
+      v.play().catch(err => this.log.push(`play ${err.name}`));
+    };
+    if (media) {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { width: 640, height: 480 } });
+      for (const track of stream.getTracks()) pc.addTrack(track, stream);
+    }
+    const wire = dc => {
+      this.dc = dc;
+      dc.onopen = () => this.log.push('dc open');
+      dc.onmessage = e => { this.received.push(e.data); if (e.data.startsWith('ping-')) dc.send(`pong-${e.data.slice(5)}`); };
+    };
+    if (initiator) {
+      wire(pc.createDataChannel('peerlane'));
+      await pc.setLocalDescription(await pc.createOffer());
+      window.peerlaneSignal({ type: 'description', description: { type: pc.localDescription.type, sdp: pc.localDescription.sdp } });
+    } else pc.ondatachannel = e => wire(e.channel);
+  },
+  async signal(msg) {
+    const pc = this.pc;
+    const add = c => pc.addIceCandidate(c).catch(e => this.errors.push(`addIceCandidate: ${e}`));
+    if (msg.type === 'description') {
+      await pc.setRemoteDescription(msg.description);
+      this.remoteSet = true;
+      for (const c of this.pending.splice(0)) await add(c);
+      if (msg.description.type === 'offer') {
+        await pc.setLocalDescription(await pc.createAnswer());
+        window.peerlaneSignal({ type: 'description', description: { type: pc.localDescription.type, sdp: pc.localDescription.sdp } });
+      }
+    } else if (!this.remoteSet) this.pending.push(msg.candidate);
+    else await add(msg.candidate);
+  },
+  async report() {
+    if (!this.pc) return null;
+    const all = new Map();
+    (await this.pc.getStats()).forEach(s => all.set(s.id, s));
+    let pair = null;
+    for (const s of all.values()) if (s.type === 'transport' && s.selectedCandidatePairId) pair = all.get(s.selectedCandidatePairId) ?? pair;
+    if (!pair) for (const s of all.values()) if (s.type === 'candidate-pair' && (s.selected || (s.nominated && s.state === 'succeeded'))) pair = s;
+    const cand = c => c && { type: c.candidateType, protocol: c.protocol, relayProtocol: c.relayProtocol, address: c.address ?? c.ipAddress, port: c.port ?? c.portNumber, url: c.url };
+    const media = {};
+    for (const s of all.values()) if (s.type === 'inbound-rtp')
+      media[s.kind ?? s.mediaType] = { packetsReceived: s.packetsReceived, framesDecoded: s.framesDecoded, totalSamplesReceived: s.totalSamplesReceived, bytesReceived: s.bytesReceived };
+    const locals = [...all.values()].filter(s => s.type === 'local-candidate').map(cand);
+    return { connectionState: this.pc.connectionState, iceConnectionState: this.pc.iceConnectionState, dataChannel: this.dc?.readyState ?? null,
+      selected: pair && { state: pair.state, nominated: pair.nominated, bytesSent: pair.bytesSent, bytesReceived: pair.bytesReceived,
+        local: cand(all.get(pair.localCandidateId)), remote: cand(all.get(pair.remoteCandidateId)) },
+      localCandidates: locals, media, received: this.received.slice(), log: this.log.slice(), errors: this.errors.slice() };
+  },
+  close() { this.dc?.close(); this.pc?.getSenders().forEach(s => s.track?.stop()); this.pc?.close(); },
+};
+</script>

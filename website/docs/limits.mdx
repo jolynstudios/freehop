@@ -1,0 +1,65 @@
+---
+title: Limits
+sidebar_label: Limits
+description: What Freehop cannot do by design, the engine quirks it works around, and what has not been verified yet.
+---
+
+import { UnreachableScene } from '@site/src/components/scenes';
+
+<UnreachableScene caption="A house with a wall around it, where only the mail slot opens. Envelopes get through. Media cannot." />
+
+Freehop is alpha software, qualified in a lab. This page lists what it cannot do by design, the browser quirks it works around, and what has not been verified yet. Read it before you depend on Freehop.
+
+## Limits by design
+
+### Networks that only reach the gate
+
+Gus is on a guest network that lets traffic through to the gate's host and to nothing else. Envelopes reach the gate, so Gus can be introduced, but there is no machine in the session his media could travel to. Carrying it through the gate would mean the operator carries media, which is exactly what Freehop rules out. Freehop reports such pairs as `unreachable` (lab scenario `gate-only`).
+
+A gate operator who *chooses* to also run a gateway, for example a community gate, can serve such users. Your own gates do not.
+
+### Two hard networks and nobody else
+
+Two browser-only participants who are both behind hard NATs or UDP-blocking networks, with no IPv6, no gateway in the session and no third participant, cannot connect (lab scenario `hard-pair`). Any one of these changes that: a desktop player with a reachable gateway, a [host node](./concepts/host-nodes.mdx), or a third participant who reaches both and can [forward](./concepts/forwarding.mdx).
+
+When a pair is `unreachable`, Freehop keeps retrying with ICE restarts after 30, 60, 120 and 240 seconds, then every 300 seconds, at almost no cost to the gate. Show your users an honest message, such as "voice unavailable on this network", rather than silence.
+
+### Small rooms
+
+Rooms are a full mesh designed for 2 to 8 participants. Every participant sends its media to every other participant, so upstream grows with the room: at five participants with video, each one sends about 4 × 330 kbit/s.
+
+### Trust and privacy
+
+- **IP addresses.** As in any WebRTC call, participants learn each other's IP addresses. Hiding them would need a relay in every call, which breaks the cost rule.
+- **Members trust each other for signalling.** All members share one room key, so any member can forge envelopes in the room's name. Removing someone always requires a key rotation.
+- **Gateway credentials.** Until they expire, a room member could use a gateway's credentials to relay traffic to arbitrary public hosts. You can shorten the credential lifetime.
+
+### Forwarding
+
+Bridged media is decoded and re-encoded by the forwarding participant, which costs CPU and some quality. Forwarded video is capped at 200 kbit/s.
+
+### Practicalities
+
+- Freehop is not published to the npm registry yet; install it from GitHub.
+- Host nodes need a runtime with a global `WebSocket` (Node.js 22 or newer) and at least one Freehop gate (`wss://`) in their tickets; they do not use tracker gates.
+- Public WebTorrent trackers are third-party services. When you use them as gates, their availability is outside your control; list more than one.
+
+## Browser quirks Freehop works around
+
+- **Chromium and simultaneous ICE restarts.** In the lab, simultaneous restarts (glare) intermittently left the polite side's senders silent after its restart offer was rolled back. Freehop lets only one side restart.
+- **WebKit and TURN URLs.** Playwright 1.62's WebKit build rejects `?transport=` in TURN URLs (WebKit bug 320931). The client detects this and falls back to UDP-only TURN URLs for that engine.
+
+## Not yet verified
+
+These are the next phases of verification. Until they are done, treat Freehop's behaviour on them as unknown:
+
+1. **Physical networks:** real home routers, 4G and 5G carrier NAT (usually with IPv6), a UDP-blocking corporate network, and routers without UPnP, PCP or NAT-PMP.
+2. **The [Redline Wars](./redline-wars.mdx) integration** through the SDK, including the game's strict frame-time checks with voice on.
+3. **iOS Safari and Android browsers.** Only desktop engines were tested.
+4. **Media quality under real load,** including how much upload a forwarding player on home broadband can spare.
+
+The [qualification results](./results.mdx) list exactly what *has* been verified.
+
+## Next
+
+Freehop comes with no warranty. Read the [license and disclaimer](./license.mdx).

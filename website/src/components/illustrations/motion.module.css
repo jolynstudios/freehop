@@ -1,0 +1,185 @@
+/* Ambient motion for illustrations. Everything here stops under prefers-reduced-motion. */
+
+.dash {
+  animation: dash 1.4s linear infinite;
+}
+.dashSlow {
+  animation: dash 2.8s linear infinite;
+}
+@keyframes dash {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+
+.bob {
+  transform-box: fill-box;
+  animation: bob 3.4s ease-in-out infinite;
+}
+.bobLate {
+  transform-box: fill-box;
+  animation: bob 3.4s ease-in-out -1.7s infinite;
+}
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.drift {
+  animation: drift 16s ease-in-out infinite alternate;
+}
+.driftLate {
+  animation: drift 21s ease-in-out -7s infinite alternate;
+}
+@keyframes drift {
+  from {
+    transform: translateX(-16px);
+  }
+  to {
+    transform: translateX(16px);
+  }
+}
+
+.wave1,
+.wave2 {
+  animation: wave 2s ease-out infinite;
+}
+.wave2 {
+  animation-delay: 0.35s;
+}
+@keyframes wave {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  25%,
+  60% {
+    opacity: 1;
+  }
+}
+
+/* A front door swinging open and shut around its hinge (left edge). */
+.doorSwing {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: swing 5s cubic-bezier(0.5, 0, 0.2, 1) infinite;
+}
+@keyframes swing {
+  0%,
+  12% {
+    transform: scaleX(1);
+  }
+  30%,
+  82% {
+    transform: scaleX(-0.42);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+.doorOpen {
+  transform-box: fill-box;
+  transform-origin: left center;
+  transform: scaleX(-0.42);
+}
+
+/* Mailbox flag: raised while an envelope is inside. */
+.flag {
+  transform-box: fill-box;
+  transform-origin: 0% 100%;
+  animation: flag 4s ease-in-out infinite;
+}
+@keyframes flag {
+  0%,
+  30% {
+    transform: rotate(90deg);
+  }
+  40%,
+  70% {
+    transform: rotate(0deg);
+  }
+  80%,
+  100% {
+    transform: rotate(90deg);
+  }
+}
+
+.lamp {
+  animation: lamp 2.2s steps(1, end) infinite;
+}
+@keyframes lamp {
+  0%,
+  60% {
+    fill: #ffe600;
+  }
+  61%,
+  100% {
+    fill: #ffffff;
+  }
+}
+
+.blinkSoft {
+  animation: blinkSoft 2.6s ease-in-out infinite;
+}
+@keyframes blinkSoft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.wiggle {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: wiggle 2.4s ease-in-out infinite;
+}
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+
+.bounceBack {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash,
+  .dashSlow,
+  .bob,
+  .bobLate,
+  .drift,
+  .driftLate,
+  .wave1,
+  .wave2,
+  .doorSwing,
+  .flag,
+  .lamp,
+  .blinkSoft,
+  .wiggle {
+    animation: none !important;
+  }
+  .wave1,
+  .wave2 {
+    opacity: 1;
+  }
+  .doorSwing {
+    transform: scaleX(-0.42);
+  }
+  .flag {
+    transform: rotate(0deg);
+  }
+}

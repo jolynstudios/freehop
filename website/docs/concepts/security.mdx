@@ -1,0 +1,89 @@
+---
+title: Security model
+sidebar_label: Security model
+description: What Freehop's gates, gateways, forwarders and room members can and cannot learn or do, and how keys, tickets and kicks work.
+---
+
+import { SecurityScene } from '@site/src/components/scenes';
+
+<SecurityScene caption="Everything the gate handles is sealed. Only the people in the room hold the key." />
+
+Freehop assumes that every server in the middle is curious and some are hostile. Gates only ever see sealed envelopes, gateways only relay encrypted media for people they issued keys to, and membership comes from your backend, not from any server Freehop talks to.
+
+## Keys
+
+Each room starts with a **room secret** of at least 128 bits, created by your backend's authority (32 random bytes by default). Members receive it inside their ticket, over your own authenticated channel. Players never see it or share it.
+
+From the secret, every member derives two values with HKDF-SHA256:
+
+| Value | Derivation | Used for |
+|---|---|---|
+| Room tag | `HKDF(secret, salt, info "room-tag")`, 32 bytes, base64url | The only room identifier a gate ever sees |
+| Envelope key | `HKDF(secret, salt, info "envelope-key")` | AES-256-GCM key for every signalling envelope |
+
+The salt is `peerlane/v1/` followed by your app name, so two applications never share tags or keys. "Peerlane" is Freehop's codename, which is why it appears in wire identifiers.
+
+## Sealed envelopes
+
+Every signalling message is sealed before it leaves the browser:
+
+```text
+box = base64url( iv[12] || AES-256-GCM(envelopeKey, iv, plaintext, aad) )
+aad = "peerlane/v1|" + roomTag + "|" + from + "|" + to
+```
+
+The additional data binds the room, the sender and the recipient. If a gate re-labels the sender or re-routes an envelope to someone else, it fails authentication and is dropped. Each sender also numbers its envelopes, and receivers keep a 1024-wide replay window per sender, so replayed envelopes are discarded. Try both attacks in the [gate demo](./gates.mdx#what-the-gate-sees-live).
+
+## Who learns what
+
+| Party | Learns | Cannot |
+|---|---|---|
+| **Gate** | Socket IP addresses, opaque room tags, random peer ids, envelope sizes and timing | Read SDP, candidates, capabilities or credentials; forge or re-route envelopes undetected; add members to a room |
+| **Gateway owner** (a desktop player or host node) | Which peers relay through it, and how much | Read the media: it stays DTLS-SRTP encrypted end to end, and the gateway relays ciphertext |
+| **Forwarding participant** | The media it forwards | Nothing new: it is in the call and already receives both streams |
+| **Room member** | The other members' IP addresses, as in any WebRTC call | Stay in the room after a kick, because the secret rotates |
+
+A hostile gate can drop or delay traffic. Several gates in each ticket mitigate that: clients use all of them, and envelopes arrive through any route that works.
+
+## Membership comes from envelopes, not rosters
+
+A gate's list of peers in a room is only a hint. A hint makes a client greet that peer with its sealed capabilities, at most once every 20 seconds and for at most 64 hints. The peer becomes a member, with `peer` events, a link and a slot, only after an envelope **from** it authenticates. A gate therefore cannot inject or evict members.
+
+## Tickets
+
+A ticket is `{ v, app, roomId, epoch, gates, secret, auth?, expires }`. It carries the room secret, so it is a bearer credential: anyone holding it can join the room. Deliver it only to the member it was issued for, over your application's own authenticated channel, and never put it in a listing or a shareable link. A ticket's `expires` is 6 hours after issue by default, and the gate token inside it expires at the same moment.
+
+## Kicks rotate the room
+
+Removing someone is a key rotation, not a request to a server:
+
+1. Your backend calls `authority.kick(roomId, member)`. The room gets a new secret and a higher `epoch`, and the authority returns fresh tickets for every remaining member.
+2. Your backend delivers those tickets, together with the removed peer's id.
+3. Each client calls `session.update(newTicket, { dropped: [peerId] })`. It disconnects the removed peer at once, moves to the new room tag on every gate and seals with the new key. For 30 seconds it still accepts envelopes under the previous key from peers whose links are connected, so the switch does not drop anyone else.
+4. Gateways revoke the removed peer's credentials and tear down its allocations. A host node does this when you pass `dropped` to `host.update()`, and a desktop player's own gateway does it when you pass `dropped` to `session.update()`.
+
+The removed peer still holds the old secret, but nobody uses it any more: it can no longer read or send signalling.
+
+## Gateways
+
+Gateway credentials are minted per peer and per room, are valid for 2 hours and are only issued to authenticated members. The gateway's default policy refuses loopback, link-local, multicast and private peer addresses, keeps services on its own host unreachable, and enforces quotas (6 allocations per username, 4 Mbit/s per allocation, 40 Mbit/s in total).
+
+One residual risk is documented in the protocol: a room member could use a gateway's credentials to relay traffic to arbitrary public hosts until the credentials expire. Operators who care can shorten the credential lifetime (`credentialTtlSeconds`).
+
+On the desktop, the Electron preload exposes the gateway only to the origins you list with `--freehop-origins=`. Any other page opened in the window never sees it.
+
+## Trust between members
+
+Room members are mutually trusted for signalling: any member can forge envelopes in the room's name, because they share one key. Per-peer signatures are a possible addition to a future protocol version. Removing a member always requires a secret rotation.
+
+## IP addresses
+
+As in any WebRTC call, participants learn each other's IP addresses. Relay-only operation could hide them, but only by putting a relay in every call, which would break the cost rule. Freehop does not do this by default.
+
+## Independent review
+
+An independent security and correctness review of the protocol and code produced 11 findings, 3 of them high. All were fixed and re-tested. Examples: gates could inject peers, the gateway exposed loopback services, and a lost offer could deadlock a pair.
+
+## Next
+
+The [cost model](./cost.mdx) shows what moves off your bill and who carries it instead.

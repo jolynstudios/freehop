@@ -1,0 +1,94 @@
+.section {
+  position: relative;
+  padding: var(--fh-section) var(--fh-gutter);
+}
+
+.paper {
+  background: var(--fh-paper);
+  color: var(--fh-slate);
+}
+
+.surface {
+  background: var(--fh-surface);
+  color: var(--fh-slate);
+  border-top: 1px solid var(--fh-lavender);
+  border-bottom: 1px solid var(--fh-lavender);
+}
+
+.yellow {
+  background: var(--fh-yellow);
+  color: var(--fh-charcoal);
+}
+
+.yellow :focus-visible {
+  outline-color: var(--fh-charcoal);
+}
+
+.inner {
+  max-width: var(--fh-max);
+  margin: 0 auto;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.056em;
+  text-transform: uppercase;
+  color: var(--fh-fog);
+  margin: 0 0 1.1rem;
+}
+
+.eyebrow::before {
+  content: '';
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--fh-yellow);
+  border: 2px solid var(--fh-charcoal);
+}
+
+.yellow .eyebrow {
+  color: var(--fh-charcoal);
+}
+
+.yellow .eyebrow::before {
+  background: var(--fh-azure);
+}
+
+.title {
+  font-family: var(--fh-display);
+  font-weight: 400;
+  font-size: clamp(2.7rem, 6vw, 5.2rem);
+  line-height: 0.86;
+  letter-spacing: 0.005em;
+  color: var(--fh-ink);
+  margin: 0 0 1.5rem;
+  max-width: 16ch;
+  text-wrap: balance;
+}
+
+.yellow .title {
+  color: var(--fh-charcoal);
+}
+
+.chevronText {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5em;
+}
+
+.chevron {
+  font-family: var(--fh-mono);
+  font-weight: 600;
+  color: inherit;
+  opacity: 0.65;
+  transition: transform 0.18s var(--fh-ease), opacity 0.18s var(--fh-ease);
+}
+
+a:hover .chevron {
+  transform: translateX(4px);
+  opacity: 1;
+}

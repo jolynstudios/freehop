@@ -1,0 +1,86 @@
+---
+title: Desktop (Electron)
+sidebar_label: Desktop (Electron)
+description: Reference for installFreehopGateway and the Freehop preload, which give an Electron app's players their own reachable gateway.
+---
+
+A desktop app can do something a browser tab cannot: run a TURN server on the player's machine and ask the router to forward a port to it. Freehop's Electron helper does both in the main process and hands the result to your page through an origin-restricted preload. Players behind hard NATs or UDP-blocking networks can then reach this player without any third party. The [gateways concept page](../concepts/gateways.mdx) explains why.
+
+## Main process
+
+```js title="main.mjs"
+import { app, BrowserWindow, ipcMain } from 'electron';
+import { createRequire } from 'node:module';
+import { installFreehopGateway } from 'freehop/electron';
+
+const require = createRequire(import.meta.url);
+const freehop = installFreehopGateway({ ipcMain });
+app.on('will-quit', () => freehop.close());
+
+app.whenReady().then(() => {
+  const win = new BrowserWindow({
+    webPreferences: {
+      preload: require.resolve('freehop/electron/preload'),
+      additionalArguments: ['--freehop-origins=https://play.example.com'],
+      contextIsolation: true
+    }
+  });
+  win.loadURL('https://play.example.com');
+});
+```
+
+### `installFreehopGateway(params)`
+
+| Parameter | Meaning |
+|---|---|
+| `ipcMain` | Electron's `ipcMain`. The helper registers four handlers on it. |
+| `options` | Passed to the gateway (see below). Optional. |
+| `log` | `(event, details) => void`, for example to forward port-mapping results to your logs. Optional. |
+
+It returns `{ gateway, close() }`. `gateway` stays `null` until a page first asks for it: the gateway starts lazily, so players who never use voice pay nothing. `close()` removes the IPC handlers, stops the TURN server and removes the router mappings (best effort).
+
+### Gateway options
+
+| Option | Default | Meaning |
+|---|---|---|
+| `host` | first non-internal IPv4 address | Address the TURN server listens on |
+| `port` | `3478` | Listener port, UDP and TCP |
+| `relayPortRange` | `[49160, 49359]` | Ports for relay allocations, mapped on demand |
+| `portMapping` | `true` | Ask the router for mappings (PCP, then NAT-PMP, then UPnP IGD). `false` disables it |
+| `externalAddress` | none | With `portMapping: false`: the public address of ports you forwarded by hand |
+| `credentialTtlSeconds` | `7200` | Lifetime of the per-peer credentials |
+| `limits` | built-in | TURN quotas; by default 6 allocations per username, 4 Mbit/s per allocation, 40 Mbit/s in total |
+
+## Preload: window.freehopGateway
+
+The preload (`freehop/electron/preload`) exposes `window.freehopGateway` **only** to pages whose origin appears in `--freehop-origins=`, a comma-separated list you pass through `additionalArguments`. Any other page in the window, such as a link a player opens, never sees the gateway or its secret.
+
+| Method | What it does |
+|---|---|
+| `info()` | Starts the gateway if needed and resolves to its description, or `null` when this machine cannot be reached from outside |
+| `allowRoom(tag)` | Lets the gateway serve a room tag |
+| `revokePeer(tag, peer)` | Revokes one peer's credentials and allocations in a room |
+| `revokeRoom(tag)` | Revokes a whole room |
+
+The main process validates every argument (room tags and peer ids must be base64url of the expected length) before it touches the gateway. The IPC channels are `freehop:gateway-info`, `freehop:allow-room`, `freehop:revoke-peer` and `freehop:revoke-room`.
+
+## In your page
+
+Nothing changes. `connect()` looks for `window.freehopGateway`, asks for the gateway's description, allows the ticket's room on it and includes it when it joins. From then on, every member of the room receives credentials minted for them, inside sealed envelopes.
+
+```js
+const session = await connect(ticket, { media: { audio: true } });
+// On the desktop, other players can now reach this player through its own gateway.
+```
+
+When `info()` resolves to `null` (no public address, no router that grants a mapping, or a router whose own external address is private), the app joins as an ordinary peer. Nothing fails; the other steps of the ladder stay available.
+
+For kicks, `session.update(newTicket, { dropped })` drops the listed peers and revokes them on this player's gateway. To remove someone before the new ticket arrives, call `session.kick(peerId)`, which does the same for one peer right away.
+
+## Other Node.js programs
+
+Outside Electron, `startGateway()` from `freehop/relay` runs the same gateway. Pass its `info()` to the client as the `gateway` option of `connect()` or `join()`. A session host that should offer its gateway without joining the call uses [host sessions](./host.mdx) instead.
+
+## Next
+
+[Host sessions](./host.mdx) turn the machine that hosts a match into the session's gateway.

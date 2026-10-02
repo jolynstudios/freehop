@@ -1,0 +1,79 @@
+.badge {
+  --k: var(--fh-path-direct);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42em;
+  padding: 0.16em 0.62em 0.16em 0.5em;
+  border-radius: var(--fh-round);
+  border: 1px solid color-mix(in srgb, var(--k) 32%, white);
+  background: color-mix(in srgb, var(--k) 8%, white);
+  color: var(--k);
+  font-family: var(--fh-mono);
+  font-weight: 500;
+  font-size: 0.8125em;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  vertical-align: 0.06em;
+}
+
+.sm {
+  font-size: 0.75em;
+}
+
+.lg {
+  font-size: 0.9375em;
+  padding: 0.28em 0.8em 0.28em 0.62em;
+}
+
+.dot {
+  width: 0.58em;
+  height: 0.58em;
+  border-radius: 50%;
+  background: var(--k);
+  flex: none;
+}
+
+.via {
+  color: color-mix(in srgb, var(--k) 80%, #333);
+  font-weight: 400;
+}
+
+.direct {
+  --k: var(--fh-path-direct);
+}
+.gateway {
+  --k: var(--fh-path-gateway);
+}
+.relay {
+  --k: var(--fh-path-relay);
+}
+.bridged {
+  --k: var(--fh-path-bridged);
+}
+.unreachable {
+  --k: var(--fh-path-unreachable);
+  background: #ffffff;
+  border-style: dashed;
+  border-color: #8a8a96;
+}
+.unreachable .dot {
+  background: #ffffff;
+  border: 2px solid var(--k);
+}
+.connecting {
+  --k: #6c6c7a;
+}
+.connecting .dot {
+  animation: blink 1.2s ease-in-out infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0.2;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .connecting .dot {
+    animation: none;
+  }
+}

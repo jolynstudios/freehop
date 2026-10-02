@@ -1,0 +1,33 @@
+import Layout from '@theme/Layout';
+import Head from '@docusaurus/Head';
+import Hero from '@site/src/components/home/Hero';
+import Problem from '@site/src/components/home/Problem';
+import Ladder from '@site/src/components/home/Ladder';
+import Proof from '@site/src/components/home/Proof';
+import Quickstart from '@site/src/components/home/Quickstart';
+import Redline from '@site/src/components/home/Redline';
+import Honest from '@site/src/components/home/Honest';
+import {CostSection, FinalCta} from '@site/src/components/home/Closing';
+
+export default function Home() {
+  return (
+    <Layout
+      title="Peer-to-peer calls where your servers never carry the media"
+      description="Freehop is an open-source peer-to-peer voice, video and data SDK. You run only blind gates for sealed signalling; the media hops between the people in the call.">
+      <Head>
+        <html className="fh-home" />
+      </Head>
+      <main>
+        <Hero />
+        <Problem />
+        <Ladder />
+        <CostSection />
+        <Proof />
+        <Quickstart />
+        <Redline />
+        <Honest />
+        <FinalCta />
+      </main>
+    </Layout>
+  );
+}

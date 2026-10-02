@@ -1,0 +1,34 @@
+Freehop
+Copyright 2026 Jolyn Studios
+
+This product includes software developed by Jolyn Studios
+(https://github.com/jolynstudios/freehop).
+
+Freehop was developed under the codename Peerlane. Some protocol identifiers
+(for example the key-derivation salt "peerlane/v1/", the TURN realm and the
+data channel label) keep that name.
+
+LICENSING
+- Source code: Apache License, Version 2.0 (see LICENSE).
+- Documentation, the protocol specification and the website content
+  (README.md, ARCHITECTURE.md, PROTOCOL.md, SDK.md, RESULTS.md, website/docs):
+  Creative Commons Attribution 4.0 International (see LICENSE-docs).
+
+NO WARRANTY
+Freehop is provided "AS IS", without warranties or conditions of any kind,
+either express or implied (Apache License 2.0, sections 7 and 8; CC BY 4.0,
+section 5). You use it entirely at your own risk.
+
+THIRD-PARTY MATERIAL
+- ws (https://github.com/websockets/ws), MIT License.
+  Copyright (c) 2011 Einar Otto Stangvik
+  Copyright (c) 2013 Arnout Kazemier and contributors
+  Copyright (c) 2016 Luigi Pinca and contributors
+  A runtime dependency of the gate service, installed from npm; not bundled in
+  this repository.
+- Test vectors from RFC 5769, "Test Vectors for Session Traversal Utilities for
+  NAT (STUN)", used in test/stun.test.mjs.
+  Copyright (c) 2010 IETF Trust and the persons identified as the document
+  authors. All rights reserved. Code Components extracted from IETF documents
+  are licensed under the Simplified BSD License as described in the IETF
+  Trust's Legal Provisions (https://trustee.ietf.org/license-info).

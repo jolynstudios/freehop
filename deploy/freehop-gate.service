@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: Apache-2.0
+# Freehop gate: signalling-only rendezvous. It never carries media; its traffic is a few
+# KB per call setup. Runs unprivileged, loopback-only behind Caddy, plus a public STUN port.
+[Unit]
+Description=Freehop gate (signalling only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=freehop
+Group=freehop
+WorkingDirectory=/opt/freehop
+Environment=FREEHOP_GATE_HOST=127.0.0.1
+Environment=FREEHOP_GATE_PORT=8787
+Environment=FREEHOP_GATE_PATH=/freehop
+Environment=FREEHOP_GATE_PUBLIC_HOST=play.example.com
+Environment=FREEHOP_GATE_STUN=0.0.0.0:3478,[::]:3478
+Environment=FREEHOP_GATE_TRUST_PROXY=1
+EnvironmentFile=-/etc/freehop/gate.env
+ExecStart=/usr/bin/node /opt/freehop/bin/freehop-gate.mjs
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+MemoryMax=256M
+LimitNOFILE=8192
+
+[Install]
+WantedBy=multi-user.target

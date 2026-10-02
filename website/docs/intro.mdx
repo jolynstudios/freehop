@@ -1,0 +1,83 @@
+---
+slug: /
+title: Introduction
+sidebar_label: Introduction
+description: Freehop is an open-source SDK for peer-to-peer voice, video and data calls in which the operator's servers never carry or pay for media.
+---
+
+import { IntroScene } from '@site/src/components/scenes';
+import { StatGrid, Stat } from '@site/src/components/Stats';
+import PathBadge from '@site/src/components/PathBadge';
+
+<IntroScene caption="Homes are the people in the call, the globe is the internet, and the mailbox is a gate. Media hops from home to home." />
+
+Freehop connects 2 to 8 people with audio, video and data in browsers and desktop apps. Your servers never carry or pay for the media: they only run **gates**, blind mailboxes that pass sealed signalling envelopes between the people in a call.
+
+:::caution[Alpha, lab-qualified]
+
+Freehop is alpha software. It passed a full qualification in an isolated network lab (40 of 40 runs, three browser engines), but it has not yet been verified on physical home routers, 4G/5G carrier networks, corporate networks or mobile browsers. See [Limits](./limits.mdx) before you depend on it.
+
+:::
+
+## The one rule
+
+A byte of media only crosses machines that belong to the call: the two people talking, another participant, or the machine that hosts the session. Your servers are never on that list.
+
+Classic WebRTC deployments fall back to a TURN relay that the operator rents. Every relayed minute of every call flows through that relay, and the operator pays for the bandwidth. Freehop removes that fallback and replaces it with routes that stay inside the session:
+
+| Step | Path | What carries the media |
+|---|---|---|
+| 1 | <PathBadge kind="direct" /> | Nothing in between: LAN, IPv6, or addresses discovered with STUN |
+| 2 | <PathBadge kind="gateway" /> | A desktop player's own gateway, reachable through their router's port mapping |
+| 3 | <PathBadge kind="relay" /> | The gateway of another session member, such as the session's host node |
+| 4 | <PathBadge kind="bridged" /> | Another participant, who forwards the media because it is in the call anyway |
+| | <PathBadge kind="unreachable" /> | Nothing: an honest status when no route exists inside the session |
+
+The [paths and escalation](./concepts/paths.mdx) page explains when each step is tried and how long it gets.
+
+## What you run
+
+| Piece | Runs on | Job |
+|---|---|---|
+| **Authority** | Your backend | Decides who is in a room and hands each member a **ticket** |
+| **Gate** | Any server, any number of them | Passes sealed envelopes between peers that announce the same room tag |
+| **Client** | Every browser or desktop renderer | Joins with the ticket, negotiates media and climbs the path ladder |
+| **Desktop gateway** (optional) | A player's desktop app | Opens the player's own front door: TURN plus a router port mapping |
+| **Host node** (optional) | The machine that hosts the session | Joins without media and offers its gateway to the session |
+
+A gate carries tens of kilobytes per call setup and almost nothing afterwards, because signalling moves onto the peers' own data channels once they are connected. Clients use every gate in their ticket, peers on different gates still meet through each other, and calls keep running when every gate goes down. A gate can even be a public WebTorrent tracker (`bt+wss://…`), so a room can run with no server of your own at all. The [live call](/demo) on this site works that way.
+
+## Meet the people in our examples
+
+The documentation follows the same people through every page, so you can compare their paths:
+
+| Person | Network | Lab profile |
+|---|---|---|
+| **Ana** | Home Wi-Fi behind an ordinary home router | `eim` |
+| **Ben** | A phone hotspot behind a carrier NAT that picks a new random port for every destination (a symmetric NAT) | `random` |
+| **Kai** | Another phone hotspot with the same kind of NAT as Ben | `random` |
+| **Cleo** | A fibre line with a public address | `public` |
+| **Dani** | The desktop app, behind a home router that supports UPnP, PCP or NAT-PMP | `upnp` |
+| **Omar** | An office network that blocks all UDP | `udpblock` |
+| **Ivy** | A network with IPv6, where IPv4 UDP is blocked | `v6` |
+| **Gus** | A guest network that only lets traffic through to the gate's host | `gateonly` |
+
+The lab profile column names the Linux kernel NAT profile that emulates each network in Freehop's [qualification lab](./results.mdx). Physical carrier networks, offices and guest networks are not yet part of that evidence.
+
+## Status
+
+<StatGrid>
+  <Stat value="40/40" label="lab runs passed" note="11 network scenarios × 3 trials, plus 7 cross-engine runs" />
+  <Stat value="79/79" label="unit tests" note="STUN, TURN, port mapper, gate, gateway" />
+  <Stat value="800/800" label="TURN messages, UDP and TCP" note="coturn's turnutils_uclient against Freehop's TURN server, 0 lost" />
+</StatGrid>
+
+The browser client has zero runtime dependencies. The gate uses `ws`. The gateway uses only Node.js built-ins. Freehop's first production consumer and test environment is [Redline Wars](./redline-wars.mdx), a browser and desktop real-time strategy game, which is integrating it through the public SDK.
+
+## Where to go next
+
+- [Quickstart](./quickstart.mdx): the five pieces of an integration, with code.
+- [Gates](./concepts/gates.mdx): what a gate is, and what it can and cannot see.
+- [Paths and escalation](./concepts/paths.mdx): how a pair of peers finds its route, with an interactive path finder.
+- [Cost model](./concepts/cost.mdx): what moves off your bill, and who carries it instead.
+- [Live call](/demo): a real call in your browser, introduced by public trackers only.

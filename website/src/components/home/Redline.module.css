@@ -1,0 +1,121 @@
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: center;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.lede {
+  font-size: clamp(1.1rem, 1.5vw, 1.3rem);
+  line-height: 1.55;
+  color: var(--fh-charcoal);
+  margin: 0 0 1rem;
+}
+
+.body {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: var(--fh-charcoal);
+  margin: 0 0 1.4rem;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  background: var(--fh-white);
+  border: 2px solid var(--fh-charcoal);
+  border-radius: var(--fh-round);
+  padding: 0.4rem 0.95rem;
+  margin: 0 0 1.75rem;
+}
+
+.dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: var(--fh-azure);
+  border: 2px solid var(--fh-charcoal);
+  animation: dot 1.6s ease-in-out infinite;
+}
+
+@keyframes dot {
+  50% {
+    background: var(--fh-white);
+  }
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.primary,
+.secondary {
+  font-weight: 600;
+  border-radius: var(--fh-round);
+  padding: 0.75rem 1.3rem;
+  border: 3px solid var(--fh-charcoal);
+  transition: transform 0.18s var(--fh-ease);
+}
+
+.primary {
+  background: var(--fh-charcoal);
+  color: var(--fh-yellow);
+}
+
+.primary:hover {
+  color: var(--fh-yellow);
+  transform: translateY(-2px) rotate(-1deg);
+}
+
+.secondary {
+  background: var(--fh-white);
+  color: var(--fh-charcoal);
+}
+
+.secondary:hover {
+  color: var(--fh-charcoal);
+  transform: translateY(-2px) rotate(1deg);
+}
+
+.tertiary {
+  font-weight: 600;
+  color: var(--fh-charcoal);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.25em;
+}
+
+.tertiary:hover {
+  color: var(--fh-charcoal);
+  text-decoration-color: var(--fh-azure);
+}
+
+@media (max-width: 996px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .art {
+    order: 2;
+    max-width: 560px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+  }
+}

@@ -1,0 +1,132 @@
+.container {
+  max-width: calc(var(--fh-max) + 2 * var(--fh-gutter));
+  margin: 0 auto;
+  padding: clamp(2rem, 5vw, 3.5rem) var(--fh-gutter) 1rem;
+}
+
+.loading {
+  font-size: 1rem;
+  color: var(--fh-fog);
+}
+
+.notes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--fh-lavender);
+}
+
+.noteTitle {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--fh-ink);
+  margin: 0 0 0.75rem;
+}
+
+.notes ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--fh-slate);
+}
+
+.notes li + li {
+  margin-top: 0.4rem;
+}
+
+.notes a {
+  color: var(--fh-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--fh-mist);
+  text-underline-offset: 0.2em;
+}
+
+.jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.4rem;
+}
+
+.jumpLink,
+.jumpLive {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border: 2px solid var(--fh-charcoal);
+  border-radius: var(--fh-round);
+  padding: 0.4rem 0.9rem;
+  transition: transform 0.16s var(--fh-ease);
+}
+
+.jumpLink {
+  background: var(--fh-white);
+  color: var(--fh-charcoal);
+}
+
+.jumpLive {
+  background: var(--fh-charcoal);
+  color: var(--fh-yellow);
+}
+
+.jumpLink:hover,
+.jumpLive:hover {
+  transform: translateY(-2px);
+}
+
+.jumpLink:hover {
+  color: var(--fh-charcoal);
+}
+
+.jumpLive:hover {
+  color: var(--fh-yellow);
+}
+
+.jumpLive span {
+  font-family: var(--fh-mono);
+  margin-left: 0.3rem;
+}
+
+.demo {
+  scroll-margin-top: calc(var(--ifm-navbar-height) + 1rem);
+  padding: 1.5rem 0 1rem;
+}
+
+.demo + .demo {
+  border-top: 1px solid var(--fh-lavender);
+  padding-top: 3rem;
+}
+
+.demoHead {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 0.5rem 3rem;
+  align-items: end;
+  margin-bottom: 0.5rem;
+}
+
+.demoTitle {
+  font-family: var(--fh-display);
+  font-weight: 400;
+  font-size: clamp(2.2rem, 4.5vw, 3.4rem);
+  line-height: 0.9;
+  color: var(--fh-ink);
+  margin: 0;
+}
+
+.demoText {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--fh-slate);
+  max-width: 40rem;
+}
+
+@media (max-width: 996px) {
+  .notes,
+  .demoHead {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

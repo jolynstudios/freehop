@@ -1,0 +1,120 @@
+---
+title: 'Client: connect'
+sidebar_label: 'Client: connect'
+description: Reference for connect(ticket, options), the browser and desktop-renderer entry point of the Freehop SDK, with its options, methods and events.
+---
+
+`connect()` is what your front end calls. Give it the ticket your backend issued; it joins the room through the ticket's gates, captures media when you ask for it, uses the desktop gateway automatically inside the Electron helper, and follows ticket rotations after kicks.
+
+```js title="call.js"
+import { connect } from 'freehop';
+
+const session = await connect(ticket, { media: { audio: true, video: true } });
+
+session.on('peer', ({ id }) => tileFor(id));
+session.on('track', ({ peer, track }) =>
+  session.attach(track, tileFor(peer).querySelector(track.kind === 'video' ? 'video' : 'audio')));
+session.on('path', ({ peer, kind, via }) => {
+  tileFor(peer).dataset.path = via ? `${kind} via ${via.slice(0, 6)}` : kind;
+});
+session.on('peer-left', ({ id }) => tileFor(id).remove());
+
+reportPeerIdToBackend(session.id);   // lets your backend name this peer in a kick
+```
+
+The browser client has no runtime dependencies. It needs WebRTC, WebSocket and the Web Crypto API.
+
+## connect(ticket, options)
+
+`ticket` is a ticket object or the string from `encodeTicket()`. An invalid ticket throws a `TypeError`.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `media` | none | `{ audio, video }` to capture the microphone and camera now, or a `MediaStream` you captured yourself. Without it, you join receive-only and can turn devices on later. |
+| `desktopGateway` | `window.freehopGateway` | The desktop gateway bridge exposed by the [Electron preload](./desktop.mdx). Pass `null` to ignore it. |
+| `gateway` | none | A gateway description from `startGateway().info()`, when your app hands the page its own gateway some other way than the Electron preload. |
+| `stun` | none | Extra STUN URLs, added to those the gates advertise. |
+| `forward` | `true` | Whether this participant may [forward](../concepts/forwarding.mdx) media for pairs that cannot connect. |
+| `log` | none | `(event, details) => void` for diagnostics. |
+| `timing`, `limits` | built-in | Overrides for the protocol's timers and limits. Leave them alone unless you test the protocol itself. |
+
+Media is captured with echo cancellation, noise suppression and automatic gain control for audio, and at 640×360 (up to 24 fps ideal) for video. Each link sends audio at up to 32 kbit/s and video at up to 300 kbit/s. Rooms are a full mesh designed for 2 to 8 participants.
+
+## The session
+
+`connect()` resolves with a session object:
+
+| Member | What it does |
+|---|---|
+| `id` | This peer's id: 22 base64url characters, fresh for every join. |
+| `on(event, handler)` | Subscribes to an event and returns an unsubscribe function. `off(event, handler)` also works. |
+| `setMicrophone(enabled)` | Turns the microphone on (capturing it on first use) or mutes it. Muting disables the track without renegotiation. |
+| `setCamera(enabled)` | Turns the camera on, or stops it and frees the device. |
+| `attach(track, element)` | Plays a remote track in an `<audio>` or `<video>` element (sets `srcObject`, autoplay, inline playback). |
+| `levels()` | Resolves to `{ [peerId]: 0..1 }`: the current speaking level of each origin peer, from inbound audio statistics. |
+| `update(ticket, { dropped })` | Applies a newer ticket for the same room after a kick, drops the listed peer ids and revokes them on this player's desktop gateway. Resolves to `false` if the ticket is not newer. |
+| `kick(peerId)` | Disconnects a peer now and revokes it on this player's desktop gateway, without waiting for the new ticket. |
+| `drop(peerId)` | Disconnects a peer locally, without touching a gateway. |
+| `ticket()` | The current ticket. |
+| `stats()` | A snapshot of gates, links, paths, media counters and bridges (see below). |
+| `leave()` | Says goodbye to every member, closes all links and gates, and stops the devices it captured. |
+
+## Events
+
+| Event | Payload | When |
+|---|---|---|
+| `peer` | `{ id }` | A member authenticated with its first sealed envelope. |
+| `peer-left` | `{ id, reason }` | `reason` is `bye` (it left), `dropped` (a kick) or `gone` (absent from every gate for 8 s without a connected link; it may come back). |
+| `track` | `{ peer, via, track, stream }` | A remote track. `peer` is the origin. `via` is the forwarding participant when the pair is bridged, otherwise `null`. |
+| `track-ended` | `{ peer, via, stream }` | A forwarded stream was withdrawn. |
+| `path` | `{ peer, kind, via, ... }` | The route to a peer changed. See below. |
+| `link` | `{ peer, connected }` | The connection to a peer came up or went down. |
+| `gate` | `{ url, state, code }` | A gate's state: `joined`, `reconnecting` or `error` (with an error `code`). |
+| `gateway` | `{ id, available }` | A host node (gateway member) appeared or left. |
+| `closed` | `{}` | The session ended after `leave()`. |
+
+## Path kinds
+
+| `kind` | Meaning | Extra fields |
+|---|---|---|
+| `connecting` | Still negotiating | `phase`: 0 endpoint, 1 session, 2 bridged |
+| `direct` | No relay on either side | `local`, `remote` (candidate types), `protocol`, `localAddress`, `remoteAddress`, `rtt`, `bytesSent`, `bytesReceived` |
+| `gateway` | Through one endpoint's own gateway; `via` is its owner | As above, plus `relayProtocol` and `relayUrl` |
+| `relay` | Through another session member's gateway; `via` is its owner | As for `gateway` |
+| `bridged` | Forwarded by a participant; `via` is the forwarder | |
+| `unreachable` | No route inside the session right now | |
+
+`via` is a peer id. It is `'unknown'` in the rare case where a relay cannot be matched to a member. Show users the path: "voice unavailable on this network" is a better message than silence.
+
+## stats()
+
+```js
+const s = await session.stats();
+// s.gates  -> [{ url, state, sent, received, bytesOut, bytesIn, errors, connects }]
+// s.links  -> [{ peer, connected, phase, path, restarts, connectMs, media: { inbound, outbound } }]
+// s.bridges, s.relaying, s.counters
+```
+
+`bytesOut` and `bytesIn` per gate are what your gate actually carried for this client: a quick way to see that media never touches it.
+
+## Without a backend: join()
+
+`freehop/client` exports the lower-level `join()`, which takes the gates and a shared secret directly. It is what `connect()` uses internally, and what the [live call](/demo) on this site uses with public trackers:
+
+```js
+import { join } from 'freehop/client';
+
+const room = await join({
+  gates: ['bt+wss://tracker.openwebtorrent.com', 'bt+wss://tracker.webtorrent.dev'],
+  stun: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'],
+  secret: roomCode,          // at least 16 bytes of entropy, shared by every member
+  app: 'my-app',
+  media: { audio: true, video: true }
+});
+```
+
+Without an authority there are no tickets and no kicks: everyone who knows the secret can join. Use `connect()` with tickets for anything beyond a demo.
+
+## Next
+
+[Desktop (Electron)](./desktop.mdx) adds a player's own gateway to the same session.

@@ -1,0 +1,213 @@
+.section {
+  overflow: hidden;
+}
+
+.head {
+  max-width: 760px;
+  margin-bottom: clamp(2.5rem, 5vw, 4rem);
+}
+
+.title {
+  max-width: 13ch;
+}
+
+.lede {
+  font-size: clamp(1.05rem, 1.4vw, 1.25rem);
+  line-height: 1.55;
+  max-width: 36rem;
+  margin: 0;
+  color: var(--fh-charcoal);
+}
+
+.steps {
+  position: relative;
+  container-type: inline-size;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1.75rem;
+}
+
+.road {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  width: 100%;
+  /* Same height as a porthole, so the road runs through their centres. */
+  height: min(210px, calc((100cqi - 7rem) / 5));
+  pointer-events: none;
+}
+
+.step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.art {
+  position: relative;
+  width: min(100%, 210px);
+  aspect-ratio: 1;
+  transition: transform 0.3s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+.art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.step:hover .art {
+  transform: translateY(-6px) rotate(-3deg);
+}
+
+.badge {
+  position: absolute;
+  top: 2%;
+  left: 2%;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: var(--fh-white);
+  border: 3px solid var(--fh-charcoal);
+  display: grid;
+  place-items: center;
+  font-family: var(--fh-display);
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--fh-charcoal);
+}
+
+.copy {
+  margin-top: 1.1rem;
+  max-width: 15rem;
+}
+
+.name {
+  font-family: var(--fh-display);
+  font-weight: 400;
+  font-size: 2.1rem;
+  line-height: 0.9;
+  margin: 0 0 0.35rem;
+  color: var(--fh-charcoal);
+}
+
+.when {
+  display: inline-block;
+  font-family: var(--fh-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--fh-charcoal);
+  background: var(--fh-white);
+  border: 2px solid var(--fh-charcoal);
+  border-radius: var(--fh-round);
+  padding: 0.1rem 0.6rem;
+  margin: 0 0 0.7rem;
+}
+
+.text {
+  margin: 0;
+  font-size: 0.975rem;
+  line-height: 1.5;
+  color: var(--fh-charcoal);
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  margin-top: clamp(2.5rem, 5vw, 3.75rem);
+  justify-content: center;
+}
+
+.cta {
+  font-weight: 600;
+  font-size: 1.0625rem;
+  color: var(--fh-yellow);
+  background: var(--fh-charcoal);
+  border-radius: var(--fh-round);
+  padding: 0.8rem 1.4rem;
+  transition: transform 0.18s var(--fh-ease);
+}
+
+.cta:hover {
+  color: var(--fh-yellow);
+  transform: translateY(-2px) rotate(-1deg);
+}
+
+.ctaQuiet {
+  font-weight: 600;
+  font-size: 1.0625rem;
+  color: var(--fh-charcoal);
+  padding: 0.8rem 0.2rem;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.25em;
+}
+
+.ctaQuiet:hover {
+  color: var(--fh-charcoal);
+  text-decoration-color: var(--fh-azure);
+}
+
+@media (max-width: 1100px) {
+  .steps {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 2.75rem;
+  }
+  .step {
+    flex: 0 1 calc((100% - 3.5rem) / 3);
+  }
+  .road {
+    display: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .steps {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 1.6rem;
+  }
+  .step {
+    flex-direction: row;
+    align-items: flex-start;
+    text-align: left;
+    gap: 1.1rem;
+  }
+  .art {
+    width: 118px;
+    flex: none;
+  }
+  .badge {
+    width: 2.1rem;
+    height: 2.1rem;
+    font-size: 1.1rem;
+    top: -4%;
+    left: -4%;
+  }
+  .copy {
+    margin-top: 0.4rem;
+    max-width: none;
+  }
+  .name {
+    font-size: 1.8rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .art {
+    transition: none;
+  }
+  .step:hover .art {
+    transform: none;
+  }
+}

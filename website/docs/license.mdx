@@ -1,0 +1,40 @@
+---
+title: License and disclaimer
+sidebar_label: License & disclaimer
+description: Freehop's code is licensed under Apache-2.0 and its documentation and protocol specification under CC BY 4.0, and it comes without warranty of any kind.
+---
+
+Freehop is open source. The code is licensed under Apache-2.0, and the documentation and protocol specification under CC BY 4.0. © 2026 Jolyn Studios.
+
+:::danger[No warranty]
+
+**Freehop is provided as is, without warranty of any kind. You use it at your own risk.**
+
+:::
+
+## Licenses
+
+| What | License |
+|---|---|
+| The code: SDK, client, gate, gateway, Electron helper, examples, tests and lab scripts | [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) |
+| The documentation on this site and the [protocol specification](./protocol.md) | [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) |
+
+Source files carry `SPDX-License-Identifier: Apache-2.0` headers. When you reuse the documentation or the specification, credit it as "Freehop documentation, © 2026 Jolyn Studios, licensed under CC BY 4.0" and link to the license.
+
+## What "no warranty" means in practice
+
+Both licenses already exclude warranties and limit liability (Apache-2.0 sections 7 and 8, CC BY 4.0 section 5). For an alpha networking SDK, that has concrete consequences:
+
+- **Test it on your own users' networks.** Freehop is qualified in a lab with emulated NATs. Physical home routers, carrier networks, corporate networks and mobile browsers are [not yet verified](./limits.mdx#not-yet-verified).
+- **There is no service level.** Nobody guarantees that a gate, a public tracker, a gateway or a host node is available, or that a call connects.
+- **Peers see each other's IP addresses**, as in any WebRTC call. Say so in your privacy information.
+- **Gateways and host nodes spend someone's bandwidth.** If your users run them, make it their informed choice.
+- **You are responsible for your deployment:** your backend's authentication, how you deliver tickets, your gate's configuration and your users' data.
+
+Report problems on [GitHub](https://github.com/jolynstudios/freehop/issues).
+
+## Third-party software
+
+- The gate uses [`ws`](https://github.com/websockets/ws) (MIT License).
+- The browser client has no runtime dependencies, and the gateway uses only Node.js built-ins. No PeerJS, libp2p or other networking library is used.
+- This website is built with [Docusaurus](https://docusaurus.io) (MIT License) and uses the Changa One, Rubik and IBM Plex Mono typefaces from Google Fonts (SIL Open Font License).

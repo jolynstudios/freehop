@@ -1,0 +1,50 @@
+---
+title: Forwarding (bridging)
+sidebar_label: Forwarding (bridging)
+description: When two peers have no route and no session gateway exists, a third participant who reaches both forwards their media.
+---
+
+import { BridgeScene } from '@site/src/components/scenes';
+
+<BridgeScene caption="Two houses that cannot see each other, and a neighbour in the middle who passes the ball along." />
+
+When two people in a call cannot reach each other and no session gateway is left to try, a third participant who is connected to both can pass their media along. That participant is already in the call and already receives both streams, so forwarding exposes nothing new to them.
+
+## An example
+
+Ben and Kai are both behind carrier NATs that pick a new random port for every destination, and Cleo has a fibre line with a public address. All three are in the same call, and nobody runs a desktop gateway or a host node.
+
+- Ben and Cleo connect directly, and so do Kai and Cleo: Cleo's public address accepts their packets.
+- Ben and Kai fail the endpoint phase, and the session phase has no gateway to add.
+- The peer with the lower id of the pair asks Cleo to bridge. Cleo agrees, and from then on she forwards Ben's audio and video to Kai, and Kai's to Ben.
+- Both report the path as `bridged` via Cleo. Their own media to Cleo stays direct.
+
+This is lab scenario `hard-pair-bridge`: three passes out of three with Chromium, and a cross-engine pass with Firefox and WebKit as Ben and Kai, at 91 to 115 KB of gate traffic per run.
+
+## How a bridge is set up
+
+1. **Request.** The endpoint with the lower id sends `bridge-request` to every connected participant whose capabilities report a link to the other endpoint. If nothing happens within 4 seconds, the other endpoint takes over.
+2. **Offer and accept.** The first participant to answer with `bridge-offer` wins, and the endpoint confirms with `bridge-accept`.
+3. **Map, then forward.** The forwarder first tells each side which stream id belongs to which origin (`forward-map`), then adds the origin's tracks to its link with the other side, and finally sends `bridge-active` to both. The SDK's `track` events name the origin as `peer` and the forwarder as `via`, so your interface can put each stream in the right tile.
+4. **Release.** The endpoints keep retrying the cheaper routes in the background. When a direct or session route connects later, they release the bridge; the forwarder stops the forwarded transceivers (so the session description does not keep growing) and sends `forward-unmap`. If the forwarder leaves or its link drops, the endpoints escalate again.
+
+## Guard rails
+
+- A forwarder accepts `bridge-accept` only for an offer it made to that endpoint within the last 30 seconds, only while forwarding is enabled, and only under its limit of 4 bridges.
+- An endpoint that receives `bridge-active` from a second forwarder releases it at once.
+- A receiver accepts `forward-map` only for an origin it cannot reach itself, and only from that pair's forwarder.
+- Forwarded video is capped at **200 kbit/s**.
+
+## Costs and trade-offs
+
+Forwarding is the last step of the ladder for good reasons:
+
+- **The forwarder pays with its upload.** Cleo sends Ben's media to Kai and Kai's to Ben on top of her own. How much upload a forwarding player on home broadband can spare is not yet measured.
+- **Media is re-encoded.** The forwarder decodes and encodes the streams again, which costs CPU and some quality. A relay through a session gateway avoids that and keeps media end-to-end encrypted, so the ladder tries session gateways first.
+- **It needs a third person.** Two people alone, both behind hard NATs, with no gateway in the session, cannot be bridged. They are `unreachable` until something changes.
+
+A participant can opt out of forwarding with `connect(ticket, { forward: false })`.
+
+## Next
+
+The [security model](./security.mdx) explains what gates, gateways and forwarders can and cannot learn.

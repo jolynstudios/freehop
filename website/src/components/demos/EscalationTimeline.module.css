@@ -1,0 +1,279 @@
+.timeline {
+  container-type: inline-size;
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.play {
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--fh-yellow);
+  background: var(--fh-charcoal);
+  border: 2px solid var(--fh-charcoal);
+  border-radius: var(--fh-round);
+  padding: 0.28rem 0.95rem;
+  cursor: pointer;
+  min-width: 4.8rem;
+  transition: transform 0.16s var(--fh-ease);
+}
+
+.play:hover {
+  transform: translateY(-1px) rotate(-1deg);
+}
+
+.play:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+.playing {
+  background: #ffffff;
+  color: var(--fh-charcoal);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem 1.5rem;
+  margin-bottom: 1.4rem;
+}
+
+.trackWrap {
+  background: var(--fh-yellow);
+  border: 3px solid var(--fh-charcoal);
+  border-radius: 18px;
+  padding: 2.4rem 1.3rem 1.1rem;
+}
+
+.track {
+  position: relative;
+  height: 18px;
+  margin-bottom: 2rem;
+}
+
+.seg {
+  position: absolute;
+  top: 0;
+  height: 18px;
+  border: 3px solid var(--fh-charcoal);
+  border-radius: var(--fh-round);
+}
+
+.seg0 {
+  background: var(--fh-path-direct);
+}
+
+.segGrace {
+  background: repeating-linear-gradient(-45deg, #ffffff 0 6px, #9cd3cf 6px 12px);
+}
+
+.seg1 {
+  background: var(--fh-path-relay);
+}
+
+.seg2 {
+  background: var(--fh-path-bridged);
+}
+
+.seg3 {
+  background: #ffffff;
+  border-style: dashed;
+}
+
+.break {
+  position: absolute;
+  top: -6px;
+  width: 10px;
+  height: 30px;
+  border-left: 3px solid var(--fh-charcoal);
+  border-right: 3px solid var(--fh-charcoal);
+  transform: skewX(-18deg);
+  background: var(--fh-yellow);
+}
+
+.tick {
+  position: absolute;
+  top: 28px;
+  transform: translateX(-50%);
+  font-family: var(--fh-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--fh-charcoal);
+  white-space: nowrap;
+}
+
+.retry {
+  position: absolute;
+  top: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2.5px solid var(--fh-charcoal);
+  background: #ffffff;
+}
+
+.retryOn {
+  background: var(--fh-charcoal);
+  animation: retryPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes retryPulse {
+  50% {
+    background: #ffffff;
+  }
+}
+
+.retryLabel {
+  font-family: var(--fh-mono);
+  font-size: 0.72rem;
+  color: var(--fh-charcoal);
+  text-align: right;
+}
+
+.marker {
+  position: absolute;
+  top: -34px;
+  transform: translateX(-50%);
+  transition: left 0.35s var(--fh-ease);
+  filter: none;
+}
+
+.markerMoving {
+  transition: none;
+}
+
+.marker svg {
+  display: block;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1.1rem 0 1.1rem;
+  min-height: 2.2rem;
+}
+
+.statusText {
+  font-family: var(--fh-display);
+  font-size: 1.55rem;
+  line-height: 1;
+  color: var(--fh-charcoal);
+}
+
+.timeline ol.phases {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.7rem;
+}
+
+@container (min-width: 860px) {
+  .timeline ol.phases {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 560px) and (max-width: 859px) {
+  .timeline ol.phases {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.timeline li.phase {
+  margin: 0;
+}
+
+.phase {
+  border: 2px solid var(--fh-lavender);
+  border-radius: 12px;
+  padding: 0.8rem 0.9rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  transition: background-color 0.3s var(--fh-ease), border-color 0.3s var(--fh-ease), opacity 0.3s var(--fh-ease);
+}
+
+.phase dl {
+  margin: 0.5rem 0 0;
+}
+
+.phase dt {
+  font-weight: 600;
+  color: var(--fh-ink);
+  font-size: 0.75rem;
+}
+
+.phase dd {
+  margin: 0 0 0.4rem;
+  color: var(--fh-slate);
+}
+
+.phaseHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.phaseName {
+  font-weight: 600;
+  color: var(--fh-ink);
+  font-size: 0.875rem;
+}
+
+.budget {
+  font-family: var(--fh-mono);
+  font-size: 0.72rem;
+  color: var(--fh-fog);
+  white-space: nowrap;
+}
+
+.now {
+  border-color: var(--fh-charcoal);
+  background: #fffbd1;
+}
+
+.past {
+  border-color: var(--fh-lavender);
+  background: #ffffff;
+}
+
+.past .phaseName::after {
+  content: ' (no route yet)';
+  font-weight: 400;
+  color: var(--fh-fog);
+}
+
+.next {
+  background: #ffffff;
+}
+
+.skipped {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+.note {
+  margin: 1rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--fh-fog);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marker,
+  .phase {
+    transition: none;
+  }
+  .retryOn {
+    animation: none;
+  }
+}

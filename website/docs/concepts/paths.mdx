@@ -1,0 +1,101 @@
+---
+title: Paths and escalation
+sidebar_label: Paths & escalation
+description: How each pair of Freehop peers climbs the path ladder from direct to gateway, relay and bridged routes, with the exact timings of every step.
+---
+
+import { PathsScene } from '@site/src/components/scenes';
+import PathBadge from '@site/src/components/PathBadge';
+import EscalationTimeline from '@site/src/components/demos/EscalationTimeline';
+import PathFinder from '@site/src/components/demos/PathFinder';
+
+<PathsScene caption="Every pair of peers climbs the same ladder, and stops at the first step that works." />
+
+Every pair of peers in a call finds its own media route. Freehop tries the cheapest route first and only moves to the next step after the cheaper one demonstrably failed, so the cost stays with the two people talking whenever possible.
+
+## The ladder
+
+| Step | Path | What carries the media | Typical case |
+|---|---|---|---|
+| 1 | <PathBadge kind="direct" /> | Nothing in between | Same LAN, IPv6 on both sides, or addresses discovered with STUN through ordinary home routers |
+| 2 | <PathBadge kind="gateway" /> | One endpoint's own gateway | Ben's carrier NAT cannot reach Dani directly, so he uses the front door of Dani's desktop app |
+| 3 | <PathBadge kind="relay" /> | The gateway of another session member | Ben and Kai both sit behind random-port NATs; the session's host node relays for them |
+| 4 | <PathBadge kind="bridged" /> | Another participant, forwarding the media | Ben and Kai cannot reach each other, but both reach Cleo, who is in the call anyway |
+| | <PathBadge kind="unreachable" /> | Nothing | No route exists inside the session; Freehop says so and keeps retrying slowly |
+
+The cost rule behind the ladder: **a byte of media only crosses machines that belong to the call.** Steps 2 to 4 use machines of the session itself (a participant's gateway, the host node, a participant), never a server of the operator.
+
+## When each step is tried
+
+Freehop follows the W3C *perfect negotiation* pattern. Each pair escalates through phases, and each phase has a time budget:
+
+| Phase | ICE servers in use | Expected route | Moves on when |
+|---|---|---|---|
+| 0, endpoint | The gate's STUN, the peer's own gateway, the other peer's gateway | <PathBadge kind="direct" /> or <PathBadge kind="gateway" /> | Not connected **5 s** after the description; one more 5 s if connectivity checks are getting answers |
+| 1, session | Plus up to **2** gateways of connected participants or gateway members | <PathBadge kind="relay" /> | **7 s** without a connection |
+| 2, bridged | Unchanged | <PathBadge kind="bridged" /> | The direct or session route later succeeds |
+| no route | Unchanged | <PathBadge kind="unreachable" /> | Never gives up: ICE restarts after **30 s, 60 s, 120 s, 240 s**, then every **300 s** |
+
+A few rules keep the escalation stable:
+
+- **One side restarts.** The peer with the lexicographically greater id is *polite*. Only the other (impolite) side restarts ICE. The polite side applies the same servers and takes over after 2.5 s if no restart offer arrived. Simultaneous restarts collide: in the lab, a rolled-back restart offer was observed to leave Chromium's senders silent.
+- **Both sides gather against the same relays.** A description names the extra gateways in use, and the receiver adds those servers before it answers.
+- **Nothing deadlocks on a lost envelope.** An offer that gets no answer within 8 s is rolled back and sent again. Candidates for an ICE generation that has not arrived yet wait in a buffer of 128.
+- **Media is watched.** If a connected link's live track sends no packets for two 5-second checks, the link restarts (the polite side asks the impolite side to do it).
+- **Networks change.** On `disconnected` a link waits 4 s, then restarts; on `failed` it restarts at once.
+
+## Play the timeline
+
+Step through the phases of one pair, or let it run. Each outcome stops at the phase where it connects.
+
+<EscalationTimeline />
+
+## Worked examples
+
+Each row below is a [lab scenario](../results.mdx) that passed three out of three Chromium runs; the results page also lists the Firefox and WebKit runs. The lab emulates each network with a Linux kernel NAT profile; physical carrier networks are not yet verified.
+
+| People in the call | Networks | What happens | Result | Lab scenario |
+|---|---|---|---|---|
+| Two players like Ana | Two ordinary home routers | STUN-discovered addresses work, because each router keeps the same public port for every destination | <PathBadge kind="direct" /> | `direct-eim` |
+| Ivy and a friend on the same kind of network | IPv6 on both sides, IPv4 UDP blocked | Global IPv6 addresses; the stateful firewalls let the replies in once both sides send | <PathBadge kind="direct" /> | `ipv6-direct` |
+| Ben and Kai, alone | Two random-port (symmetric) NATs | Neither NAT keeps a port the other side can predict, and nobody else is in the session | <PathBadge kind="unreachable" /> | `hard-pair` |
+| Ben, Kai and Cleo | Two random-port NATs and a public address | Ben and Kai each reach Cleo directly. Cleo forwards their media to each other | Ben–Kai <PathBadge kind="bridged" via="Cleo" /> | `hard-pair-bridge` |
+| Ben and Dani | Random-port NAT and a desktop app behind a UPnP router | Ben connects to Dani's own gateway through the port her router opened | <PathBadge kind="gateway" via="Dani" /> | `two-player-desktop-host` |
+| Ben, Kai and Dani | Two random-port NATs and a desktop app | Both reach Dani's gateway. Ben and Kai then relay through it | Ben–Kai <PathBadge kind="relay" via="Dani" /> | `hard-pair-gateway` |
+| Omar and Dani | UDP-blocking office and a desktop app | Omar reaches Dani's gateway with TURN over TCP | <PathBadge kind="gateway" via="Dani" /> | `udpblock-gateway` |
+| Omar, a colleague in another UDP-blocking office, and Dani | Two UDP-blocking offices and a desktop app | Both use Dani's gateway over TCP, and relay through it to each other | <PathBadge kind="relay" via="Dani" /> | `udpblock-pair-gateway` |
+| Ben and Kai in a hosted match | Two random-port NATs, a host node with a public address | The host node joins without media and relays for them | <PathBadge kind="relay" via="host node" /> | `hard-pair-host-node` |
+| Omar and his colleague in a hosted match | Two UDP-blocking offices, a host node | Both reach the host node over TCP | <PathBadge kind="relay" via="host node" /> | `udpblock-pair-host-node` |
+| Gus with Ana and Cleo | A guest network that only reaches the gate host | Ana and Cleo connect directly. Gus can reach nothing but the gate | Gus <PathBadge kind="unreachable" />, Ana–Cleo <PathBadge kind="direct" /> | `gate-only` |
+
+The last row is the honest boundary. A network that can only reach the gate cannot carry media unless the gate operator carries it, and Freehop will not do that. See [Limits](../limits.mdx).
+
+## Find a path
+
+Pick a network for Ana and for Ben, and choose who else is in the session. The scene shows the route the ladder settles on, why, and what your own server carries.
+
+<PathFinder />
+
+## How the path is classified
+
+When a link connects, Freehop reads the selected ICE candidate pair:
+
+- no relay candidate on either side: <PathBadge kind="direct" />;
+- a relay owned by one of the two endpoints: <PathBadge kind="gateway" />;
+- a relay owned by another member of the session: <PathBadge kind="relay" />;
+- media arriving through a forwarding participant: <PathBadge kind="bridged" />;
+- nothing works and no bridge candidate exists: <PathBadge kind="unreachable" />.
+
+A local peer-reflexive candidate whose `relayProtocol` is set still rides a relay, and is classified as one. The SDK reports every change as a `path` event, with `via` naming the gateway owner or forwarder:
+
+```js
+session.on('path', ({ peer, kind, via }) => {
+  label(peer).textContent = via ? `${kind} via ${nameOf(via)}` : kind;
+});
+```
+
+While a pair is bridged or unreachable, it keeps trying the cheaper routes with cheap ICE restarts. When a direct or session route connects later, the bridge is released.
+
+## Next
+
+[Gateways and port mapping](./gateways.mdx) explains step 2, the player's own front door.

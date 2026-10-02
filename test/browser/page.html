@@ -1,0 +1,65 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>peerlane test</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
+<body>
+<script type="module">
+import { join } from '/client/peerlane.mjs';
+const events = [];
+const origins = new Map(); // remote track id -> { peer, via }
+const at = performance.now();
+const record = e => { if (events.length < 2000) events.push({ ms: Math.round(performance.now() - at), ...e }); };
+window.peerlaneTest = {
+  events,
+  async join(options) {
+    const room = await join({ ...options, log: (name, d) => record({ t: 'log', name, message: d?.message }) });
+    window.room = room;
+    room.on('peer', e => record({ t: 'peer', id: e.id }));
+    room.on('peer-left', e => record({ t: 'peer-left', id: e.id, reason: e.reason }));
+    room.on('gate', e => record({ t: 'gate', state: e.state }));
+    room.on('path', e => record({ t: 'path', peer: e.peer, kind: e.kind, via: e.via ?? null, local: e.local ?? null, remote: e.remote ?? null, protocol: e.protocol ?? null, relayProtocol: e.relayProtocol ?? null }));
+    room.on('track-ended', e => record({ t: 'track-ended', peer: e.peer, via: e.via }));
+    room.on('track', ({ peer, via, track }) => {
+      record({ t: 'track', peer, via, kind: track.kind });
+      origins.set(track.id, { peer, via });
+      const el = document.createElement(track.kind === 'video' ? 'video' : 'audio');
+      el.autoplay = true; el.muted = true; el.playsInline = true; el.dataset.peer = peer; el.srcObject = new MediaStream([track]);
+      document.body.append(el); el.play().catch(() => {});
+    });
+    return room.id;
+  },
+  stats: () => window.room.stats(),
+  // Inbound media per ORIGIN peer (direct or forwarded through another participant).
+  async mediaByOrigin() {
+    const out = {};
+    for (const link of window.room.links.values()) {
+      let stats; try { stats = await link.pc.getStats(); } catch { continue; }
+      for (const s of stats.values()) {
+        if (s.type !== 'inbound-rtp' || !s.kind) continue;
+        const o = origins.get(s.trackIdentifier) ?? { peer: link.id + '?', via: null };
+        const m = out[o.peer] ??= { audioPackets: 0, audioSamples: 0, videoFrames: 0, videoPackets: 0, via: new Set() };
+        if (s.kind === 'audio') { m.audioPackets += s.packetsReceived ?? 0; m.audioSamples += s.totalSamplesReceived ?? 0; }
+        else { m.videoFrames += s.framesDecoded ?? 0; m.videoPackets += s.packetsReceived ?? 0; }
+        m.via.add(o.via ?? 'direct');
+      }
+    }
+    for (const m of Object.values(out)) m.via = [...m.via];
+    return out;
+  },
+  // Negotiation diagnostics: transceiver directions, sender tracks and outbound counters.
+  async debug() {
+    const out = {};
+    for (const link of window.room.links.values()) {
+      const pc = link.pc, outbound = {};
+      try { for (const s of (await pc.getStats()).values()) if (s.type === 'outbound-rtp' && s.kind) outbound[s.kind] = (outbound[s.kind] ?? 0) + (s.packetsSent ?? 0); } catch {}
+      out[link.id] = { polite: link.polite, signaling: pc.signalingState, ice: pc.iceConnectionState, restarts: link.restarts, missed: link.missedNegotiation,
+        suppress: link.suppress, restartPending: link.restartPending, outbound,
+        transceivers: pc.getTransceivers().map(t => ({ mid: t.mid, kind: t.receiver.track.kind, direction: t.direction, current: t.currentDirection, sending: !!t.sender.track })) };
+    }
+    return out;
+  },
+  leave: () => window.room?.leave()
+};
+document.title = 'peerlane ready';
+</script>
+</body>

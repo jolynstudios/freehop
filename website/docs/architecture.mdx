@@ -1,0 +1,74 @@
+---
+title: Architecture
+sidebar_label: Architecture
+description: How Freehop's modules fit together, what runs where, and how a call is set up step by step from ticket to media.
+---
+
+Freehop is a handful of small modules: a browser library, a gate, a gateway, and an SDK layer that connects them to your application. This page shows what runs where and follows one call from ticket to media.
+
+## The big picture
+
+```text
+          sealed signalling only (kilobytes)                 media (megabytes), never through a gate
+
+ ┌───────┐   ┌───────────┐   ┌───────┐          ┌───────┐ ─────────────── direct ──────────────── ┌───────┐
+ │ Ana   │───│  gate(s)  │───│ Ben   │          │ Ana   │ ─── a player's own gateway (TURN) ───── │ Ben   │
+ └───────┘   └───────────┘   └───────┘          └───────┘ ─── the session host's gateway ──────── └───────┘
+     any number of gates, run by anyone                    ─── forwarded by a participant ───────
+```
+
+On the left, everything your servers ever handle: sealed envelopes that introduce peers. On the right, everything that carries media: routes between machines that belong to the call.
+
+## What runs where
+
+| Machine | Runs | Holds |
+|---|---|---|
+| **Your backend** | The authority (`freehop/authority`) | Room secrets, in memory; your own notion of membership |
+| **Your gate host** | The gate service (`freehop-gate`) | In-memory routing tables of room tags and peer ids. Nothing persistent. |
+| **Every browser or renderer** | The client (`connect()`) | Its ticket, its derived room key, its links and media |
+| **A player's desktop app** (optional) | The gateway, in the Electron main process | The gateway secret, which only its own page can read |
+| **The session's host** (optional) | `hostSession()`: a gateway plus a gateway member | The gateway secret; credentials for the members it serves |
+
+## Module map
+
+| Module | Source | Runs in | Dependencies | Job |
+|---|---|---|---|---|
+| Client | `src/client/` | Browser or renderer | None | Rooms, sealed signalling, perfect negotiation, the path ladder, bridging and media |
+| Tracker client | `src/client/tracker-client.mjs` | Browser | None | Uses a public WebTorrent tracker as a gate (`bt+wss://`) |
+| Gate | `src/gate/` | Node.js server | `ws` | WebSocket rendezvous, optional STUN responder, token admission, byte budgets |
+| TURN server | `src/relay/turn-server.mjs` | Node.js or Electron main | Built-ins | RFC 8656 subset: UDP relays for UDP and TCP clients, internal relaying between allocations |
+| Port mapper | `src/relay/port-mapper.mjs` | Node.js or Electron main | Built-ins | PCP, NAT-PMP and UPnP IGD client for router port mappings |
+| Gateway | `src/relay/agent.mjs` | Node.js or Electron main | Built-ins | TURN plus port mapping plus per-peer, per-room credentials |
+| Gateway member | `src/relay/member.mjs` | Node.js | Built-ins, global `WebSocket` | A host node that joins without media and offers its gateway |
+| STUN codec | `src/shared/stun.mjs` | Node.js | Built-ins | STUN and TURN messages (RFC 8489 and 8656), checked against the RFC 5769 vectors |
+| Gate tokens | `src/shared/tokens.mjs` | Node.js | Built-ins | HMAC-SHA256 admission tokens |
+| SDK | `src/sdk/` | Backend, browser, host | The modules above | `createAuthority()`, `connect()`, `hostSession()`, tickets |
+| Electron helper | `src/electron/` | Electron | The gateway | Gateway in the main process, origin-restricted preload |
+
+Around the library: `bin/freehop-gate.mjs` and `deploy/` (the gate service), `examples/minimal/` (a complete reference consumer), `lab/` (the disposable Linux NAT lab) and `test/` (unit tests and real-browser tests). The browser client has no runtime dependencies, and no PeerJS, libp2p or other networking library is used anywhere.
+
+## One call, step by step
+
+Ana and Ben join `match-42`. Ana is on a home router; Ben is on a phone hotspot.
+
+1. **Tickets.** Your backend opens the room (a 32-byte secret) and sends each of them a ticket over your own authenticated channel.
+2. **Keys.** Each client derives the room tag and the envelope key from the secret with HKDF. It picks a fresh random peer id.
+3. **Gates.** Each client connects to every gate in its ticket: `hello`, then `welcome` (with the gate's STUN URLs), then `join` with the room tag and its peer id. The gate answers with the peers already present.
+4. **Greeting.** Every peer on a gate's roster is only a hint, so Ana greets Ben with sealed capabilities, and Ben greets Ana. When Ana's first envelope authenticates at Ben's side, Ben admits her as a member (`peer` event), and the other way round.
+5. **Offer.** The peer with the lower id opens the link and makes the offer; the other side waits for it. Descriptions and ICE candidates travel as sealed envelopes through every gate both are on.
+6. **Endpoint phase.** ICE gathers against the gate's STUN and any gateways named in the capabilities. Ana and Ben have 5 seconds (plus one grace period while checks get answers) to connect.
+7. **Escalation, if needed.** If they do not connect, the pair moves to the session phase (session gateways, 7 seconds), then bridging through a participant, then `unreachable` with slow retries. See [paths and escalation](./concepts/paths.mdx).
+8. **Connected.** The link's data channel opens, and from now on Ana and Ben send each other envelopes over it. The gate's part is over: apart from 30-second keepalive pings, it carries nothing for this pair.
+9. **Path.** Each side reads its selected candidate pair and reports the path (`direct`, `gateway`, `relay` or `bridged`) to your interface.
+
+## Design choices
+
+- **Gates are untrusted and interchangeable.** Because every envelope is sealed and bound to room, sender and recipient, a gate can be anyone's server, or a public tracker. Clients use several at once, and calls survive losing all of them.
+- **Gateways speak plain TURN.** A gateway is an ordinary TURN server with short-lived REST-style credentials, so every browser's ICE agent can use it without changes. The alternative, pinning Electron's WebRTC UDP port range and mapping it, would need cooperation from Chromium.
+- **Escalation is earned.** A pair only moves to a costlier route after the cheaper one demonstrably failed, and only one side restarts ICE, because simultaneous restarts were observed to silence Chromium's senders.
+- **Full mesh, small rooms.** Every participant sends its media to every other participant, which suits 2 to 8 people. At five participants with video, each one sends about 4 × 330 kbit/s upstream.
+- **Membership lives in your backend.** Freehop has no accounts and no lobby. Your application decides who gets a ticket, and a kick is a key rotation.
+
+## Next
+
+The [protocol specification](./protocol.md) defines every message and timer, and the [qualification results](./results.mdx) show how it behaved in the lab.
