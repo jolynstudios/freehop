@@ -4,7 +4,7 @@ sidebar_label: Quickstart
 description: Integrate Freehop in five pieces, a backend authority, a gate, the client, an optional desktop gateway and an optional host node, with working code for each.
 ---
 
-Every application integrates Freehop with the same five pieces. You need the first three for a working call; the last two make more networks reachable without anyone paying for a relay.
+The examples below show where each piece runs. A ticket-based integration uses a backend authority, a browser client and at least one gate. You can use public trackers instead of running your own gate. Desktop gateways and host nodes are optional; their owners contribute bandwidth when a direct path fails.
 
 ```text
  your backend            your gate host             every client               hosts (optional)
@@ -20,7 +20,7 @@ Every application integrates Freehop with the same five pieces. You need the fir
 
 :::note[Not on npm yet]
 
-Freehop is alpha and is not published to the npm registry. Add it from GitHub, or clone [the repository](https://github.com/jolynstudios/freehop). It needs Node.js 22 or newer.
+Freehop is alpha and is not published to the npm registry. Add it from GitHub, or clone [the repository](https://github.com/jolynstudios/freehop). The backend, gate and host helpers need Node.js 22 or newer. The client runs in the browser; bundle its package import with your frontend build tool.
 
 :::
 
@@ -83,11 +83,13 @@ In a project that depends on `freehop`, `npx freehop-gate` runs the same service
 
 :::tip[No gate of your own]
 
-For experiments you can skip this step: a public WebTorrent tracker works as a gate. Put `bt+wss://tracker.openwebtorrent.com` in the authority's `gates` list. Tracker gates carry the same sealed envelopes and see just as little.
+For experiments you can skip this step: a public WebTorrent tracker works as a gate. Replace the authority's `gates` list with `['bt+wss://tracker.openwebtorrent.com']` and remove `gateTokenSecrets` when no private gate remains. Keep an application-approved public STUN server in `stun`, such as `stun:stun.cloudflare.com:3478`, if you are not running your own. Trackers carry sealed envelopes but still see IP addresses and other connection metadata.
 
 :::
 
 ## 3. Client: join with the ticket
+
+This is browser JavaScript. Fetch `ticket` from your authenticated backend, then call `connect()` from a Join button on an HTTPS page (localhost works for development). `addTile`, `mediaElementFor`, `showRoute` and `removeTile` are functions you supply in your UI. The microphone, camera and leave calls below are separate examples for your controls; do not run them all immediately after joining.
 
 ```js title="call.js"
 import { connect } from 'freehop';
@@ -133,7 +135,7 @@ app.whenReady().then(() => {
 });
 ```
 
-`connect()` finds `window.freehopGateway` automatically. The gateway starts the first time the page asks for it, so participants who never use voice pay nothing. [Desktop (Electron)](./sdk/desktop.mdx) explains the origin restriction and the options.
+`connect()` finds `window.freehopGateway` automatically. The gateway starts when `connect()` first requests it, including for receive-only sessions. [Desktop (Electron)](./sdk/desktop.mdx) explains the origin restriction and the options.
 
 ## 5. Hosts: let the session's own host relay for it
 
@@ -145,7 +147,7 @@ import { hostSession } from 'freehop/host';
 const host = await hostSession(await authority.ticket('room-42')); // a ticket without a member
 if (!host.available) console.log('Not reachable from outside: no public address, no router mapping.');
 
-// After a kick, follow the rotation and revoke the removed peer:
+// After a kick, follow the rotation and revoke the entire old room epoch:
 await host.update(nextTicket, { dropped: [peerId] });
 await host.close();
 ```

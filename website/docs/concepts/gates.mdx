@@ -26,7 +26,7 @@ Here is the whole conversation from the gate's side, using the frames of the [ga
 {"t":"recv","room":"Xq3v…","from":"n8Wd…","box":"Cq9Lr2T…opaque base64url…"}
 ```
 
-The room tag is derived from the room secret with HKDF, so the gate cannot work out which room or application it belongs to. Peer ids are 16 random bytes, fresh for every join.
+The room tag is derived from the room secret with HKDF, so it does not directly reveal your human-readable room name. IP addresses, the WebSocket Origin and traffic patterns can still identify an application or correlate participants. Peer ids are 16 random bytes, fresh for every join.
 
 ## What a gate sees, and what it cannot see
 
@@ -35,14 +35,14 @@ The room tag is derived from the room secret with HKDF, so the gate cannot work 
 | The IP addresses of the sockets that connect to it | The room secret, or anything derived from it except the tag |
 | Opaque room tags and random peer ids | Session descriptions (SDP) and ICE candidates |
 | Envelope sizes and timing | Capabilities and gateway credentials |
-| The claims of a gate token, if you use them (expiry, room tag) | Your users' names or your application's member ids |
+| The claims of a gate token, if you use them (expiry, room tag, gate audience) | Your users' names or your application's member ids |
 | | A single byte of media |
 
 A gate also cannot forge or re-route an envelope without detection. Every envelope is bound to its room, sender and recipient, so an envelope that a gate relabels fails authentication at the recipient. A gate cannot add members to a room either: its roster is only a hint, and a peer becomes a member only after an envelope from it authenticates. What a hostile gate *can* do is drop or delay traffic. Listing several gates in your tickets protects against that. The [security model](./security.mdx) has the details.
 
 ## How much traffic a gate carries
 
-Signalling is small, and it only flows while a pair of peers sets up its connection:
+Most gate traffic is connection setup. Keepalives, newcomer discovery and recovery can continue afterwards:
 
 - About **15 to 35 KB per pair of peers** at call setup.
 - **Roughly zero afterwards.** Every link carries a pre-negotiated data channel, and once it is open the peers send each other's envelopes over it instead of through the gate.
@@ -67,7 +67,7 @@ A ticket can list up to eight gates. Clients connect to every one of them and an
 
 - **Peers on different gates still meet.** Say Ana only reaches `gate-1`, Ben only reaches `gate-2`, and Cleo reaches both. Cleo connects to both of them and reports her links in her sealed capabilities. Ana's envelopes for Ben then travel through Cleo's data channel, forwarded once, until Ana and Ben have their own link.
 - **Calls survive a total gate outage.** An established call does not depend on any gate. In the lab, peers kept exchanging media (about 600 audio packets per peer in 6 seconds) after every gate was shut down.
-- **A public WebTorrent tracker works as a gate.** A gate URL of the form `bt+wss://tracker.openwebtorrent.com` makes the client use that tracker as its mailbox. The swarm's `info_hash` is the first 20 hex characters of the room tag, and the envelopes ride in the offer and answer fields that trackers already relay. A tracker sees exactly as little as a Freehop gate. The [live call](/demo) on this site uses public trackers as its only gates. [Torrent trackers as gates](./trackers.mdx) explains how it works and when to use it.
+- **A public WebTorrent tracker works as a gate.** A gate URL of the form `bt+wss://tracker.openwebtorrent.com` makes the client use that tracker as its mailbox. The swarm's `info_hash` is the first 20 ASCII characters of the hex-encoded, decoded room tag (80 bits of tag material), and the envelopes ride in the offer and answer fields that trackers already relay. Like a Freehop gate, a tracker sees connection metadata but cannot decrypt envelopes. The [live call](/demo) on this site uses public trackers as its only gates. [Torrent trackers as gates](./trackers.mdx) explains how it works and when to use it.
 
 ## Admission: open or token-gated
 

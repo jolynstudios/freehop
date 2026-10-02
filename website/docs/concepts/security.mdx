@@ -32,7 +32,7 @@ box = base64url( iv[12] || AES-256-GCM(envelopeKey, iv, plaintext, aad) )
 aad = "peerlane/v1|" + roomTag + "|" + from + "|" + to
 ```
 
-The additional data binds the room, the sender and the recipient. If a gate re-labels the sender or re-routes an envelope to someone else, it fails authentication and is dropped. Each sender also numbers its envelopes, and receivers keep a 1024-wide replay window per sender, so replayed envelopes are discarded. Try both attacks in the [gate demo](./gates.mdx#what-the-gate-sees-live).
+The additional data binds the room, the sender and the recipient. If a gate re-labels the sender or re-routes an envelope to someone else, it fails authentication and is dropped. Each sender also numbers its envelopes, and receivers keep a 1024-wide replay window per sender, so replayed envelopes are discarded. Try tampering in the [gate demo](./gates.mdx#what-the-gate-sees-live).
 
 ## Who learns what
 
@@ -41,13 +41,13 @@ The additional data binds the room, the sender and the recipient. If a gate re-l
 | **Gate** | Socket IP addresses, opaque room tags, random peer ids, envelope sizes and timing | Read SDP, candidates, capabilities or credentials; forge or re-route envelopes undetected; add members to a room |
 | **Gateway owner** (a desktop participant or host node) | Which peers relay through it, and how much | Read the media: it stays DTLS-SRTP encrypted end to end, and the gateway relays ciphertext |
 | **Forwarding participant** | The media it forwards | Nothing new: it is in the call and already receives both streams |
-| **Room member** | The other members' IP addresses, as in any WebRTC call | Stay in the room after a kick, because the secret rotates |
+| **Room member** | Network addresses on direct paths and the room's shared key | Authenticate to the new epoch after a kick, provided every remaining member and host updates its ticket |
 
 A hostile gate can drop or delay traffic. Several gates in each ticket mitigate that: clients use all of them, and envelopes arrive through any route that works.
 
 ## Membership comes from envelopes, not rosters
 
-A gate's list of peers in a room is only a hint. A hint makes a client greet that peer with its sealed capabilities, at most once every 20 seconds and for at most 64 hints. The peer becomes a member, with `peer` events, a link and a slot, only after an envelope **from** it authenticates. A gate therefore cannot inject or evict members.
+A gate's list of peers in a room is only a hint. A hint makes a client greet that peer with its sealed capabilities, at most once every 20 seconds and for at most 64 hints. The peer becomes a member, with `peer` events, a link and a slot, only after an envelope **from** it authenticates. A gate cannot authenticate an invented member. It can still prevent discovery or disrupt recovery by hiding or dropping traffic; roster presence alone is not proof of membership.
 
 ## Tickets
 
@@ -66,11 +66,11 @@ A voluntary departure also needs rotation: `await authority.leave(roomId, member
 
 ## Gateways
 
-Gateway credentials are minted per peer and per room, are valid for 2 hours and are only issued to authenticated members. The gateway's default policy refuses loopback, link-local, multicast and private peer addresses, keeps services on its own host unreachable, and enforces quotas (6 allocations per username, 4 Mbit/s per allocation, 32 allocations and 20 Mbit/s per room, 40 Mbit/s in total).
+Gateway credentials are minted per peer and per room, are valid for 2 hours by default (configurable from 1 to 86400 seconds) and are only issued to authenticated members. The gateway's default policy refuses loopback, link-local, multicast and private peer addresses, keeps services on its own host unreachable, and enforces quotas (6 allocations per username, 4 Mbit/s per allocation, 32 allocations and 20 Mbit/s per room, 40 Mbit/s in total).
 
 One residual risk is documented in the protocol: a room member could use a gateway's credentials to relay traffic to arbitrary public hosts. Credential expiry blocks authenticated requests; existing allocations can continue until their granted lifetime ends. Revocation ends them immediately. Operators who care can shorten the credential lifetime (`credentialTtlSeconds`).
 
-On the desktop, configure the same exact HTTP(S) origins in `installFreehopGateway({ ipcMain, allowedOrigins })` and the preload argument `--freehop-origins=`. The main process rejects IPC from other origins and subframes.
+On the desktop, configure the same exact HTTPS origins (HTTP is allowed only on loopback) in `installFreehopGateway({ ipcMain, allowedOrigins })` and the preload argument `--freehop-origins=`. The main process rejects IPC from other origins and subframes.
 
 ## Trust between members
 
@@ -78,11 +78,11 @@ Room members are mutually trusted for signalling: any member can forge envelopes
 
 ## IP addresses
 
-As in any WebRTC call, participants learn each other's IP addresses. Relay-only operation could hide them, but only by putting a relay in every call, which would break the cost rule. Freehop does not do this by default.
+Freehop's direct paths expose network addresses to the other participants. Gate and tracker operators also see connecting IP addresses. The SDK does not offer a mode that guarantees IP anonymity; encrypted signalling does not hide connection metadata.
 
 ## Audit and limits
 
-The 2 October 2026 source audit added regression checks for key rotation, aliases, ticket expiry, authority races, forwarding authorization, gate input handling, UDP reflection budgets and Electron IPC authorization. The repository's `SECURITY-AUDIT.md` records findings, changes and remaining limits. This is a source review with local tests, not an independent cryptographic certification.
+The 2 October 2026 source audit added regression checks for key rotation, aliases, ticket expiry, authority races, forwarding authorization, gate input handling, UDP reflection budgets and Electron IPC authorization. The follow-up review added gateway key isolation, gate audiences, application-pinned STUN, room quotas, bounded revocations and both-endpoint forwarding consent. The [repository audit](https://github.com/jolynstudios/freehop/blob/main/SECURITY-AUDIT.md) records findings, changes and remaining limits. This is a source review with local tests, not an independent cryptographic certification.
 
 ## Next
 

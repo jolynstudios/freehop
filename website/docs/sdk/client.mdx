@@ -22,7 +22,7 @@ session.on('peer-left', ({ id }) => tileFor(id).remove());
 reportPeerIdToBackend(session.id);   // lets your backend name this peer in a kick
 ```
 
-The browser client has no runtime dependencies. It needs WebRTC, WebSocket and the Web Crypto API.
+This is browser code: bundle the package import with your frontend build tool and call it from your Join control. Serve the page over HTTPS (localhost works for development). The browser client has no runtime dependencies; it needs WebRTC, WebSocket and Web Crypto. `tileFor` and `reportPeerIdToBackend` are helpers supplied by your application.
 
 ## connect(ticket, options)
 
@@ -38,7 +38,7 @@ The browser client has no runtime dependencies. It needs WebRTC, WebSocket and t
 | `log` | none | `(event, details) => void` for diagnostics. |
 | `timing`, `limits` | built-in | Overrides for the protocol's timers and limits. Leave them alone unless you test the protocol itself. |
 
-Media is captured with echo cancellation, noise suppression and automatic gain control for audio, and at 640×360 (up to 24 fps ideal) for video. Each link sends audio at up to 32 kbit/s and video at up to 300 kbit/s. Rooms are a full mesh designed for 2 to 8 participants.
+Media is captured with echo cancellation, noise suppression and automatic gain control for audio, and at 640×360 (up to 24 fps ideal) for video. Each link sends audio at up to 32 kbit/s and video at up to 300 kbit/s. Rooms are a full mesh with an initial target of 2 to 8 participants, not a benchmarked capacity limit. See [room limits](../limits.mdx#small-rooms).
 
 ## The session
 
@@ -57,7 +57,7 @@ Media is captured with echo cancellation, noise suppression and automatic gain c
 | `kick(peerId)` | Throws migration guidance. Use backend `authority.kick()` and distribute replacement tickets to revoke membership. |
 | `drop(peerId)` | Disconnects a peer locally, without touching a gateway. |
 | `ticket()` | The current ticket. |
-| `stats()` | A snapshot of gates, links, paths, media counters and bridges (see below). |
+| `stats()` | Resolves to a snapshot of gates, links, paths, media counters and bridges (see below). |
 | `leave()` | Says goodbye to every member, closes all links and gates, and stops the devices it captured. |
 
 ## Events
@@ -65,7 +65,7 @@ Media is captured with echo cancellation, noise suppression and automatic gain c
 | Event | Payload | When |
 |---|---|---|
 | `peer` | `{ id }` | A member authenticated with its first sealed envelope. |
-| `peer-left` | `{ id, reason }` | `reason` is `bye` (it left), `dropped` (a kick) or `gone` (absent from every gate for 8 s without a connected link; it may come back). |
+| `peer-left` | `{ id, reason }` | `reason` is `bye` (it left), `dropped` (local removal), `rekey` (an old-epoch link closed) or `gone` (absent from every gate for 8 s without a connected link; it may come back). |
 | `track` | `{ peer, via, track, stream }` | A remote track. `peer` is the origin. `via` is the forwarding participant when the pair is bridged, otherwise `null`. |
 | `track-ended` | `{ peer, via, stream }` | A forwarded stream was withdrawn. |
 | `path` | `{ peer, kind, via, ... }` | The route to a peer changed. See below. |
@@ -98,6 +98,22 @@ const s = await session.stats();
 
 `bytesOut` and `bytesIn` per gate are what your gate actually carried for this client: a quick way to see that media never touches it.
 
+## Audio playback in the browser
+
+Receiving audio packets does not guarantee audible playback. Browser autoplay rules can reject `HTMLMediaElement.play()`, and a muted tab or the wrong output device can also cause silence. `attach()` sets up the element and attempts playback; your UI should check playback and offer a button when it is blocked:
+
+```js
+session.attach(track, audioElement);
+audioElement.play().catch(() => { enableSoundButton.hidden = false; });
+enableSoundButton.onclick = () => {
+  audioElement.play()
+    .then(() => { enableSoundButton.hidden = true; })
+    .catch(showPlaybackError);
+};
+```
+
+The element, button and `showPlaybackError` are supplied by your app. Call `play()` directly from the button handler so it retains user activation. Keep the same audio attachment when only camera tracks change. The [live demo](/demo) shows playback status and an Enable sound control separately from network counters. See [Chrome's autoplay guidance](https://developer.chrome.com/blog/autoplay/).
+
 ## Without a backend: join()
 
 `freehop/client` exports the lower-level `join()`, which takes the gates and a shared secret directly. It is what `connect()` uses internally, and what the [live call](/demo) on this site uses with public trackers:
@@ -114,7 +130,7 @@ const room = await join({
 });
 ```
 
-Without an authority there are no tickets and no kicks: everyone who knows the secret can join. Use `connect()` with tickets for anything beyond a demo.
+Without an authority there are no tickets or managed membership revocations: everyone who knows the secret can join. Your application would have to rotate and redistribute the secret itself to remove someone. Use `connect()` with tickets for anything beyond a demo.
 
 ## Next
 

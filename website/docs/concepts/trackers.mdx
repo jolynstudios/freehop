@@ -8,7 +8,7 @@ import { GateScene } from '@site/src/components/scenes';
 
 <GateScene caption="A public tracker is a borrowed mailbox: the same sealed envelopes, posted at an address that already exists." />
 
-A Freehop gate is a mailbox for sealed envelopes. Freehop can also borrow mailboxes that already exist on the internet: the public trackers that browser-based BitTorrent apps use to find each other. The [live call](/demo) on this site runs on two of them and on nothing of ours.
+A Freehop gate is a mailbox for sealed envelopes. Freehop can also borrow mailboxes that already exist on the internet: the public trackers that browser-based BitTorrent apps use to find each other. The [live call](/demo) on this site uses two of them, with no Freehop gate or media backend. GitHub Pages serves the static website; public STUN servers help browsers discover their addresses.
 
 ## What a WebTorrent tracker is
 
@@ -32,14 +32,18 @@ const authority = createAuthority({
     'bt+wss://tracker.openwebtorrent.com',     // public WebTorrent trackers
     'bt+wss://tracker.webtorrent.dev',
   ],
+  gateTokenSecrets: {
+    'wss://gate.example.com/freehop': process.env.FREEHOP_GATE_TOKEN_SECRET
+  },
+  stun: ['stun:stun.cloudflare.com:3478']
 });
 ```
 
 Here is what happens when Ana and Ben join the same room with a tracker in their tickets:
 
-1. **The swarm is named after the room.** Both derive the room tag from the room secret, and the swarm's `info_hash` is the first 20 hex characters of that tag. Only people with the secret can work out the name. To the tracker it is a random-looking fingerprint, like any other file.
+1. **The swarm is named after the room.** Both derive the room tag from the room secret, and the swarm's `info_hash` is the first 20 ASCII characters of the hex-encoded, decoded tag (80 bits of tag material). Room members derive it locally; the tracker also learns it. The fingerprint is not an admission credential. To the tracker it is a random-looking fingerprint, like any other file.
 2. **Each client says hello.** Every 30 seconds (or less often, if the tracker asks for that), each client announces itself to the swarm with six offers. Instead of a WebRTC offer, each one carries a sealed hello: `pl1:<peer id>:<sealed hello>`. The tracker hands these to other members of the swarm, as it would for any file.
-3. **Only real members are admitted.** When Ben receives Ana's hello, he opens it with the room key. Only if it authenticates does he remember which tracker address belongs to Ana. A stranger in the swarm cannot impersonate her or redirect her envelopes.
+3. **Only real members are admitted.** When Ben receives Ana's hello, he opens it with the room key. Only if it authenticates does he remember which tracker address belongs to Ana. A stranger without the room key cannot forge her envelopes. Room members share one key, so this does not prove identity against another member.
 4. **Envelopes travel as answers.** From then on, Ben's envelopes for Ana go to the tracker as "answers" addressed to her. These are the same sealed envelopes a Freehop gate would carry: session descriptions, ICE candidates and capabilities.
 5. **Pair signalling moves onto the data channel.** As soon as Ana and Ben's own data channel opens, their connection messages use it. Periodic tracker announcements continue so newcomers can discover them, and tracker signalling can be used again during connection recovery. Audio and video never pass through the tracker at all.
 
@@ -52,7 +56,7 @@ A tracker sees as little as a Freehop gate does:
 | A tracker can see | A tracker cannot |
 |---|---|
 | The IP addresses of the browsers that connect to it | Read the envelopes, which are sealed with AES-256-GCM under a key derived from the room secret |
-| The swarm fingerprint, which cannot be linked to the room's name without the secret | Forge or alter an envelope, or add anyone to the room |
+| An opaque swarm fingerprint; metadata can still correlate participants or applications | Forge or alter an envelope, or add anyone to the room |
 | Random per-join peer ids, message sizes and timing | Learn the room secret |
 | That a swarm is active, and how many browsers are in it | Carry or see media: audio and video go between the people in the call |
 
@@ -62,13 +66,13 @@ Anyone who knows a swarm's fingerprint could post into it, but without the room 
 
 **Good for:**
 
-- **Demos and prototypes with zero servers.** Like this site's live call: no backend, no gate, no bill.
+- **Demos and prototypes with zero servers.** Like this site's live call: no call backend or gate of your own; third parties provide tracker and STUN infrastructure.
 - **Extra resilience next to your own gate.** Clients use every gate in the ticket at once. If your gate is down or slow, people still find each other through a tracker.
 - **Community projects** that would rather not run any server at all.
 
 **Think twice when you need:**
 
-- **Guaranteed availability.** Public trackers are run by volunteers. They can rate-limit, change or go offline, and you cannot do anything about it. For production, list your own gate first.
+- **Guaranteed availability.** Public trackers are run by volunteers. They can rate-limit, change or go offline, and you cannot do anything about it. For production, include your own gate. All listed gates are used concurrently; order is not a priority setting.
 - **Networks that block them.** Some corporate and school networks block known tracker domains. Your own gate on your own domain is less likely to be blocked.
 - **Admission control.** Trackers are open to everyone. Your own gate can require [room-bound tokens](./gates.mdx#admission-open-or-token-gated), so it serves only your rooms.
 - **Host nodes.** [Host nodes](./host-nodes.mdx) join through WebSocket gates only, so their tickets need at least one `wss://` gate.

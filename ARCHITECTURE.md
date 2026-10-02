@@ -14,7 +14,7 @@ This document explains how Freehop is put together and why. For the normative wi
 | Zero configuration for users | Tickets from the app backend; automatic path escalation; automatic router port mapping on desktop. |
 | Embeddable | Small modules with no runtime dependency in the browser; one SDK for every consumer. |
 
-**Non-goals:** large rooms (Freehop uses a mesh, 2–8 participants); guaranteed connectivity on
+**Current scope:** a flexible mesh SDK with an initial target of 2–8 participants, not a benchmarked capacity limit. Larger rooms await capacity testing. Non-goals include guaranteed connectivity on
 networks that can reach only the operator's server; recording or transcoding.
 
 ## 2. Components
@@ -55,7 +55,7 @@ flowchart TB
 | `src/client/room.mjs` | The orchestrator: hints and admission, routing (mesh → gates → introducer → outbox), caps, path ladder, bridging, media controls, departures, rekey |
 | `src/client/peer.mjs` | One `RTCPeerConnection` per remote peer: perfect negotiation, candidate buffering, offer timeout, single-initiator ICE restarts, path classification |
 | `src/sdk/authority.mjs` | Backend: room secrets, tickets, kick-and-rotate |
-| `src/sdk/client.mjs` | `connect(ticket)`: desktop-gateway detection, `update()`, `kick()`, `levels()`, `attach()` |
+| `src/sdk/client.mjs` | `connect(ticket)`: desktop-gateway detection, `update()`, `disconnectPeer()`, `levels()`, `attach()` |
 | `src/sdk/host.mjs` | `hostSession(ticket)`: shared process gateway plus gateway member |
 | `src/sdk/ticket.mjs` | Ticket validation and compact encoding |
 | `src/gate/gate.mjs` | The gate: admission tokens, rooms, routing, byte and message budgets, backpressure |
@@ -94,7 +94,7 @@ stateDiagram-v2
   Endpoint --> Connected: ICE connected
   Endpoint --> Session: 5 s without connection (+1 grace)
   Session --> Connected
-  Session --> Bridged: 7 s without connection
+  Session --> Bridged: 7 s without connection (+1 grace)
   Bridged --> Connected: background retry succeeds
   Session --> Unreachable: no bridge candidate
   Unreachable --> Endpoint: network change or new member
@@ -129,34 +129,34 @@ sequenceDiagram
 
 - **Reachability.** The gateway uses a public address directly, or a router mapping. A mapping
   that returns a private or carrier-grade NAT (CGNAT) external address is not offered.
-- **Credentials.** TURN REST style, scoped to a room and a peer, valid for 2 h. Rooms are allowed
-  explicitly; peers can be revoked (kick), which tears down their allocations.
+- **Credentials.** TURN REST style, scoped to a room and a peer, valid for 2 h by default (configurable from 1 s to 24 h). The signing key stays in the privileged process; renderers request bounded credentials through a broker. Rooms are allowed explicitly; rotation revokes the whole old epoch, including alias allocations.
 - **Policy.**
-  - The TURN server refuses loopback, link-local, multicast and private peers.
+  - The TURN server refuses loopback, link-local, multicast, private peers and selected IPv6 transition prefixes (6to4, Teredo, local-use NAT64).
   - The host's own addresses are reachable only relay↔relay.
   - Error replies to unauthenticated UDP sources are rate-limited.
-  - TCP connections are capped per source address and have a pre-authentication timeout.
+  - TCP connections are capped per source address and have an absolute 10 s deadline to allocate.
+  - Gateway quotas: 6 allocations per username, 32 per room, 64 total; 4 Mbit/s per allocation, 20 Mbit/s per room, 40 Mbit/s total, separately per direction.
+  - Startup reachability does not guarantee continued reachability; mapping-loss and address-change recovery remain pending.
 - **No hairpin dependency.** Traffic between two allocations on the same gateway is delivered
   internally. The owner reaches remote allocations through its own `self` allocation.
 
 ## 5. Host node, bridging and kicks
 
 - **Host node.** The machine hosting a session (an app server, a community server or a hosting
-  desktop app) calls `hostSession(ticket)`. It joins the room with a `gw_…` id, never sends media,
+  desktop app) calls `hostSession(ticket)`. It joins the room with a `gw_…` id, captures no media of its own, relays encrypted packets,
   and greets each authenticated member with that member's own credentials.
 - **Bridging.** When a pair has no route and no untried session gateway, the lower id asks
   connected participants that can reach the other side. The forwarder:
-  - accepts only an offer it made;
+  - accepts only an offer it made, then obtains the second endpoint's consent with `bridge-confirm` / `bridge-ready`;
   - announces `forward-map` before renegotiating;
   - adds the origin's tracks, re-encoding them;
   - stops those transceivers again on release.
   Endpoints release any duplicate forwarder.
 - **Kick.** The application calls `authority.kick()`, which rotates the room secret.
   - Remaining members receive new tickets and call `session.update(ticket, {dropped})`.
-    Their links stay up, gates move to the new room tag, and envelopes under the old key are
-    accepted from connected peers for 30 s.
-  - Gateways revoke the kicked peer: the host node through `host.update()`, a desktop
-    participant's own gateway through `session.update()`.
+    Every old-key link closes and previous-key envelopes are rejected immediately. Gates move to the new room tag and approved members reconnect; media briefly pauses.
+  - Gateways revoke the entire old room epoch, including unreported aliases: the host node through `host.update()`, a desktop participant's own gateway through `session.update()`.
+  - Update every remaining member and host. Machines still on the old key can communicate with old-key holders. Voluntary departures also require rotation via `authority.leave()`.
 
 ## 6. Threat model (summary)
 

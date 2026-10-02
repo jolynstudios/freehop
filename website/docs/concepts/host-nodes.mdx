@@ -23,10 +23,10 @@ In the lab this is scenario `hard-pair-host-node`: three passes out of three wit
 
 ## What a gateway member does, and does not do
 
-- **It never sends media.** It is not a participant: it only offers a door.
+- **It captures no media of its own.** It relays encrypted media packets for participants, without decoding or re-encoding them.
 - **It only helps members.** A gate's roster is just a hint. The host node hands out credentials only after a peer proves room membership with an authenticated envelope, and each credential is minted for that peer and that room.
 - **Its role must be earned.** The `gw_` prefix of its id is only a hint. Clients accept the gateway role only from the member's sealed capabilities, and accept at most 4 gateway members per room.
-- **It follows kicks.** When the room rotates its secret, the host node moves to the new room tag and revokes the removed peers.
+- **It follows kicks.** When the room rotates its secret, the host node moves to the new room tag and revokes every old-epoch credential and allocation, including aliases.
 - **It keeps credentials fresh.** It renews them well before they expire.
 
 ## Who should be a host node

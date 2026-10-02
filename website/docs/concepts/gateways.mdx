@@ -12,7 +12,7 @@ A gateway is a small TURN server that runs on a desktop participant's own machin
 
 ## Why a front door helps
 
-Take Ben, on a phone hotspot behind a carrier NAT that picks a new random port for every destination, and Dani, who plays from the desktop app at home. Ben's NAT makes his address unpredictable, and Dani's home router drops packets it was not expecting. A direct route between them usually fails.
+Take Ben, on a phone hotspot behind a carrier NAT that picks a new random port for every destination, and Dani, who uses the desktop app at home. Ben's NAT makes his address unpredictable, and Dani's home router drops packets it was not expecting. A direct route between them usually fails.
 
 Dani's router can do something about that: it supports UPnP. So Dani's app asks the router to forward a port to her machine, and runs a TURN server behind it. Now Ben has an address that accepts his packets. His browser connects to Dani's gateway, the gateway hands the packets to Dani, and the path is reported as `gateway`. In the lab this is scenario `two-peer-desktop-host`, three passes out of three, with 37 to 66 KB of gate traffic per run.
 
@@ -22,9 +22,9 @@ The same front door works for Omar, whose office blocks all UDP: his browser rea
 
 When the desktop app first asks for its gateway, Freehop:
 
-1. starts a TURN server on the machine's LAN address, listening on UDP and TCP port 3478 by default;
-2. asks the router for port mappings, trying **PCP** (RFC 6887), then **NAT-PMP** (RFC 6886), then **UPnP IGD** v1 and v2;
-3. requests the same external port as the internal one, for the listener and, on demand, for each relayed port (49160 to 49359 by default), and releases a relayed port's mapping as soon as its allocation ends.
+1. asks the router for listener port mappings, trying **PCP** (RFC 6887), then **NAT-PMP** (RFC 6886), then **UPnP IGD** v1 and v2;
+2. starts a TURN server on the machine's LAN address, listening on UDP and TCP port 3478 by default;
+3. maps each relayed port on demand (49160 to 49359 by default), requesting the same external port as the internal one, and releases that mapping when its allocation ends.
 
 A machine with a public address skips the mapping step. If the router reports a private or carrier-grade NAT address as its external address, the gateway is not offered at all, because nobody outside could reach it. If you forward ports by hand, pass `externalAddress` and `portMapping: false`.
 
@@ -36,7 +36,7 @@ Routers without PCP, NAT-PMP or UPnP cannot map a port, and participants behind 
 
 ## Keys for one room and one person
 
-A gateway never hands out a general password. Dani's client mints a credential for each peer, for this room only, following the TURN REST convention:
+A gateway never hands out a general password. Dani's privileged gateway process mints a credential for each peer, for this room only, following the TURN REST convention:
 
 ```text
 username   = "<unix expiry>:<first 8 characters of the room tag>:<recipient peer id>"
@@ -45,19 +45,19 @@ credential = base64( HMAC-SHA1( gateway secret, username ) )
 
 - The credential travels to Ben inside a sealed `caps` envelope, so the gate never sees it.
 - Credentials go only to authenticated room members, never to a peer that a gate merely announced.
-- They expire after **2 hours** and are renewed at half-life.
-- The gateway accepts only rooms its owner told it to serve. On a kick, the removed peer's credentials are revoked and its allocations torn down; when the session ends, the whole room can be revoked.
+- They expire after **2 hours by default** and are renewed at half-life. `credentialTtlSeconds` can be set from 1 to 86400 seconds; the server rejects credentials extending beyond its configured lifetime.
+- The gateway accepts only rooms its owner told it to serve. On a ticket rotation, the entire old room epoch is revoked and all its allocations are torn down, including unreported aliases. Update every remaining client and host.
 - The gateway's signing key stays in its privileged process. Dani's page requests bounded credentials through a broker.
 
 ## What a gateway refuses
 
 A TURN server on someone's home machine must not become a proxy into their home. Freehop's gateway:
 
-- refuses loopback, link-local, multicast and private peer addresses by default;
+- refuses loopback, link-local, multicast, private and selected IPv6 transition destinations (6to4, Teredo and local-use NAT64) by default;
 - keeps services on the host itself unreachable (the machine's own addresses only work relay to relay);
 - bounds unauthenticated UDP errors and Binding answers per source and globally to limit reflection;
 - accepts at most 16 TCP connections per source address, with a 10-second deadline to authenticate;
-- caps usage at 6 allocations per username, 4 Mbit/s per allocation and 40 Mbit/s in total.
+- caps usage at 6 allocations per username, 32 allocations per room and 64 in total; bandwidth caps are 4 Mbit/s per allocation, 20 Mbit/s per room and 40 Mbit/s in total, separately per direction.
 
 Media stays DTLS-SRTP encrypted end to end, so the gateway relays ciphertext it cannot read. The TURN realm is `peerlane`, Freehop's codename, which is why that name appears on the wire.
 

@@ -38,7 +38,7 @@ app.whenReady().then(() => {
 | `options` | Passed to the gateway (see below). Optional. |
 | `log` | `(event, details) => void`, for example to forward port-mapping results to your logs. Optional. |
 
-It returns `{ gateway, close() }`. `gateway` stays `null` until a page first asks for it: the gateway starts lazily, so participants who never use voice pay nothing. `close()` removes the IPC handlers, stops the TURN server and removes the router mappings (best effort).
+It returns `{ gateway, close() }`. `gateway` stays `null` until a page first asks for it: the gateway starts on that first request, including for receive-only sessions. `close()` removes the IPC handlers, stops the TURN server and removes the router mappings (best effort).
 
 ### Gateway options
 
@@ -79,9 +79,11 @@ When `info()` resolves to `null` (no public address, no router that grants a map
 
 For kicks, `session.update(newTicket, { dropped })` drops old links and revokes the entire previous room epoch on this participant's gateway, including unreported aliases. `session.disconnectPeer(peerId)` drops one local connection and its local gateway credentials; it does not revoke membership or stop another alias. `session.kick()` now throws with migration guidance. Use `authority.kick()` plus replacement tickets to revoke membership.
 
+Reachability is assessed at startup. Automatic recovery after router mapping loss or address changes is not yet implemented.
+
 ## Other Node.js programs
 
-Outside Electron, `startGateway()` from `freehop/relay` runs the same gateway. The application must revoke the old room with `gateway.revokeRoom(oldTag)` on key rotation when using a raw gateway without the Electron bridge. In a privileged Node client, pass the gateway object itself as the `gateway` option of `connect()` or `join()`. Across a process boundary, send only public `info()` metadata plus a bounded `credentialsFor(tag, peer)` broker, using the Electron helper as the reference. Never send a signing key to a page. A session host that should offer its gateway without joining the call uses [host sessions](./host.mdx) instead.
+Outside Electron, `startGateway()` from `freehop/relay` runs the same gateway. The application must revoke the old room with `gateway.revokeRoom(oldTag)` on key rotation when using a raw gateway without the Electron bridge. Node.js does not provide browser WebRTC APIs by itself; a media client needs a compatible WebRTC implementation. In such a privileged Node client, pass the gateway object itself as the `gateway` option of `connect()` or `join()`. Across a process boundary, send only public `info()` metadata plus a bounded `credentialsFor(tag, peer)` broker, using the Electron helper as the reference. Never send a signing key to a page. A session host that should offer its gateway without joining the call uses [host sessions](./host.mdx) instead.
 
 ## Next
 

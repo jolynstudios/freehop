@@ -37,6 +37,15 @@ npm run typecheck  # optional: TypeScript check of the site code
 
 The build is strict: `onBrokenLinks`, `onBrokenAnchors` and `onBrokenMarkdownLinks` all throw.
 
+With the built site running, check sound playback from the repository root:
+
+```sh
+node test/browser/demo-playback.mjs http://localhost:3000/freehop/ first
+node test/browser/demo-playback.mjs http://localhost:3000/freehop/ second
+```
+
+These checks use fake capture devices and public trackers with normal Chromium autoplay policy. They inject a playback denial on each joiner, verify the recovery button, and check that camera changes preserve playing audio. They require internet access; reports and screenshots go to ignored `test/evidence/`.
+
 ## Deploy
 
 The site is static. Deploy the contents of `build/` to GitHub Pages for the
@@ -87,9 +96,9 @@ after hydration when `useMotionAllowed()` allows it.
 
 ## Keeping documentation in sync
 
-After SDK changes, update the root `SDK.md`, `PROTOCOL.md`, `SECURITY-AUDIT.md` and relevant
+After SDK changes, update the root `SDK.md`, `ARCHITECTURE.md`, `PROTOCOL.md`, `SECURITY-AUDIT.md` and relevant
 `docs/sdk/` and `docs/concepts/` pages. `docs/protocol.md` is a maintained website version,
-not a generated copy. Keep quickstart snippets consistent with admission and STUN settings.
+not a generated copy. Keep quickstart snippets consistent with admission and STUN settings. Label the runtime of every example (browser, backend, gate, Electron main or session host), and distinguish complete runnable examples from application-specific snippets. Privacy claims must acknowledge connection metadata and the shared-key trust between room members.
 When verification changes, update root `README.md` and `RESULTS.md`, `docs/results.mdx`,
 `docs/intro.mdx` and `src/components/home/Proof.tsx`. The current suite has 113 passing tests;
 the historical 40-run NAT matrix must remain distinguished from targeted requalification.

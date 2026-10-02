@@ -4,7 +4,7 @@ sidebar_label: Gate service
 description: Run and deploy the Freehop gate, the signalling-only service an operator runs, with its configuration, systemd unit, Caddy proxy, firewall rules and logs.
 ---
 
-The gate is the only server you run for Freehop, and it is small: a WebSocket service that passes sealed envelopes, plus an optional STUN responder. It never carries media, so it needs no TURN ports, no relay port ranges and no media bandwidth. [Gates](../concepts/gates.mdx) explains what it sees.
+The gate is the signalling service you run alongside your application backend, and it is small: a WebSocket service that passes sealed envelopes, plus an optional STUN responder. It never carries media, so it needs no TURN ports, no relay port ranges and no media bandwidth. [Gates](../concepts/gates.mdx) explains what it sees.
 
 ## Run it
 
@@ -13,7 +13,7 @@ node bin/freehop-gate.mjs          # from a checkout of the repository
 npx freehop-gate                   # in a project that depends on freehop
 ```
 
-It prints one line when it is ready:
+It prints one line when it is ready. With STUN configured, for example:
 
 ```json
 {"event":"listening","url":"ws://127.0.0.1:8787/freehop","stun":["stun:gate.example.com:3478"]}
@@ -30,7 +30,7 @@ The service is configured with environment variables:
 | `FREEHOP_GATE_PATH` | `/freehop` | WebSocket path. Clients connect to `wss://<your host><path>`. |
 | `FREEHOP_GATE_PUBLIC_HOST` | none | Public host name advertised in the `stun:` URLs. Needed when STUN binds a wildcard address. |
 | `FREEHOP_GATE_STUN` | none | STUN responders to start, for example `0.0.0.0:3478,[::]:3478` (IPv4 and IPv6). |
-| `FREEHOP_GATE_TOKEN_SECRET` | none | Makes the gate token-gated: only clients with a token minted with this secret get in. Use the same value as the authority's `gateTokenSecret`. |
+| `FREEHOP_GATE_TOKEN_SECRET` | none | Makes the gate token-gated: only clients with a token minted with this secret get in. Use the same value in the authority's `gateTokenSecrets` map for this gate URL. |
 | `FREEHOP_GATE_TOKEN_AUDIENCE` | required with a secret | Exact public WebSocket URL, e.g. `wss://gate.example.com/freehop`. Must match the authority’s URL and token audience. |
 | `FREEHOP_GATE_ALLOW_ANONYMOUS` | off | Set `1` explicitly to run a public community gate without admission tokens. |
 | `FREEHOP_GATE_TRUST_PROXY` | off | `1` behind a local reverse proxy: per-address limits then use the last `X-Forwarded-For` hop. |
@@ -145,7 +145,11 @@ List several gates in the authority's `gates` option (up to eight). Clients conn
 ```js
 createAuthority({
   app: 'my-app',
-  gates: ['wss://gate.example.com/freehop', 'bt+wss://tracker.openwebtorrent.com']
+  gates: ['wss://gate.example.com/freehop', 'bt+wss://tracker.openwebtorrent.com'],
+  gateTokenSecrets: {
+    'wss://gate.example.com/freehop': process.env.FREEHOP_GATE_TOKEN_SECRET
+  },
+  stun: ['stun:gate.example.com:3478']
 });
 ```
 

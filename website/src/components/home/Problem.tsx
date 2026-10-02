@@ -35,7 +35,7 @@ export default function Problem() {
       <div className={styles.grid}>
         <div className={styles.copy}>
           <p className={styles.lede}>
-            WebRTC connects most calls directly. The rest fall back to a TURN relay: a rented server in the middle that receives
+            Peer-to-peer WebRTC tries to connect people directly. When that fails, a typical app falls back to a TURN relay: a rented server in the middle that receives
             every packet and sends it on. Whoever runs that relay pays for the traffic, for as long as each call lasts.
           </p>
           <p className={styles.body}>

@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import d from './demo.module.css';
 import s from './CostCalculator.module.css';
 
-// Upper end of Freehop's measured signalling per peer pair at call setup (15–35 KB).
+// Illustrative direct-pair setup estimate; retries and more complex paths can cost more.
 const KB_PER_PAIR = 35;
 
 const MEDIA = [
@@ -117,11 +117,11 @@ export default function CostCalculator() {
             <input id={`${id}-hours`} type="number" min={1} max={744} value={hours} onChange={e => setHours(clamp(Number(e.target.value), 1, 744))} className={s.number} />
           </Field>
           <Field
-            label="Share of calls that need a relay"
+            label="Share of received streams relayed"
             htmlFor={`${id}-share`}
             note={
               <>
-                Measured: 22% (callstats.io) and 17.7% (appear.in). Default 20%.
+                Illustrative default: 20%. Historical studies measured calls or conferences, not this exact stream share.
               </>
             }>
             <input type="range" min={0} max={60} value={share} onChange={e => setShare(Number(e.target.value))} aria-label="Relay share, slider" className={s.range} />
@@ -165,7 +165,7 @@ export default function CostCalculator() {
 
         <div className={s.outputs} aria-live="polite">
           <div className={clsx(s.result, s.classic)}>
-            <p className={s.resultLabel}>Classic TURN, run by you</p>
+            <p className={s.resultLabel}>TURN you run or rent</p>
             <p className={s.big}>
               {relay.value}
               <span className={s.unit}>{relay.unit} / month</span>
@@ -206,7 +206,7 @@ export default function CostCalculator() {
               </li>
               <li>Relay traffic: each relayed person receives {group - 1} stream{group > 2 ? 's' : ''} at {kbps} kbit/s through the relay.</li>
               <li>
-                Gates: {Math.round(r.calls).toLocaleString('en-US')} calls of {minutes} min, {(group * (group - 1)) / 2} peer pair{group > 2 ? 's' : ''} each, up to {KB_PER_PAIR} KB per pair at setup and close to nothing afterwards.
+                Gates: {Math.round(r.calls).toLocaleString('en-US')} calls of {minutes} min, {(group * (group - 1)) / 2} peer pair{group > 2 ? 's' : ''} each, an assumed {KB_PER_PAIR} KB per pair at setup. Excludes keepalives, discovery, retries, protocol overhead and hosting costs; complex paths can use more.
               </li>
             </ul>
           </details>

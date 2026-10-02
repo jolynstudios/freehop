@@ -119,20 +119,57 @@ function MediaTile({stream, label, muted, mirrored, children}: {stream: MediaStr
 
 function RemoteTile({peer, streams}: {peer: Peer; streams: MediaStream | undefined}) {
   const audio = useRef<HTMLAudioElement>(null);
+  const generation = useRef(0);
+  const [playback, setPlayback] = useState<'waiting' | 'playing' | 'blocked' | 'error'>('waiting');
+  const playAudio = useCallback(() => {
+    const el = audio.current;
+    if (!(el?.srcObject instanceof MediaStream) || !el.srcObject.getAudioTracks().length) return;
+    const current = generation.current;
+    // Call play synchronously from the recovery button to retain browser user activation.
+    void el.play().then(() => {
+      if (generation.current === current) setPlayback('playing');
+    }).catch((error: Error) => {
+      if (generation.current === current) setPlayback(error.name === 'NotAllowedError' ? 'blocked' : 'error');
+    });
+  }, []);
   useEffect(() => {
     const el = audio.current;
-    if (!el || !streams) return;
-    const tracks = streams.getAudioTracks();
+    if (!el) return;
+    const tracks = streams?.getAudioTracks().filter(t => t.readyState === 'live') ?? [];
+    const attached = el.srcObject instanceof MediaStream ? el.srcObject.getAudioTracks() : [];
+    // Camera changes must not reload an already-playing audio element or lose its permission.
+    if (tracks.length === attached.length && tracks.every((t, i) => t === attached[i])) return;
+    generation.current++;
     el.srcObject = tracks.length ? new MediaStream(tracks) : null;
-    el.play().catch(() => {});
-  }, [streams]);
+    setPlayback('waiting');
+    playAudio();
+  }, [streams, playAudio]);
+  useEffect(() => {
+    const el = audio.current;
+    return () => {
+      generation.current++;
+      if (el) { el.pause(); el.srcObject = null; }
+    };
+  }, []);
   return (
     <MediaTile stream={streams ?? null} label={`Peer ${peer.id.slice(0, 6)}`} muted>
       <PathBadge kind={peer.path} via={peer.via ? peer.via.slice(0, 6) : undefined} size="sm" />
       <span className={s.counters}>
         audio {peer.audio.toLocaleString('en-US')} pkts · video {peer.video.toLocaleString('en-US')} frames
       </span>
-      <audio ref={audio} autoPlay />
+      <span className={s.playbackStatus} role="status">
+        {playback === 'blocked' ? 'Your browser blocked sound. Enable it below.'
+          : playback === 'error' ? 'Sound playback stopped. Try starting it again.'
+          : playback === 'playing' ? 'Sound playback is on.' : 'Waiting for incoming audio…'}
+      </span>
+      {(playback === 'blocked' || playback === 'error') && (
+        <button type="button" className={s.control} onClick={playAudio}>
+          {playback === 'blocked' ? 'Enable sound' : 'Retry sound'}
+        </button>
+      )}
+      <audio ref={audio} onPlaying={() => setPlayback('playing')} onPause={() => {
+        if (audio.current?.srcObject) setPlayback('error');
+      }} onError={() => setPlayback('error')} />
     </MediaTile>
   );
 }
@@ -234,10 +271,14 @@ export default function LiveCall() {
         });
         r.on('track', ({peer, track}) => {
           setStreams(st => {
-            const stream = new MediaStream([...(st[peer]?.getTracks() ?? []).filter(t => t.kind !== track.kind || t.readyState === 'live'), track]);
+            const stream = new MediaStream([...(st[peer]?.getTracks() ?? []).filter(t => t.kind !== track.kind && t.readyState === 'live'), track]);
             return {...st, [peer]: stream};
           });
-          track.addEventListener('ended', () => setStreams(st => ({...st})));
+          track.addEventListener('ended', () => setStreams(st => {
+            const current = st[peer];
+            if (!current?.getTracks().includes(track)) return st;
+            return {...st, [peer]: new MediaStream(current.getTracks().filter(t => t !== track && t.readyState === 'live'))};
+          }));
         });
         setPhase('live');
         if (video) {
@@ -489,7 +530,7 @@ export default function LiveCall() {
                 <p className={s.waitingText}>
                   {lonely
                     ? 'Nobody has appeared yet. Check that the other side uses the same invite link. If the trackers stay unreachable from your network, peers cannot find each other.'
-                    : 'Share the invite link. Peers find each other through the trackers, then talk directly.'}
+                    : 'Share the invite link. Peers find each other through the trackers, then connect directly when possible.'}
                 </p>
               </div>
             )}

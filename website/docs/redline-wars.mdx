@@ -46,7 +46,7 @@ The [live call](/demo) on this site uses public WebTorrent trackers as its only 
 In the game, the main mailbox is the game's own gate. It runs on the game's own domain and admits only tickets for the game's own rooms. Public trackers can be listed in the same tickets as backup gates:
 
 - **If the game's gate is down or blocked** on someone's network, participants still find each other through a tracker. A call that is already running does not need any gate.
-- **The trackers learn nothing about the match.** They see a random-looking swarm fingerprint and sealed envelopes. They cannot tell which match or which participants it is, and voice never passes through them.
+- **The trackers cannot read match signalling.** They see an opaque swarm fingerprint, IP addresses, random peer ids, sizes and timing. Match names and user ids are not sent, but metadata can still correlate participants. Voice never passes through the tracker.
 - **The trade-off.** Public trackers are run by volunteers, outside the game's control. Whether the game lists them is a decision for the integration.
 
 ## What the game does not get

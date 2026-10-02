@@ -39,8 +39,7 @@ export function FinalCta() {
           Make a real call, right here.
         </Title>
         <p className={styles.finalLede}>
-          The live demo runs Freehop in your browser. Two public WebTorrent trackers act as gates and the media goes straight
-          between you. Camera and microphone stay off until you press join.
+          The live demo runs Freehop in your browser. Two public WebTorrent trackers act as gates and media travels between machines in the call, directly when possible. Camera and microphone stay off until you press join.
         </p>
         <div className={styles.finalCtas}>
           <Link className={styles.primary} to="/demo">

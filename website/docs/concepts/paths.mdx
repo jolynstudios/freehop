@@ -11,7 +11,7 @@ import PathFinder from '@site/src/components/demos/PathFinder';
 
 <PathsScene caption="Every pair of peers climbs the same ladder, and stops at the first step that works." />
 
-Every pair of peers in a call finds its own media route. Freehop tries the cheapest route first and only moves to the next step after the cheaper one demonstrably failed, so the cost stays with the two people talking whenever possible.
+Every pair of peers in a call finds its own media route. Freehop tries the cheapest route first and only moves to the next step after the current attempt exhausts its time budget, so the cost stays with the two people talking whenever possible.
 
 ## The ladder
 
@@ -32,7 +32,7 @@ Freehop follows the W3C *perfect negotiation* pattern. Each pair escalates throu
 | Phase | ICE servers in use | Expected route | Moves on when |
 |---|---|---|---|
 | 0, endpoint | Application-approved STUN, the peer's own gateway, the other peer's gateway | <PathBadge kind="direct" /> or <PathBadge kind="gateway" /> | Not connected **5 s** after the description; one more 5 s if connectivity checks are getting answers |
-| 1, session | Plus up to **2** gateways of connected participants or gateway members | <PathBadge kind="relay" /> | **7 s** without a connection |
+| 1, session | Plus up to **2** gateways of connected participants or gateway members | <PathBadge kind="relay" /> | **7 s** without a connection; one extra 7 s if checks get answers |
 | 2, bridged | Unchanged | <PathBadge kind="bridged" /> | The direct or session route later succeeds |
 | no route | Unchanged | <PathBadge kind="unreachable" /> | Never gives up: ICE restarts after **30 s, 60 s, 120 s, 240 s**, then every **300 s** |
 
@@ -52,7 +52,7 @@ Step through the phases of one pair, or let it run. Each outcome stops at the ph
 
 ## Worked examples
 
-Each row below is a [lab scenario](../results.mdx) that passed three out of three Chromium runs; the results page also lists the Firefox and WebKit runs. The lab emulates each network with a Linux kernel NAT profile; physical carrier networks are not yet verified.
+Each row below comes from the original [lab qualification](../results.mdx), before the later security fixes, and passed three out of three Chromium runs; the results page also lists the Firefox and WebKit runs. The lab emulates each network with a Linux kernel NAT profile; physical carrier networks are not yet verified.
 
 | People in the call | Networks | What happens | Result | Lab scenario |
 |---|---|---|---|---|
@@ -72,7 +72,7 @@ The last row is the honest boundary. A network that can only reach the gate cann
 
 ## Find a path
 
-Pick a network for Ana and for Ben, and choose who else is in the session. The scene shows the route the ladder settles on, why, and what your own server carries.
+Pick a network for Ana and for Ben, and choose who else is in the session. The model shows a possible route under those assumptions, why, and what your own server carries.
 
 <PathFinder />
 

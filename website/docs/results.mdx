@@ -69,7 +69,7 @@ Peers are named by letter: `a`, `b` and `c` are browser participants, `g` is a d
 
 ### What this answers
 
-Earlier research that only tried direct routes proved its own boundary: two fully random symmetric NATs connected in 0 of 3 attempts, and UDP-blocked peers had no route at all. In this lab Freehop connects both cases, through a desktop participant's gateway, the session's host node or a participant. The only network it cannot serve is one that reaches nothing but the gate (`gate-only`). There, media is impossible without the operator carrying it, and Freehop reports `unreachable`.
+Earlier research that only tried direct routes proved its own boundary: two fully random symmetric NATs connected in 0 of 3 attempts, and UDP-blocked peers had no route at all. In this lab Freehop connects both cases, through a desktop participant's gateway, the session's host node or a participant. The lab also leaves a hard-NAT pair without a helper unreachable. A network that reaches nothing but the gate (`gate-only`) remains unreachable even with session helpers. There, media is impossible without the operator carrying it, and Freehop reports `unreachable`.
 
 ## Other evidence
 
@@ -82,15 +82,17 @@ Earlier research that only tried direct routes proved its own boundary: two full
 - Gateway: bounded room-scoped credentials, revocation retention, renderer isolation and loopback refusal.
 - Protocol regressions: gate audiences, STUN pinning, discovery churn, both-endpoint forwarding consent and cancellation, key rotation and copied aliases.
 
-### Independent TURN conformance
+### Independent TURN conformance (original qualification)
 
 coturn's `turnutils_uclient` against Freehop's TURN server: **UDP 800/800 and TCP 800/800 messages, 0 lost.** It runs in Send/Data mode, because coturn's client uses obsolete RFC 5766 channel numbers. ChannelData is covered by the browser tests.
 
-### TURN browser interop (macOS)
+### TURN browser interop (macOS, original qualification)
 
 20 passed, 0 failed, 6 blocked. All six blocked cases are WebKit over TCP, caused by a TURN URL bug in Playwright's WebKit build (WebKit bug 320931). The client detects it and degrades to UDP TURN for that engine.
 
-### Local browser suites (macOS), all passing on the final code
+### Local browser suites (macOS)
+
+The original qualification included every suite below. After the security fixes, the three-engine TLS mesh, multi-gate outage, kick/rekey and SDK reference app suites were rerun. Public tracker connectivity was also exercised in the live demo checks.
 
 - A mesh of three Chromium browsers.
 - Chromium, Firefox and WebKit in one mesh over TLS.

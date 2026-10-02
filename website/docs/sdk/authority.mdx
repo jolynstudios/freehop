@@ -13,7 +13,8 @@ const authority = createAuthority({
   app: 'my-app',
   gates: ['wss://gate-1.example.com/freehop', 'wss://gate-2.example.com/freehop'],
   gateTokenSecrets: {
-    'wss://gate-1.example.com/freehop': process.env.FREEHOP_GATE_TOKEN_SECRET
+    'wss://gate-1.example.com/freehop': process.env.FREEHOP_GATE_1_TOKEN_SECRET,
+    'wss://gate-2.example.com/freehop': process.env.FREEHOP_GATE_2_TOKEN_SECRET
   },
   stun: ['stun:gate-1.example.com:3478']
 });
@@ -37,12 +38,12 @@ The authority keeps its rooms in memory, in the process that created it. Creatio
 
 | Method | Returns | What it does |
 |---|---|---|
-| `openRoom(roomId)` | `{ roomId, tag, epoch, members }` | Creates the room and its secret (32 random bytes). Idempotent. Never returns the secret. |
-| `ticket(roomId, member?)` | ticket | Issues a ticket. With a `member`, that member is recorded as part of the room. Without one (for a host node), nobody is added. |
-| `kick(roomId, member)` | `{ epoch, previousTags, tickets, hostTicket }` | Removes the member, rotates the secret and increments `epoch`. `tickets` is a `Map` from each remaining member to its new ticket. |
+| `openRoom(roomId)` | Promise of `{ roomId, tag, epoch, members }` | Creates the room and its secret (32 random bytes). Idempotent; `members` is a count. Never returns the secret. |
+| `ticket(roomId, member?)` | Promise of a ticket | Issues a ticket. With a `member`, that member is recorded as part of the room. Without one (for a host node), nobody is added. |
+| `kick(roomId, member)` | Promise of `{ epoch, previousTags, tickets, hostTicket }` | Removes the member, rotates the secret and increments `epoch`. `tickets` is a `Map` from each remaining member to its new ticket. |
 | `leave(roomId, member)` | Promise of the same result as `kick` | Rotates the key on voluntary departure too. Deliver the returned tickets to remaining members. |
-| `closeRoom(roomId)` | `Promise<boolean>` | Forgets the room after pending operations finish. Await it. |
-| `describe(roomId)` | `{ roomId, tag, epoch, members }` or `null` | Public facts about a room, for your own bookkeeping. |
+| `closeRoom(roomId)` | `Promise<boolean>` | Forgets the room after pending operations finish. Does not end active calls or erase tickets already issued; your app must tell clients to leave. |
+| `describe(roomId)` | `{ roomId, tag, epoch, members }` or `null` | Public facts for bookkeeping; `members` is an array of member ids. |
 
 ## The ticket
 
@@ -56,7 +57,10 @@ A ticket is everything a client needs to enter one room:
   "epoch": 1,
   "gates": ["wss://gate-1.example.com/freehop", "wss://gate-2.example.com/freehop"],
   "secret": "base64url, 32 random bytes",
-  "auth": {"wss://gate-1.example.com/freehop": "gate-specific token"},
+  "auth": {
+    "wss://gate-1.example.com/freehop": "token for gate-1",
+    "wss://gate-2.example.com/freehop": "token for gate-2"
+  },
   "stun": ["stun:gate-1.example.com:3478"],
   "expires": 1800000000
 }
@@ -94,7 +98,7 @@ onMessage(async ({ ticket, dropped }) => {
 });
 ```
 
-Each remaining client disconnects the removed peer, closes every old link, moves to the new room tag and reconnects using the new key. The removed peer still holds the old secret, but nobody uses it any more. See the [security model](../concepts/security.mdx) for the details of the switch.
+Each remaining client disconnects the removed peer, closes every old link, moves to the new room tag and reconnects using the new key. The removed peer still holds the old secret, but updated members reject it. Deliver replacement tickets to every remaining client and host; machines left on the old key can still communicate with each other. See the [security model](../concepts/security.mdx) for the details of the switch.
 
 ## Next
 

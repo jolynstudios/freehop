@@ -52,6 +52,8 @@ When the machine cannot be reached from outside (no public address and no router
 
 `freehop/host` also exports `sharedGateway(options)` and `closeSharedGateway()`, for processes that host many rooms and want to manage the shared gateway's lifetime themselves.
 
+`available` reflects gateway startup, not a continuous external reachability probe. Automatic recovery after router mapping loss or address changes is not yet implemented.
+
 ## Requirements
 
 - **Reachability.** A public address, or a router that grants a port mapping (PCP, NAT-PMP or UPnP IGD).
@@ -60,7 +62,7 @@ When the machine cannot be reached from outside (no public address and no router
 
 ## What the host node does on the wire
 
-It joins every gate in the ticket with an id that starts with `gw_`. When a member greets it with an authenticated envelope, it answers with sealed capabilities that carry `role: "gateway"` and credentials minted for that member alone. It never sends media, never forwards, and renews credentials well before they expire. Clients accept at most 4 gateway members per room.
+It joins every Freehop WebSocket gate in the ticket with an id that starts with `gw_`. When a member greets it with an authenticated envelope, it answers with sealed capabilities that carry `role: "gateway"` and credentials minted for that member alone. It captures no media and never acts as a decoding/re-encoding participant bridge. Its TURN gateway forwards encrypted packets, and the member renews credentials before they expire. Clients accept at most 4 gateway members per room.
 
 ## Next
 

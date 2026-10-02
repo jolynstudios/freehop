@@ -4,7 +4,7 @@ import Section, {Chevron, Eyebrow, Title} from './Section';
 import styles from './Proof.module.css';
 
 const STATS = [
-  {value: '40/40', label: 'lab runs passed', note: '11 network scenarios × 3 trials, plus 7 cross-engine runs'},
+  {value: '40/40', label: 'historical lab runs passed', note: '11 network scenarios × 3 trials, plus 7 cross-engine runs'},
   {value: '113/113', label: 'unit tests', note: 'STUN codec, TURN server, port mapper, gate and gateway'},
   {value: '800/800', label: 'TURN messages, UDP and TCP', note: "coturn's turnutils_uclient against Freehop's TURN: 0 lost"},
   {value: '3', label: 'browser engines', note: 'Chromium 151, Firefox 153 and WebKit 26.5'},
@@ -88,7 +88,7 @@ export default function Proof() {
           </tbody>
         </table>
         <p id="proof-table-note" className={styles.caption}>
-          Final qualification, 2 October 2026. "+ 1/1" is the extra run with Firefox and WebKit behind the hard networks.
+          Original qualification, 2 October 2026, before the later security fixes. "+ 1/1" is the extra Firefox/WebKit run. The updated runtime passed 113 unit tests, browser suites and five targeted NAT scenarios; the full matrix has not been rerun.
         </p>
       </div>
 

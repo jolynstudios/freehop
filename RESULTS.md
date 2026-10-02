@@ -5,11 +5,10 @@ where *any* route exists inside the session. That includes the cases the earlier
 research proved impossible directly: two fully random symmetric NATs, and UDP-blocking
 networks. The operator runs only gates, which carry sealed signalling of tens of KB per call and
 never media. When no direct route exists, media goes through machines that belong to the
-session: a desktop participant's own gateway, the session's host node, or another participant. The only
-unsolved network is one that can reach nothing but the gate. There, media is impossible without
+session: a desktop participant's own gateway, the session's host node, or another participant. A hard-NAT pair without a helper remains unreachable. A network that reaches only the gate remains unreachable even with session helpers. There, media is impossible without
 the operator carrying it, and Freehop reports `unreachable`.
 
-## Final lab qualification (fixed code, one clean run)
+## Original lab qualification (before subsequent security fixes)
 
 Real Chromium 151, Firefox 153 and WebKit 26.5 ran in separate Linux network namespaces, each
 behind its own kernel-NAT router profile, with fake camera and microphone. Every run asserts:
@@ -61,14 +60,14 @@ The 40-run matrix above is historical qualification before the security changes 
   - gate: routing, isolation, floods, tokens, capacity, STUN, keepalive, trust-proxy;
   - gateway: room-scoped and revocable credentials, loopback refused, old-epoch alias allocations revoked;
   - Protocol security regressions (tickets, authority races, key epochs, forwarding, hostile gates and Electron IPC).
-- **Independent TURN conformance:** coturn's `turnutils_uclient` against Freehop's TURN
+- **Independent TURN conformance (original qualification):** coturn's `turnutils_uclient` against Freehop's TURN
   server got UDP 800/800 and TCP 800/800 messages with 0 lost.
   - It runs in Send/Data mode because coturn's client uses obsolete RFC 5766 channel numbers.
   - ChannelData is covered by the browser tests.
-- **TURN browser interop (macOS):** 20 pass, 0 fail, 6 blocked. All six blocked cases are
+- **TURN browser interop (macOS, original qualification):** 20 pass, 0 fail, 6 blocked. All six blocked cases are
   WebKit over TCP, caused by a TURN-URL bug in Playwright's WebKit build (bug 320931). The
   client degrades to UDP TURN for that engine.
-- **Local browser suites (macOS), all passing on the final code:**
+- **Local browser suites (macOS):** the original qualification included all suites below. After security fixes, the three-engine TLS mesh, multi-gate outage, kick/rekey and SDK reference app were rerun; public tracker connectivity was also exercised in live demo checks.
   - 3×Chromium mesh;
   - Chromium + Firefox + WebKit mesh over TLS;
   - multi-gate: peers on disjoint gates introduced through the mesh, then **all gates shut

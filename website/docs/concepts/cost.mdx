@@ -44,7 +44,7 @@ The arithmetic is simple enough to check by hand. With Freehop's default bitrate
 
 So one hour of one person's relayed audio moves as many bytes as roughly 400 to 1,000 call setups through a gate. At the example rate of $0.05 per GB, 100,000 relayed person-hours a month cost about **$72** for audio only and about **$747** with video, for two-person calls. In a group call, each relayed person receives one stream per other participant, so the relay delivers proportionally more.
 
-The gate's share stays small because signalling stops flowing through it once a pair is connected: the peers move it onto their own data channel. In the [qualification lab](../results.mdx), a gate's total for a whole scenario run, retries included, was 30 to 210 KB.
+The gate's share stays small because connected pairs move signalling onto their own data channels. Keepalives, newcomer discovery and recovery still contribute traffic. In the [qualification lab](../results.mdx), a gate's total for a whole scenario run, retries included, was 30 to 210 KB.
 
 ## Who carries the relayed share instead
 
@@ -60,11 +60,11 @@ None of these rows is your operator infrastructure. That is the point of the des
 
 - **Do not host sessions on servers whose bandwidth you pay for.** A host node relays media for its session. If that host is your own server, the relay bill is back.
 - **Forwarding costs a participant's upload.** How much a forwarding participant on home broadband can spare is not yet measured. Freehop caps forwarded video at 200 kbit/s.
-- **Gateways have quotas.** By default a gateway relays at most 4 Mbit/s per allocation and 40 Mbit/s in total.
+- **Gateways have quotas.** By default a gateway relays at most 4 Mbit/s per allocation, 20 Mbit/s per room and 40 Mbit/s in total, separately per direction, with at most 6 allocations per username, 32 per room and 64 overall.
 
 ## What you still run
 
-You still run gates, or none at all: a public WebTorrent tracker can serve as a room's only gate, as the [live call](/demo) on this site does. A gate needs no TURN ports, no media bandwidth and only one public UDP port for STUN. See [Gate service](../sdk/gate-service.mdx).
+You still run gates, or none at all: a public WebTorrent tracker can serve as a room's only gate, as the [live call](/demo) on this site does. A gate needs no TURN ports, no media bandwidth and a public HTTPS/WebSocket endpoint, plus a UDP port if you enable STUN. See [Gate service](../sdk/gate-service.mdx).
 
 ## Next
 

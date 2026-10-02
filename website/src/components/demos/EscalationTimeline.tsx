@@ -25,7 +25,7 @@ const PHASES = [
   {
     name: 'Phase 0: endpoints',
     budget: '5 s',
-    servers: "The gate's STUN, your own gateway and the other side's gateway.",
+    servers: "Application-approved STUN, your own gateway and the other side's gateway.",
     routes: 'Direct (LAN, IPv6, STUN reflexive) or one endpoint’s own gateway.',
     leaves: 'Not connected 5 s after the description, plus one 5 s grace period if connectivity checks get answers.',
   },
@@ -34,7 +34,7 @@ const PHASES = [
     budget: '7 s',
     servers: 'Adds up to two gateways of other members: a desktop participant or the host node.',
     routes: 'Relay through a session gateway, still encrypted end to end.',
-    leaves: 'Only the impolite peer restarts ICE; the polite one takes over after 2.5 s. Not connected after 7 s.',
+    leaves: 'Only the impolite peer restarts ICE; the polite one takes over after 2.5 s. Not connected after 7 s, plus one 7 s grace period if checks get answers.',
   },
   {
     name: 'Phase 2: bridging',
@@ -64,7 +64,7 @@ export default function EscalationTimeline() {
   // Simulated seconds at which each phase ends, given the scenario and the grace toggle.
   const marks = useMemo(() => {
     const p0 = ENDPOINT + (grace ? GRACE : 0);
-    const p1 = p0 + SESSION;
+    const p1 = p0 + SESSION + (grace ? SESSION : 0);
     const p2 = p1 + BRIDGE;
     const end = scenario.ends === 0 ? p0 * 0.55 : scenario.ends === 1 ? p0 + SESSION * 0.5 : scenario.ends === 2 ? p1 + BRIDGE * 0.8 : p2 + 2;
     return {p0, p1, p2, end};
@@ -165,7 +165,7 @@ export default function EscalationTimeline() {
           <div className={s.track} aria-hidden="true">
             <span className={clsx(s.seg, s.seg0)} style={{left: 0, width: `${pos(ENDPOINT)}%`}} />
             {grace && <span className={clsx(s.seg, s.segGrace)} style={{left: `${pos(ENDPOINT)}%`, width: `${pos(GRACE)}%`}} />}
-            <span className={clsx(s.seg, s.seg1)} style={{left: `${pos(marks.p0)}%`, width: `${pos(SESSION)}%`}} />
+            <span className={clsx(s.seg, s.seg1)} style={{left: `${pos(marks.p0)}%`, width: `${pos(marks.p1 - marks.p0)}%`}} />
             <span className={clsx(s.seg, s.seg2)} style={{left: `${pos(marks.p1)}%`, width: `${82 - pos(marks.p1)}%`}} />
             <span className={clsx(s.seg, s.seg3)} style={{left: '84%', width: '16%'}} />
             <span className={s.break} style={{left: '82.4%'}} />
@@ -213,8 +213,8 @@ export default function EscalationTimeline() {
           })}
         </ol>
         <p className={s.note}>
-          Budgets come from the client's defaults. A route that works is used the moment ICE connects; the timers only decide when to
-          try the next rung.
+          Phase budgets come from the client's defaults; connection times here are illustrative. The 4-second bridge wait is an
+          initiator fallback, not a deadline that proves a pair unreachable. A phase with no eligible gateway or bridge can be skipped. Working routes are used as soon as they connect.
         </p>
       </div>
     </div>

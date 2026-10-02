@@ -100,7 +100,7 @@ export default function Hero() {
           <p className={styles.facts}>
             <span>Apache-2.0</span>
             <span>Alpha</span>
-            <Link to="/docs/results">Lab-qualified: 40/40 runs passed</Link>
+            <Link to="/docs/results">Original lab matrix: 40/40 passed</Link>
           </p>
         </div>
       </div>

@@ -48,7 +48,7 @@ plaintext = JSON { kind, n, ...body }
 - `to` is the recipient's peer id. The AAD binds room, sender and recipient. A gate that re-labels or re-routes an envelope makes it fail authentication.
 - `n` is a per-sender counter. Receivers keep a 1024-wide replay window per sender and drop duplicates. The same envelope legitimately arrives via several gates and the mesh.
 - Kinds: `caps`, `description`, `candidate`, `bye`, `restart-request`, `bridge-request`, `bridge-offer`, `bridge-accept`, `bridge-confirm`, `bridge-ready`, `bridge-active`, `bridge-release`, `bridge-fail`, `forward-map`, `forward-unmap`. Unknown kinds are dropped. Tracker gates add a room-broadcast `hello` (to `*`).
-- **Admission.** Gate rosters and arrival events are unauthenticated hints. A hint only makes a peer greet the hinted id with its sealed caps, at most once per 20 s and for at most 64 hints. A peer becomes a member, with `peer` events, a link and a slot, only after an envelope from it authenticates. A gate therefore cannot inject or evict members.
+- **Admission.** Gate rosters and arrival events are unauthenticated hints. A hint only makes a peer greet the hinted id with its sealed caps, at most once per 20 s and for at most 64 hints. A peer becomes a member, with `peer` events, a link and a slot, only after an envelope from it authenticates. A gate cannot authenticate an invented member, but can still prevent discovery or disrupt recovery by dropping traffic. Roster presence alone does not prove membership.
 
 ## 4. Gate protocol (WebSocket, UTF-8 JSON text frames)
 
@@ -76,7 +76,7 @@ Clients connect to every gate in their list and announce on each. Peers that sha
 
 A gate URL `bt+wss://…` names a public WebTorrent tracker used as a gate.
 
-- `info_hash` is the first 20 hex characters of the room tag, and `peer_id` is a random 20-character ASCII string.
+- `info_hash` is the first 20 ASCII characters of the hex-encoded, decoded room tag (80 bits of tag material), and `peer_id` is a random 20-character ASCII string.
 - Hellos travel as announced offers, `"pl1:<peer id>:<sealed hello>"`. Envelopes travel as answers addressed by `to_peer_id`.
 - A peer's tracker address is bound only after its envelope authenticates. Hellos carry the sender's counter and fall under the replay window.
 
@@ -125,7 +125,7 @@ Negotiation follows W3C *perfect negotiation*. The peer with the lexicographical
 | Phase | ICE servers | Expected route | Leaves the phase when |
 |---|---|---|---|
 | 0 ENDPOINT | Application-approved STUN + own gateway (internal URL) + remote peer's gateway | host/LAN, IPv6, srflx/prflx, or one endpoint's own gateway | not connected 5 s after the description, with one grace period if checks receive answers |
-| 1 SESSION | + gateways of connected participants and of gateway members (max 2 added) | `relay` through a session gateway | 7 s without connection |
+| 1 SESSION | + gateways of connected participants and of gateway members (max 2 added) | `relay` through a session gateway | 7 s without connection, with one extra 7 s grace period if checks receive answers |
 | 2 BRIDGED | unchanged | media forwarded by a connected participant (§9) | the direct or session route later succeeds |
 | unreachable | unchanged | none (no bridge candidate) | ICE restart retries with exponential backoff (30 s … 300 s) |
 
@@ -197,19 +197,19 @@ The [SDK](./sdk/authority.mdx) describes how applications consume the protocol:
 - Audio: Opus, echo cancellation, noise suppression and AGC, max 32 kbit/s.
 - Video: 640×360 at up to 24 fps, max 300 kbit/s per link.
 - Muting the microphone disables the track (no renegotiation). Turning the camera off stops the track and replaces it with `null`.
-- Mesh upstream at 5 participants with video ≈ 4 × 330 kbit/s.
+- Mesh upstream at 5 participants with video ≈ 4 × 332 kbit/s before overhead.
 
 ## 11. Security considerations
 
 - **Gates** learn: socket IP addresses, opaque room tags and peer ids, envelope sizes and timing. They cannot read SDP, ICE candidates, caps or credentials. They cannot forge or re-route envelopes without detection, and cannot inject peers into a room. A hostile gate can drop or delay traffic; using several gates mitigates that.
 - **Room members** are mutually trusted for signalling: any member can forge envelopes in the room's name. Per-peer signatures are a possible v2 addition. Removal requires a secret rotation (§2). SDK ticket expiry does not erase copies of the shared secret or end established media; it is not a replacement for rotation.
-- **Gateways**: credentials are per peer and short-lived. The peer policy prevents use as a proxy into private networks. Quotas: 6 allocations per username, 4 Mbit/s per allocation, 32 allocations and 20 Mbit/s per room, 40 Mbit/s in total. A room member could still use a gateway's credentials to relay traffic to arbitrary public hosts until the credentials expire. Operators can shorten the TTL.
-- **IP privacy**: as with any WebRTC call, participants learn each other's addresses. Relay-only operation could hide them at the cost of the cost rule. This is not a default.
+- **Gateways**: credentials are per peer and short-lived. The peer policy prevents use as a proxy into private networks. Quotas: 6 allocations per username, 4 Mbit/s per allocation, 32 allocations and 20 Mbit/s per room, 40 Mbit/s in total, separately per direction; at most 64 allocations overall. A room member could still use a gateway's credentials to relay traffic to arbitrary public hosts until the credentials expire. Expiry blocks further authenticated requests; existing allocations may continue until their granted lifetime ends. Revocation ends them immediately. Operators can shorten the TTL.
+- **IP privacy**: direct paths expose network addresses to other participants. Gate and tracker operators also see connecting IP addresses. The SDK does not provide an IP-anonymity mode.
 
 ## 12. Known limits
 
 - A network that permits traffic only to the gate host cannot carry media without the gate operator carrying it. Freehop reports `unreachable`. A gate operator who *chooses* to also run a gateway (community gates) can serve such users; the application operator's own gates do not.
-- Two browser-only participants that are both behind hard NATs or UDP-blocking networks, with no IPv6, no gateway in the session and no third participant, cannot connect. With a session host node (Redline Wars: every match has one) they connect through it.
+- Two browser-only participants that are both behind hard NATs or UDP-blocking networks, with no IPv6, no gateway in the session and no third participant, cannot connect. A session host node reachable by both endpoints can provide a TURN relay path.
 - Chromium, lab finding: simultaneous ICE restarts (glare) intermittently left the polite side's RTP senders silent after its restart offer was rolled back. Freehop avoids simultaneous restarts (§7).
 - Playwright 1.62's WebKit build rejects `?transport=` in TURN URLs (WebKit bug 320931). The client detects this and degrades to UDP-only TURN URLs for that engine.
 - Desktop apps can alternatively pin WebRTC's UDP port range (`webContents.setWebRTCUDPPortRange`, Electron 28 and newer) and map it directly. Freehop's gateway approach needs no Chromium cooperation.

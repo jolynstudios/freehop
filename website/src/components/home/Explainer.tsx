@@ -45,7 +45,7 @@ export default function Explainer() {
       </div>
       <ol className={s.strip}>
         <li><Scene kind="meet" /><h3><span>1</span> Find your friend.</h3>
-          <p>Share a link. A gate passes encrypted introductions between your devices.</p></li>
+          <p>In the demo, share a link. A gate passes encrypted introductions between your devices.</p></li>
         <li><Scene kind="call" /><h3><span>2</span> Start talking.</h3>
           <p>Your voices and video travel between your devices. The gate carries no audio or video.</p></li>
         <li><Scene kind="help" /><h3><span>3</span> Take another path.</h3>

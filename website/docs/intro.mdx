@@ -15,7 +15,7 @@ Freehop adds peer-to-peer audio, video and data to browser and desktop apps. Its
 
 :::caution[Alpha, lab-qualified]
 
-Freehop is alpha software. It passed a full qualification in an isolated network lab (40 of 40 runs, three browser engines), but it has not yet been verified on physical home routers, 4G/5G carrier networks, corporate networks or mobile browsers. See [Limits](./limits.mdx) before you depend on it.
+Freehop is alpha software. The original code passed 40 of 40 runs across three browser engines in an isolated network lab. Later security fixes passed 113 unit tests, browser suites and five targeted NAT scenarios; the full 40-run matrix has not been repeated for this revision. It it has not yet been verified on physical home routers, 4G/5G carrier networks, corporate networks or mobile browsers. See [Limits](./limits.mdx) before you depend on it.
 
 :::
 
@@ -67,7 +67,7 @@ The lab profile column names the Linux kernel NAT profile that emulates each net
 ## Status
 
 <StatGrid>
-  <Stat value="40/40" label="lab runs passed" note="11 network scenarios × 3 trials, plus 7 cross-engine runs" />
+  <Stat value="40/40" label="historical lab runs passed" note="11 network scenarios × 3 trials, plus 7 cross-engine runs" />
   <Stat value="113/113" label="unit tests" note="STUN, TURN, port mapper, gate, gateway" />
   <Stat value="800/800" label="TURN messages, UDP and TCP" note="coturn's turnutils_uclient against Freehop's TURN server, 0 lost" />
 </StatGrid>

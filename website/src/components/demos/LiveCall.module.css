@@ -400,6 +400,13 @@
   flex-basis: 100%;
 }
 
+.playbackStatus {
+  flex-basis: 100%;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--fh-slate);
+}
+
 .waiting {
   border: 3px dashed var(--fh-mist);
   border-radius: 18px;

@@ -222,7 +222,7 @@ export default function GateSees() {
             <code>{recvFrame ? <Diff prev={JSON.stringify({t: 'recv', room: room?.tag, from: ids.ana, box})} next={recvFrame} /> : '…'}</code>
           </pre>
           <p className={s.small}>
-            The gate learns a room tag, two peer ids, {sendFrame.length} bytes and the time. Your {plainBytes}-byte message is inside the box.
+            The gate also sees connecting IP addresses. This frame reveals a room tag, peer ids, {sendFrame.length} bytes and the time. Your {plainBytes}-byte message is inside the box.
           </p>
           <div className={s.tampers} role="group" aria-label="Tamper with the envelope">
             {(Object.keys(TAMPER) as Exclude<Tamper, 'none'>[]).map(t => (
@@ -254,7 +254,7 @@ export default function GateSees() {
                 <span className={s.stamp}>{result.ok ? 'Opened' : 'Rejected'}</span>
                 {result.ok ? (
                   <>
-                    <p className={s.outcomeText}>Authentic: sealed by Ana, for Ben, in this room.</p>
+                    <p className={s.outcomeText}>Authenticated with this room's shared key, addressed from Ana to Ben.</p>
                     <blockquote className={s.plain}>{String(result.payload?.text ?? '')}</blockquote>
                   </>
                 ) : (
@@ -275,7 +275,7 @@ box  = base64url(iv[12] || AES-GCM(key, iv, plaintext, aad))`}
               </code>
             </pre>
             <p className={s.small}>
-              Wire strings still say <code>peerlane</code>, Freehop's codename. The tag here is <code>{room ? short(room.tag) : '…'}</code>.
+              Any room member holds this key and could claim another sender id. The envelope protects against outsiders, not impersonation by a member. Wire strings still say <code>peerlane</code>, Freehop's codename. The tag here is <code>{room ? short(room.tag) : '…'}</code>.
             </p>
           </details>
         </section>

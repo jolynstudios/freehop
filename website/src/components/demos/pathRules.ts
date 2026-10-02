@@ -145,7 +145,7 @@ function decideRoute(a: Net, b: Net, x: Extras): Omit<Verdict, 'lab'> {
       via,
       phase: 1,
       headline: via === 'host node' ? "Relayed by the session's host node." : "Relayed by Dani's desktop gateway.",
-      why: `${reason} After the first 5 seconds, Freehop adds the gateways of other session members (up to two at a time${both ? ': here the host node and Dani' : ''}) and restarts ICE. ${via === 'host node' ? "The host node's" : "Dani's"} gateway is reachable from both of you${tcp ? ' (TCP where UDP is blocked)' : ''}, so media relays there. It stays encrypted end to end: the relay only moves ciphertext.`,
+      why: `${reason} After the 5-second endpoint budget (plus a grace period if checks get answers), Freehop adds the gateways of other session members (up to two at a time${both ? ': here the host node and Dani' : ''}) and restarts ICE. ${via === 'host node' ? "The host node's" : "Dani's"} gateway is reachable from both of you${tcp ? ' (TCP where UDP is blocked)' : ''}, so media relays there. It stays encrypted end to end: the relay only moves ciphertext.`,
     };
   }
   if (x.third && reachesOpenPeer(a) && reachesOpenPeer(b)) {
@@ -166,6 +166,6 @@ function decideRoute(a: Net, b: Net, x: Extras): Omit<Verdict, 'lab'> {
     kind: 'unreachable',
     phase: null,
     headline: 'Unreachable for now, and Freehop says so.',
-    why: `${reason} ${thirdUseless ? 'Cleo cannot reach a UDP-blocked office either, so she cannot bridge. ' : ''}Nobody inside the session can carry the media, so Freehop reports unreachable instead of renting a relay, and retries with an ICE restart after 30 seconds, backing off to every 5 minutes.${missing.length ? ` Add ${list(missing)} and the pair can connect.` : ''}`,
+    why: `${reason} ${thirdUseless ? 'Cleo cannot reach a UDP-blocked office either, so she cannot bridge. ' : ''}Nobody inside the session can carry the media, so Freehop reports unreachable instead of renting a relay, and retries with an ICE restart after 30 seconds, backing off to every 5 minutes.${missing.length ? ` Add ${list(missing)} with a working route to both endpoints to make another path possible.` : ''}`,
   };
 }

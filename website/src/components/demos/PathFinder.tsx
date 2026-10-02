@@ -184,6 +184,7 @@ export default function PathFinder() {
         </button>
       </div>
       <div className={clsx(d.cardBody, s.body)}>
+        <p>Illustrative network model, not a test of your connection. Lab figures below come from the original qualification before the later security fixes.</p>
         <div className={s.controls}>
           {group('Ana', a, setA)}
           {group('Ben', b, setB)}

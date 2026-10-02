@@ -1,7 +1,7 @@
 # Freehop SDK: integrating it into an application
 
 Freehop is built to be consumed. Any application uses the same five pieces. Redline Wars is
-its first consumer and test environment, and integrates exactly this way. Nothing below is
+a planned consumer and test environment, using the same public API. Nothing below is
 game-specific.
 
 ```
@@ -40,9 +40,12 @@ FREEHOP_GATE_TOKEN_SECRET=… FREEHOP_GATE_TOKEN_AUDIENCE=wss://example.com/free
 Put it behind your TLS proxy (`deploy/Caddyfile.snippet`, `deploy/freehop-gate.service`). It
 carries sealed signalling only: about 15–35 KB per peer pair at setup, roughly zero
 afterwards. More gates mean more resilience. Clients use every gate in the ticket, and a call
-survives all gates going down.
+survives all gates going down. Public trackers can replace your own gate; configure approved STUN separately. Keepalives, tracker discovery and recovery still contribute signalling traffic.
 
 ## 3. Client: join with the ticket (`freehop/sdk`)
+
+This runs in the browser or Electron renderer. Bundle the package import with your frontend build tool, fetch the ticket from your authenticated backend, and join from a user control on an HTTPS page (localhost works for development). The callbacks below are UI placeholders; the media, update and leave calls illustrate separate controls, not a startup sequence. Node.js 22 or newer is needed for the backend/gate/host helpers, not for browser execution.
+
 ```js
 import { connect } from 'freehop';
 const session = await connect(ticket, { media: { audio: true, video: false } });
@@ -59,6 +62,8 @@ await session.leave();
 
 Map your member ids to Freehop peer ids (`session.id`) in your backend, so that a kick can
 name the peer the remaining clients must drop.
+
+Audio packets arriving does not guarantee sound playback. `attach()` attempts playback, but browsers may block it. Check `element.play()` and offer a button that retries it directly from a click; preserve an existing audio attachment when only video changes. See the [browser playback example](https://jolynstudios.github.io/freehop/docs/sdk/client#audio-playback-in-the-browser).
 
 ## 4. Desktop apps: become reachable (`freehop/electron`)
 Main process:

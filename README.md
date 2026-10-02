@@ -12,7 +12,7 @@
 
 ![License: Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-303055)
 ![Docs: CC BY 4.0](https://img.shields.io/badge/docs-CC%20BY%204.0-303055)
-![Lab qualification: 40/40](https://img.shields.io/badge/lab%20qualification-40%2F40-096e72)
+![Original lab matrix: 40/40](https://img.shields.io/badge/original%20lab%20matrix-40%2F40-096e72)
 ![Unit tests: 113/113](https://img.shields.io/badge/unit%20tests-113%2F113-096e72)
 ![Status: alpha](https://img.shields.io/badge/status-alpha-ef3b2c)
 
@@ -23,7 +23,7 @@
 Adding voice or video to a game or app comes with a hidden bill. WebRTC connects people
 directly when it can. When it can't, because of strict NATs or firewalls that block UDP, the
 standard answer is a **TURN relay that you run and pay for**. Every byte of those calls flows
-through your servers. Published WebRTC measurements put that at **roughly one call in five**
+through your servers. Historical measurements from 2015–2017 found relay use in roughly one fifth of calls or conferences on those services; they are not a current prediction
 ([callstats.io: ~22%](https://webrtchacks.com/usage-stats/),
 [appear.in: ~17.7%](https://medium.com/@fippo/what-kind-of-turn-server-is-being-used-d67dbfc2ff5d)),
 and managed TURN is billed per gigabyte (e.g.
@@ -43,7 +43,7 @@ hosting the session, or another participant. The cost of a call stays with the p
 | 🧱 **Connects the "impossible" pairs** | Two strict (symmetric) NATs, or a network that blocks UDP, can't connect directly. Freehop routes them through a session member's gateway or the session host, still with no operator relay. |
 | 🛰️ **No single point of failure** | Run one gate or many, operated by you, your community, or public WebTorrent trackers. Peers on different gates still find each other. **Calls keep running when every gate is down.** |
 | 🔐 **Private by construction** | Signalling is sealed (HKDF + AES-256-GCM), so gates can't read or forge envelopes. Direct and gateway paths preserve end-to-end DTLS-SRTP; a forwarding participant decodes and re-encodes media. |
-| ⚙️ **Automatic** | No share links. Your backend issues a ticket, and the SDK takes the cheapest path that works: direct, then gateway, then relay, then bridge. |
+| ⚙️ **Automatic** | No manual room link is required in a ticket-based integration. Your backend issues a ticket, and the SDK takes the cheapest path that works: direct, then gateway, then relay, then bridge. |
 | 📦 **Small and open** | Zero-dependency browser client; a gate with one dependency (`ws`); TURN gateway and PCP / NAT-PMP / UPnP port mapping in plain Node. Apache-2.0. |
 
 ## How it works
@@ -70,7 +70,7 @@ flowchart LR
 
 ## Proof, not promises
 
-Qualified in an isolated Linux lab with real **Chromium 151, Firefox 153 and WebKit 26.5**.
+The original qualification ran in an isolated Linux lab with real **Chromium 151, Firefox 153 and WebKit 26.5**.
 Each browser sits behind its own kernel NAT router profile, with fake camera and microphone.
 Every run asserts the path taken and that audio *and* video actually arrive.
 

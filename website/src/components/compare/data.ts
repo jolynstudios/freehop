@@ -35,7 +35,7 @@ export const OPTIONS: Option[] = [
     fallback: "Machines in the session: a participant's desktop gateway, the host node, or a forwarding participant",
     bill: 'none',
     billText: 'No operator media bill; session machines carry the traffic',
-    size: '2 to 8 people (mesh)',
+    size: 'Small-room mesh; initial target 2–8, capacity not benchmarked',
     e2e: 'Direct and gateway paths: yes. A forwarding participant decodes and re-encodes the media',
     license: 'Apache-2.0',
     home: true,
