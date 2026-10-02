@@ -76,6 +76,21 @@
   gap: 0.5rem 1.6rem;
 }
 
+.trackersNote {
+  margin: 0.6rem 0 0;
+  max-width: 62rem;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--fh-fog);
+}
+
+.trackersNote a {
+  color: var(--fh-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .tracker {
   display: inline-flex;
   align-items: center;

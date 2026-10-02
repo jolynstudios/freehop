@@ -26,7 +26,8 @@ export const DEFAULT_LIMITS = Object.freeze({ audioBitrate: 32000, videoBitrate:
 
 export async function join(options) {
   const room = new Room(options);
-  await room.start();
+  // A failed start (e.g. a refused microphone) must not leave captured devices running.
+  try { await room.start(); } catch (error) { await room.leave().catch(() => {}); throw error; }
   return room;
 }
 

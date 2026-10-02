@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useMemo, useRef, useState, type ReactNode} from 'react';
 import clsx from 'clsx';
 import useBaseUrl from '@docusaurus/useBaseUrl';
+import Link from '@docusaurus/Link';
 import PathBadge, {type PathKind} from '../PathBadge';
 import s from './LiveCall.module.css';
 
@@ -45,12 +46,34 @@ function kb(bytes: number) {
   return `${Math.max(0, Math.round(bytes / 1000))} KB`;
 }
 
+/** Plain-language reason a camera did not start, by DOMException name. */
+function cameraProblem(err: Error & {name?: string}) {
+  switch (err.name) {
+    case 'NotAllowedError':
+    case 'SecurityError':
+      return 'Camera access is blocked for this page. Allow the camera in your browser\'s site settings, then press "Turn camera on".';
+    case 'NotReadableError':
+    case 'AbortError':
+      return 'Your camera is busy: another app or browser tab is using it. Close that, then press "Turn camera on".';
+    case 'NotFoundError':
+    case 'OverconstrainedError':
+      return 'No usable camera was found on this device.';
+    default:
+      return `The camera did not start (${err.message}).`;
+  }
+}
+
+const GATE_STATE: Record<string, string> = {joined: 'connected', connecting: 'connecting', reconnecting: 'reconnecting', error: 'unreachable', idle: 'not connected'};
+
 function MediaTile({stream, label, muted, mirrored, children}: {stream: MediaStream | null; label: string; muted?: boolean; mirrored?: boolean; children?: ReactNode}) {
   const video = useRef<HTMLVideoElement>(null);
   const [, repaint] = useState(0);
+  // Tracks can be added to or removed from the same stream (camera on/off): re-attach when they change.
+  const trackKey = stream ? stream.getTracks().map(t => t.id).join(',') : '';
   useEffect(() => {
     const el = video.current;
     if (!el) return;
+    el.srcObject = null;
     el.srcObject = stream;
     if (stream) el.play().catch(() => {});
     // A remote camera that is switched off keeps its track but stops sending: show the placeholder.
@@ -68,7 +91,7 @@ function MediaTile({stream, label, muted, mirrored, children}: {stream: MediaStr
         t.removeEventListener('ended', bump);
       }
     };
-  }, [stream]);
+  }, [stream, trackKey]);
   const hasVideo = !!stream?.getVideoTracks().some(t => t.readyState === 'live' && t.enabled && !t.muted);
   return (
     <figure className={s.tile}>
@@ -120,8 +143,9 @@ export default function LiveCall() {
   const [gates, setGates] = useState<Record<string, string>>(() => Object.fromEntries(TRACKERS.map(t => [t, 'idle'])));
   const [traffic, setTraffic] = useState({signal: 0, media: 0});
   const [mic, setMic] = useState(true);
-  const [cam, setCam] = useState(true);
-  const [withVideo, setWithVideo] = useState(true);
+  const [cam, setCam] = useState(false);
+  const [camBusy, setCamBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [lonely, setLonely] = useState(false);
   const roomRef = useRef<FreehopRoom | null>(null);
@@ -148,16 +172,18 @@ export default function LiveCall() {
     async (video: boolean) => {
       if (roomRef.current || !code) return;
       setError(null);
+      setNotice(null);
       setPhase('joining');
-      setWithVideo(video);
       setGates(Object.fromEntries(TRACKERS.map(t => [t, 'connecting'])));
       try {
         const mod: ClientModule = await import(/* webpackIgnore: true */ url);
-        const r = await mod.join({gates: TRACKERS, stun: STUN, secret: code, app: APP, media: {audio: true, video}});
+        // Join with the microphone first; the camera is added afterwards, so a busy or blocked
+        // camera never keeps anyone out of the call.
+        const r = await mod.join({gates: TRACKERS, stun: STUN, secret: code, app: APP, media: {audio: true, video: false}});
         roomRef.current = r;
         setRoom(r);
         setMic(true);
-        setCam(video);
+        setCam(false);
         r.on('gate', ({url: gate, state}) => setGates(g => ({...g, [gate]: state})));
         r.on('peer', ({id}) => setPeers(p => ({...p, [id]: p[id] ?? {id, path: 'connecting', via: null, audio: 0, video: 0}})));
         r.on('peer-left', ({id}) => {
@@ -183,6 +209,17 @@ export default function LiveCall() {
           track.addEventListener('ended', () => setStreams(st => ({...st})));
         });
         setPhase('live');
+        if (video) {
+          setCamBusy(true);
+          try {
+            await r.setCamera(true);
+            if (roomRef.current === r) setCam(true);
+          } catch (e) {
+            if (roomRef.current === r) setNotice(`${cameraProblem(e as Error)} You are in the call with your microphone.`);
+          } finally {
+            setCamBusy(false);
+          }
+        }
       } catch (e) {
         const err = e as Error & {name?: string};
         roomRef.current = null;
@@ -190,10 +227,12 @@ export default function LiveCall() {
         setPhase('error');
         setError(
           err.name === 'NotAllowedError'
-            ? 'Camera or microphone access was blocked. Allow it for this page in your browser, then join again.'
+            ? 'Microphone access was blocked. Allow it for this page in your browser, then join again.'
             : err.name === 'NotFoundError'
-              ? 'No camera or microphone was found. Try joining with the microphone only.'
-              : `Could not join: ${err.message}`,
+              ? 'No microphone was found on this device.'
+              : err.name === 'NotReadableError'
+                ? 'Your microphone is busy: another app is using it. Close that, then join again.'
+                : `Could not join: ${err.message}`,
         );
       }
     },
@@ -238,8 +277,8 @@ export default function LiveCall() {
 
   // A debugging handle for automated checks of the demo itself.
   useEffect(() => {
-    (window as any).freehopDemo = {phase, peers, gates, traffic, id: room?.id ?? null, stats: () => roomRef.current?.stats()};
-  }, [phase, peers, gates, traffic, room]);
+    (window as any).freehopDemo = {phase, peers, gates, traffic, cam, notice, id: room?.id ?? null, stats: () => roomRef.current?.stats()};
+  }, [phase, peers, gates, traffic, cam, notice, room]);
 
   const leave = useCallback(async () => {
     const r = roomRef.current;
@@ -248,6 +287,8 @@ export default function LiveCall() {
     setPeers({});
     setStreams({});
     setLonely(false);
+    setNotice(null);
+    setCam(false);
     setPhase('left');
     setGates(Object.fromEntries(TRACKERS.map(t => [t, 'idle'])));
     await r?.leave();
@@ -278,12 +319,16 @@ export default function LiveCall() {
     setMic(!mic);
   };
   const toggleCam = async () => {
-    if (!room) return;
+    if (!room || camBusy) return;
+    setCamBusy(true);
     try {
       await room.setCamera(!cam);
       setCam(!cam);
+      setNotice(null);
     } catch (e) {
-      setError(`Camera: ${(e as Error).message}`);
+      setNotice(cameraProblem(e as Error));
+    } finally {
+      setCamBusy(false);
     }
   };
 
@@ -308,22 +353,27 @@ export default function LiveCall() {
             </button>
           </div>
         </div>
-        <ul className={s.trackers} aria-label="Gates">
+        <ul className={s.trackers} aria-label="Gates: public WebTorrent trackers">
           {trackerStates.map(t => (
             <li key={t.url} className={clsx(s.tracker, s[`t_${t.state}`])}>
               <span className={s.trackerDot} aria-hidden="true" />
               <span className={s.trackerName}>{t.short}</span>
-              <span className={s.trackerState}>{t.state === 'idle' ? 'not connected' : t.state}</span>
+              <span className={s.trackerState}>{GATE_STATE[t.state] ?? t.state}</span>
             </li>
           ))}
         </ul>
+        <p className={s.trackersNote}>
+          These are this demo&apos;s gates: two free public WebTorrent trackers, used as mailboxes so the demo needs no server of
+          ours. They pass each browser&apos;s sealed hello to the other side and cannot read it. Audio and video never go through
+          them. <Link to="/docs/concepts/gates">How gates work</Link>
+        </p>
       </section>
 
       {phase !== 'live' && phase !== 'joining' && (
         <div className={s.joinBox}>
           <p className={s.joinText}>
-            Camera and microphone start only when you press join. Open the invite link in another tab, on another device, or send it
-            to a friend.
+            Camera and microphone start only when you press join. With the microphone only, you can still turn the camera on later.
+            Open the invite link in another tab, on another device, or send it to a friend.
           </p>
           <div className={s.joinButtons}>
             <button type="button" className={s.primary} onClick={() => join(true)} disabled={!code}>
@@ -343,17 +393,21 @@ export default function LiveCall() {
         </p>
       )}
 
+      {notice && (
+        <p className={s.error} role="status">
+          {notice}
+        </p>
+      )}
+
       {(phase === 'joining' || phase === 'live') && (
         <>
           <div className={s.controls}>
             <button type="button" className={clsx(s.control, !mic && s.controlOff)} onClick={toggleMic} disabled={!room} aria-pressed={!mic}>
               {mic ? 'Mute microphone' : 'Unmute microphone'}
             </button>
-            {withVideo && (
-              <button type="button" className={clsx(s.control, !cam && s.controlOff)} onClick={toggleCam} disabled={!room} aria-pressed={!cam}>
-                {cam ? 'Turn camera off' : 'Turn camera on'}
-              </button>
-            )}
+            <button type="button" className={clsx(s.control, !cam && s.controlOff)} onClick={toggleCam} disabled={!room || camBusy} aria-pressed={cam}>
+              {camBusy ? 'Starting camera…' : cam ? 'Turn camera off' : 'Turn camera on'}
+            </button>
             <button type="button" className={clsx(s.control, s.leave)} onClick={leave}>
               Leave
             </button>
