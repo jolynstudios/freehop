@@ -1,6 +1,5 @@
 import {useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent} from 'react';
 import clsx from 'clsx';
-import Link from '@docusaurus/Link';
 import {Lockup} from './Home';
 import {HopperFigure} from './Mark';
 import {CamIcon, CamOffIcon, CheckIcon, CopyIcon, MicIcon, MicOffIcon} from './Icons';
@@ -407,8 +406,7 @@ export default function Lobby({code, invite, name, onName, devices, onDevices, j
           </div>
 
           <p className={s.lobbyFoot}>
-            Hopper is a Meet(up)-like demo powered by <Link to="/docs">Freehop</Link>. Your browser connects straight to the others in this
-            meeting. Not this meeting?{' '}
+            Share the joining link with the people you want here. Not your meeting?{' '}
             <button type="button" className={s.inlineLink} onClick={onHome}>
               Back to the start
             </button>

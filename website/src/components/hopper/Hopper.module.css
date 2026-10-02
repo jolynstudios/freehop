@@ -304,109 +304,54 @@
   margin: 0 auto;
 }
 
-/* ---------- Powered by Freehop ---------- */
+/* ---------- Product benefits ---------- */
 
-.engine {
-  padding: clamp(56px, 8vw, 104px) var(--fh-gutter) 0;
+.benefits {
+  padding: clamp(56px, 8vw, 104px) var(--fh-gutter);
 }
 
-.engineInner {
+.benefitsInner {
   max-width: 1240px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: 2rem clamp(2rem, 4vw, 4rem);
-  align-items: start;
 }
 
-.engineTitle {
+.benefitsTitle {
+  max-width: 42rem;
+  margin: 0 0 clamp(2rem, 5vw, 4rem);
   font-family: var(--fh-display);
   font-weight: 400;
-  font-size: clamp(2.3rem, 4.4vw, 3.5rem);
-  line-height: 0.92;
+  font-size: clamp(2.5rem, 5vw, 4.4rem);
+  line-height: 0.95;
   color: var(--fh-ink);
-  margin: 0 0 1.1rem;
   text-wrap: balance;
 }
 
-.engineText {
+.benefitGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.5rem, 3vw, 3rem);
+}
+
+.benefit {
+  border-top: 3px solid var(--fh-charcoal);
+  padding-top: 1.3rem;
+}
+
+.benefit h3 {
+  margin: 0 0 0.8rem;
+  font-family: var(--fh-display);
+  font-size: clamp(1.65rem, 2.3vw, 2.2rem);
+  font-weight: 400;
+  line-height: 1;
+  color: var(--fh-ink);
+}
+
+.benefit p {
+  max-width: 22rem;
+  margin: 0;
   font-size: 1.0625rem;
   line-height: 1.6;
   color: var(--fh-slate);
-  margin: 0 0 1.2rem;
-}
-
-.engineSteps {
-  margin: 0 0 1.5rem;
-  padding-left: 1.3rem;
-  display: grid;
-  gap: 0.55rem;
-  font-size: 1rem;
-  line-height: 1.55;
-  color: var(--fh-slate);
-}
-
-.engineSteps li {
-  margin: 0;
-}
-
-.engineSteps li::marker {
-  font-family: var(--fh-mono);
-  color: var(--fh-fog);
-}
-
-.engineSteps strong {
-  color: var(--fh-ink);
-  font-weight: 600;
-}
-
-.engineLinks {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem 1.1rem;
-  margin: 0;
-  font-size: 0.9375rem;
-}
-
-.engineLinks a {
-  color: var(--fh-ink);
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-color: var(--fh-mist);
-  text-decoration-thickness: 2px;
-  text-underline-offset: 0.22em;
-}
-
-.engineLinks a:hover {
-  text-decoration-color: var(--fh-azure);
-}
-
-.engineLinks a.engineLink {
-  text-decoration: none;
-  background: var(--fh-charcoal);
-  color: var(--fh-yellow);
-  border-radius: var(--fh-round);
-  padding: 0.55rem 1.05rem;
-  transition: transform 0.16s var(--fh-ease);
-}
-
-.engineLinks a.engineLink:hover {
-  color: var(--fh-yellow);
-  transform: translateY(-2px);
-}
-
-.engineLink span {
-  font-family: var(--fh-mono);
-  margin-left: 0.25rem;
-}
-
-.engineCode {
-  min-width: 0;
-}
-
-.engineCode :global(.theme-code-block) {
-  margin-bottom: 0;
 }
 
 /* ---------- Waiting room ---------- */
@@ -878,19 +823,6 @@
   gap: 0.75rem;
 }
 
-.leftNote {
-  margin: 1.8rem 0 0;
-  font-size: 0.9375rem;
-}
-
-.leftNote a {
-  color: var(--fh-charcoal);
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 0.2em;
-}
-
 /* ---------- Loading ---------- */
 
 .loading {
@@ -907,9 +839,12 @@
 /* ---------- Smaller screens ---------- */
 
 @media (max-width: 996px) {
-  .homeInner,
-  .engineInner {
+  .homeInner {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .benefitGrid {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 38rem;
   }
   .lobbyInner {
     display: flex;
@@ -1024,15 +959,13 @@
   .checkButton,
   .roundButton,
   .roundButton[data-tip]::after,
-  .engineLinks a.engineLink,
   .meter i {
     transition: none;
   }
   .primary:hover,
   .secondary:hover,
   .joinNow:hover:not(:disabled),
-  .checkButton:hover,
-  .engineLinks a.engineLink:hover {
+  .checkButton:hover {
     transform: none;
   }
 }

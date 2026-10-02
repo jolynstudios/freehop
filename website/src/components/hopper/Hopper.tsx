@@ -1,5 +1,4 @@
 import {useCallback, useEffect, useState} from 'react';
-import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import {useHistory, useLocation} from '@docusaurus/router';
 import Home from './Home';
@@ -151,9 +150,6 @@ export default function Hopper() {
               Return to home screen
             </button>
           </div>
-          <p className={s.leftNote}>
-            Curious what carried the call? <Link to="/docs">Read the Freehop docs</Link>.
-          </p>
         </div>
       </div>
     );

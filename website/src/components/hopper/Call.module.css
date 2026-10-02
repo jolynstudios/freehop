@@ -64,44 +64,6 @@
   letter-spacing: 0.01em;
 }
 
-.builtOn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex: none;
-  background: var(--fh-yellow);
-  color: var(--fh-charcoal);
-  border-radius: var(--fh-round);
-  padding: 0.3rem 0.85rem 0.3rem 0.8rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  white-space: nowrap;
-  transition: background-color 0.15s var(--fh-ease), transform 0.15s var(--fh-ease);
-}
-
-.builtOn img {
-  display: block;
-}
-
-.builtOn strong {
-  font-family: var(--fh-display);
-  font-weight: 400;
-  font-size: 1.05rem;
-  line-height: 1;
-}
-
-.builtOn:hover {
-  color: var(--fh-charcoal);
-  background: #ffffff;
-  text-decoration: none;
-  transform: translateY(-1px);
-}
-
-.builtOn:focus-visible {
-  outline: 3px solid #ffffff;
-  outline-offset: 3px;
-}
-
 /* ---------- Banners ---------- */
 
 .banners {
@@ -1243,22 +1205,6 @@
   color: var(--fh-fog);
 }
 
-.infoFoot {
-  margin: 0.9rem 0 0;
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--fh-lavender);
-  font-size: 0.875rem;
-  line-height: 1.55;
-  color: var(--fh-slate);
-}
-
-.infoFoot a {
-  color: var(--fh-ink);
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
 /* Audio and video */
 
 .devices {
@@ -1357,10 +1303,6 @@
   .brandName {
     display: none;
   }
-  .builtOn {
-    font-size: 0.75rem;
-    padding: 0.28rem 0.7rem;
-  }
 }
 
 @media (max-width: 380px) {
@@ -1374,9 +1316,6 @@
   .leave {
     width: 52px;
   }
-  .builtOnWide {
-    display: none;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1388,13 +1327,11 @@
   .btn,
   .btn[data-tip]::after,
   .tile::after,
-  .builtOn,
   .inviteCopy,
   .chatForm {
     transition: none;
   }
-  .inviteCopy:hover,
-  .builtOn:hover {
+  .inviteCopy:hover {
     transform: none;
   }
 }

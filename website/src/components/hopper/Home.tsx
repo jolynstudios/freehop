@@ -1,27 +1,11 @@
 import {useState, type FormEvent} from 'react';
 import clsx from 'clsx';
 import Link from '@docusaurus/Link';
-import CodeBlock from '@theme/CodeBlock';
 import HopperMark from './Mark';
 import HopperArt from './HopperArt';
 import {HashIcon, LockIcon, NewMeetingIcon} from './Icons';
 import {parseCode} from './code';
 import s from './Hopper.module.css';
-
-const ENGINE = `import { join } from 'freehop/client';
-
-const room = await join({
-  gates: ['bt+wss://tracker.openwebtorrent.com', 'bt+wss://tracker.webtorrent.dev'],
-  stun: PUBLIC_STUN,     // the live demo's public STUN servers
-  secret: meetingCode,   // the part of the link after #
-  app: 'hopper',
-  media: { audio: true, video: false },
-});
-
-await room.setCamera(true);
-room.on('track', ({ peer, track }) => showOnTile(peer, track));
-room.on('message', ({ from, data }) => readHello(from, data));
-room.send({ type: 'hello', name: 'Mila' });`;
 
 /** The lockup used on Hopper's own screens. */
 export function Lockup({className}: {className?: string}) {
@@ -60,8 +44,7 @@ export default function Home({notice, onNew, onJoin}: {notice: string | null; on
               Face to face, <span className={s.titleLine}>browser to browser.</span>
             </h1>
             <p className={s.homeLede}>
-              Start a video meeting, share the link and talk. <strong>Hopper is a Meet(up)-like demo built on Freehop</strong>, so the
-              browsers in your meeting connect straight to each other.
+              Start a video meeting, share the link, and get together. No account needed—just your browser and the people you want to see.
             </p>
             {notice && (
               <p className={s.notice} role="alert">
@@ -117,43 +100,23 @@ export default function Home({notice, onNew, onJoin}: {notice: string | null; on
         </div>
       </header>
 
-      <section className={s.engine} aria-labelledby="hopper-engine-title">
-        <div className={s.engineInner}>
-          <div className={s.engineCopy}>
-            <p className={s.eyebrow}>Powered by Freehop</p>
-            <h2 id="hopper-engine-title" className={s.engineTitle}>
-              The whole engine is one call.
-            </h2>
-            <p className={s.engineText}>
-              Hopper is a small React layer over Freehop&apos;s browser client. <code>join()</code> finds the others, connects the browsers and
-              hands Hopper their audio and video. Names, chat, mute and camera states travel as small sealed messages with{' '}
-              <code>room.send()</code>.
-            </p>
-            <ol className={s.engineSteps}>
-              <li>
-                <strong>Find each other.</strong> Two public WebTorrent trackers pass sealed introductions. They never see audio or video.
-              </li>
-              <li>
-                <strong>Connect.</strong> Freehop links the browsers directly when it can and picks the next best path when networks get
-                in the way.
-              </li>
-              <li>
-                <strong>Talk.</strong> Audio, video and chat travel between the browsers in the meeting.
-              </li>
-            </ol>
-            <p className={s.engineLinks}>
-              <Link className={s.engineLink} to="/docs">
-                Read the Freehop docs <span aria-hidden="true">&gt;</span>
-              </Link>
-              <Link to="/docs/sdk/client">Client SDK</Link>
-              <Link to="/docs/concepts/paths">How paths work</Link>
-              <Link to="/demo">The simpler live call</Link>
-            </p>
-          </div>
-          <div className={s.engineCode}>
-            <CodeBlock language="js" title="hopper.js">
-              {ENGINE}
-            </CodeBlock>
+      <section className={s.benefits} aria-labelledby="hopper-benefits-title">
+        <div className={s.benefitsInner}>
+          <p className={s.eyebrow}>A little closer, wherever you are</p>
+          <h2 id="hopper-benefits-title" className={s.benefitsTitle}>The easy way to get together.</h2>
+          <div className={s.benefitGrid}>
+            <div className={s.benefit}>
+              <h3>Make a room in a moment.</h3>
+              <p>Start a meeting and send the joining link. Your people can join from their browser, with no sign-up.</p>
+            </div>
+            <div className={s.benefit}>
+              <h3>Join your way.</h3>
+              <p>Check your camera and microphone before you enter. Keep either one off, or join just to listen.</p>
+            </div>
+            <div className={s.benefit}>
+              <h3>Keep the conversation going.</h3>
+              <p>See each other, talk, and share a message in the same meeting. Leave and rejoin whenever you need to.</p>
+            </div>
           </div>
         </div>
       </section>

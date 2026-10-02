@@ -12,12 +12,12 @@ function Loading() {
   );
 }
 
-/** Hopper: a Meet(up)-like video meeting demo with Freehop as its engine. */
+/** Hopper's meeting home, waiting room, and call. */
 export default function HopperPage() {
   return (
     <Layout
       title="Hopper"
-      description="Hopper is a Meet(up)-like video meeting demo built on Freehop. Start a meeting, share the link, and the browsers in it connect straight to each other.">
+      description="Start a video meeting in Hopper, share the link, and get together in your browser. No account needed.">
       <main className={styles.page}>
         <BrowserOnly fallback={<Loading />}>
           {() => {

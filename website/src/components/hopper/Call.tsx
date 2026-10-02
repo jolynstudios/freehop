@@ -1,7 +1,5 @@
 import {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent, type MouseEvent, type ReactNode} from 'react';
 import clsx from 'clsx';
-import Link from '@docusaurus/Link';
-import useBaseUrl from '@docusaurus/useBaseUrl';
 import PathBadge from '../PathBadge';
 import HopperMark, {HopperFigure} from './Mark';
 import {
@@ -100,7 +98,6 @@ type CallProps = {
 
 /** The meeting itself: a dark stage with the video grid, a control dock and side panels. */
 export default function Call({call, code, invite, name, onRename, devices, onDevices, onLeave}: CallProps) {
-  const freehopLogo = useBaseUrl('/img/logo.svg');
   const [panel, setPanel] = useState<PanelKind | null>(null);
   const [deviceFocus, setDeviceFocus] = useState<{kind: 'audio' | 'video'; n: number}>({kind: 'audio', n: 0});
   const opener = useRef<HTMLElement | null>(null);
@@ -221,13 +218,6 @@ export default function Call({call, code, invite, name, onRename, devices, onDev
           </span>
           <span className={s.brandName}>Hopper</span>
         </div>
-        <Link to="/docs" className={s.builtOn}>
-          <span>
-            Meet(up)-like demo <span className={s.builtOnWide}>built on</span>
-          </span>
-          <img src={freehopLogo} alt="" width={20} height={20} />
-          <strong>Freehop</strong>
-        </Link>
       </header>
 
       {(call.trackersDown || call.notice || blocked) && (
@@ -695,11 +685,6 @@ function InfoPanel({code, invite, gates}: {code: string; invite: string; gates: 
           );
         })}
       </ul>
-      <p className={s.infoFoot}>
-        Hopper is a Meet(up)-like demo built on Freehop.{' '}
-        <Link to="/docs">Read the Freehop docs</Link>, see <Link to="/docs/concepts/paths">how paths are chosen</Link> or the{' '}
-        <Link to="/docs/sdk/client">client SDK</Link>.
-      </p>
     </div>
   );
 }
