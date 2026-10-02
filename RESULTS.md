@@ -18,20 +18,20 @@ behind its own kernel-NAT router profile, with fake camera and microphone. Every
 
 | Scenario (browsers) | Passed | Paths per pair | Gate traffic per run |
 |---|---|---|---|
-| direct-eim (chromium) | 3/3 | a-b:direct | 31 KB |
+| direct-eim (chromium) | 3/3 | a-b:direct | 31–32 KB |
 | direct-eim (mixed) | 1/1 | a-b:direct | 34 KB |
 | ipv6-direct (chromium) | 3/3 | a-b:direct (IPv6, IPv4 UDP blocked) | 34 KB |
-| ipv6-direct (mixed) | 1/1 | a-b:direct | 30 KB |
+| ipv6-direct (mixed) | 1/1 | a-b:direct | 36 KB |
 | hard-pair (chromium) | 3/3 | a-b:unreachable (two random NATs, nobody else: expected) | 93 KB |
 | hard-pair-bridge (chromium) | 3/3 | a-c:direct b-c:direct a-b:bridged@c | 91 KB |
-| hard-pair-bridge (mixed) | 1/1 | a-c:direct b-c:direct a-b:bridged@c | 115 KB |
+| hard-pair-bridge (mixed) | 1/1 | a-c:direct b-c:direct a-b:bridged@c | 80 KB |
 | two-peer-desktop-host (chromium) | 3/3 | a-g:gateway@g | 37–66 KB |
 | two-peer-desktop-host (mixed) | 1/1 | a-g:gateway@g | 34 KB |
 | hard-pair-gateway (chromium) | 3/3 | a-g:gateway@g b-g:gateway@g a-b:relay@g | 143–201 KB |
-| hard-pair-gateway (mixed) | 1/1 | a-g:gateway@g b-g:gateway@g a-b:relay@g | 146 KB |
-| udpblock-gateway (chromium) | 3/3 | a-g:gateway@g (TURN over TCP) | 34–63 KB |
-| udpblock-gateway (mixed) | 1/1 | a-g:gateway@g | 31 KB |
-| udpblock-pair-gateway (chromium) | 3/3 | a-g:gateway@g b-g:gateway@g a-b:relay@g | 130–158 KB |
+| hard-pair-gateway (mixed) | 1/1 | a-g:gateway@g b-g:gateway@g a-b:relay@g | 203 KB |
+| udpblock-gateway (chromium) | 3/3 | a-g:gateway@g (TURN over TCP) | 63 KB |
+| udpblock-gateway (mixed) | 1/1 | a-g:gateway@g | 54 KB |
+| udpblock-pair-gateway (chromium) | 3/3 | a-g:gateway@g b-g:gateway@g a-b:relay@g | 186 KB |
 | hard-pair-host-node (chromium) | 3/3 | a-b:relay@h (host node, no desktop participant) | 73 KB |
 | hard-pair-host-node (mixed) | 1/1 | a-b:relay@h | 62 KB |
 | udpblock-pair-host-node (chromium) | 3/3 | a-b:relay@h | 65 KB |
@@ -50,10 +50,10 @@ behind its own kernel-NAT router profile, with fake camera and microphone. Every
 party is needed. Gate traffic is the gate's total for the whole run, including retries of pairs
 that stay unreachable. It is signalling only.
 
-The 40-run matrix above is historical qualification before the security changes in [SECURITY-AUDIT.md](SECURITY-AUDIT.md). The updated runtime passed the 113-test unit suite, local browser suites and five targeted kernel-NAT scenarios: `hard-pair-bridge`, `hard-pair-gateway`, `hard-pair-host-node`, `udpblock-gateway` and `host-node-gates-down`. The full matrix has not been repeated for this revision.
+The 40-run matrix above was re-run on 2 October 2026 on the current revision, after the security fixes in [SECURITY-AUDIT.md](SECURITY-AUDIT.md): gateways and host nodes now relay only between allocations on themselves, and every gateway and host-node scenario still passed. The same run repeated the coturn conformance check (UDP 800/800 and TCP 800/800, 0 lost).
 
 ## Other evidence
-- **Unit tests: 113/113.**
+- **Unit tests: 146/146.**
   - STUN codec with RFC 5769 vectors and fuzzing;
   - TURN server;
   - port mapper, 30 cases with fake PCP/NAT-PMP/UPnP routers;

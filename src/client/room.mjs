@@ -125,7 +125,8 @@ export class Room extends Emitter {
       const gate = url.startsWith('bt+')
         ? new TrackerClient(url.slice(3), { room: this.tag, peer: this.id, WebSocketImpl: this.WebSocket,
             hello: () => seal(epoch, this.id, '*', { kind: 'hello', n: ++this.sendCounter }) })
-        : new GateClient(url, { room: this.tag, peer: this.id, auth: this.options.auth, WebSocketImpl: this.WebSocket });
+        // Auth is read at every (re)connect, so refreshed tokens (session.refresh) apply without a rotation.
+        : new GateClient(url, { room: this.tag, peer: this.id, auth: gateUrl => { const a = this.options.auth; return a && typeof a === 'object' ? a[gateUrl] : a; }, WebSocketImpl: this.WebSocket });
       gate.on('hello', async ({ gate: g, from, box, route }) => {
         if (this.closed || !PEER_ID.test(from) || from === this.id || this.blocked(from)) return;
         const p = await open(epoch, from, '*', box);
@@ -156,11 +157,17 @@ export class Room extends Emitter {
     return task;
   }
 
-  async changeKey(secret, { auth } = {}) {
+  async changeKey(secret, { auth, gates, stun } = {}) {
     if (this.closed) return;
+    if (gates !== undefined && (!Array.isArray(gates) || !gates.length)) throw new TypeError('At least one gate URL is required.');
+    if (stun !== undefined && !validStunUrls(stun)) throw new TypeError('Invalid application STUN URLs');
+    const nextGates = gates ?? this.options.gates;
+    if (typeof auth === 'string' && nextGates.length !== 1) throw new TypeError('Use per-gate auth tokens for multiple gates');
     const next = await deriveRoom(secret, this.app);
     if (this.closed) return;
-    this.options = { ...this.options, auth };
+    // A rotation may also evict a gate or change STUN: the next ticket's lists replace the old ones.
+    this.options = { ...this.options, auth, gates: nextGates };
+    if (stun !== undefined) this.stunUrls = new Set(stun);
     if (next.tag === this.tag) return;
     for (const gate of this.gates) gate.close();
     clearTimeout(this.capsTimer); this.capsTimer = null;
@@ -259,6 +266,12 @@ export class Room extends Emitter {
       if (live.length) this.outbox.set(peer, live); else this.outbox.delete(peer);
     }
     for (const [key, offer] of this.bridgeOffers) if (now - offer.at > 30000) this.bridgeOffers.delete(key);
+    // An accepted forwarder that never activated must not block other forwarders forever.
+    for (const [key, bridge] of [...this.bridges]) if (bridge.state === 'accepted' && now - bridge.requestedAt >= 30000 && !this.links.get(bridge.peer)?.connected) {
+      this.bridges.delete(key);
+      if (bridge.via && this.known.has(bridge.via)) this.signalTo(bridge.via, { kind: 'bridge-release', a: key.split('|')[0], b: key.split('|')[1] }).catch(() => {});
+      this.rescueLink(bridge.peer);
+    }
     for (const [key, pending] of this.bridgePending) if (now - pending.at >= 30000) {
       this.bridgePending.delete(key);
       for (const to of [pending.a, pending.b]) this.signalTo(to, {kind: 'bridge-fail', a: pending.a, b: pending.b});
@@ -290,7 +303,11 @@ export class Room extends Emitter {
     if (reason !== 'gone') this.sequences.delete(peer);
     this.departed.set(peer, { at: Date.now(), reason });
     if (this.departed.size > 256) this.departed.delete(this.departed.keys().next().value);
-    for (const [key, b] of this.bridgePending) if (b.a === peer || b.b === peer) this.bridgePending.delete(key);
+    for (const [key, b] of [...this.bridgePending]) if (b.a === peer || b.b === peer) {
+      this.bridgePending.delete(key);
+      const other = b.a === peer ? b.b : b.a;
+      if (this.known.has(other)) this.signalTo(other, { kind: 'bridge-fail', a: b.a, b: b.b }).catch(() => {});
+    }
     for (const [key, b] of [...this.relaying]) if (b.a === peer || b.b === peer) this.endRelayBridge(key, 'peer-left');
     for (const [key, b] of [...this.bridges]) if (b.via === peer || b.peer === peer) { this.bridges.delete(key); if (b.via === peer) this.rescueLink(b.peer); }
     for (const link of this.links.values()) for (const [stream, origin] of [...link.forwardMap]) if (origin === peer) link.forwardMap.delete(stream);
@@ -826,9 +843,11 @@ export class Room extends Emitter {
   // Safety net: a connected link whose live local track sends no packets for two checks gets
   // a fresh ICE restart from its impolite side (the polite side asks for one).
   async checkSending() {
-    for (const link of this.links.values()) {
+    const epoch = this.crypto;
+    for (const link of [...this.links.values()]) {
       if (!link.connected || link.closed) continue;
       let stats; try { stats = await link.pc.getStats(); } catch { continue; }
+      if (this.closed || this.crypto !== epoch || link.closed) return;
       this.updatePath(link, stats);
       const sent = {};
       for (const s of stats.values()) if (s.type === 'outbound-rtp' && s.kind) sent[s.kind] = (sent[s.kind] ?? 0) + (s.packetsSent ?? 0);

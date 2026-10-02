@@ -73,8 +73,11 @@ export class PeerLink {
     if (!d) return;
     if (d.type === 'offer') this.restartPending = false;
     const description = { type: d.type, sdp: d.sdp };
+    const epoch = this.room.crypto, caps = await this.room.capsFor(this.id);
+    // A rotation during the await closed this link: never seal its old description under the new key.
+    if (this.closed || this.room.crypto !== epoch) return;
     this.room.signal(this, { kind: 'description', description, phase: Math.min(this.phase, PHASE.SESSION),
-      gateways: [...this.extraGateways], caps: await this.room.capsFor(this.id) });
+      gateways: [...this.extraGateways], caps });
   }
 
   remoteUfrags() { return [...(this.pc.remoteDescription?.sdp ?? '').matchAll(UFRAG)].map(m => m[1]); }

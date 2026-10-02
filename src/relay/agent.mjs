@@ -6,44 +6,39 @@
 // other members of its own session use it when they cannot reach each other.
 import { networkInterfaces } from 'node:os';
 import { randomBytes, createHmac } from 'node:crypto';
-import { isIP } from 'node:net';
-import { createTurnServer } from './turn-server.mjs';
+import { createTurnServer, classifyPeerAddress } from './turn-server.mjs';
 
 const TAG = /^[A-Za-z0-9_-]{8,64}$/, LABEL = /^[A-Za-z0-9_-]{1,64}$/;
-const v4 = a => a.split('.').map(Number);
-export function isPublicAddress(address) {
-  const family = isIP(address);
-  if (family === 4) {
-    const [a, b, c] = v4(address);
-    return !(a === 0 || a === 10 || a === 127 || a >= 224 || a === 169 && b === 254 || a === 172 && b >= 16 && b <= 31 ||
-      a === 192 && b === 168 || a === 192 && b === 0 && c === 0 || a === 100 && b >= 64 && b <= 127 || a === 198 && (b === 18 || b === 19));
-  }
-  if (family === 6) {
-    const s = address.toLowerCase();
-    if (s.startsWith('::ffff:')) return isPublicAddress(s.slice(7));
-    return !(s === '::' || s === '::1' || s.startsWith('fe8') || s.startsWith('fe9') || s.startsWith('fea') || s.startsWith('feb') ||
-      s.startsWith('fc') || s.startsWith('fd') || s.startsWith('ff'));
-  }
-  return false;
-}
+// Peer revocations per room, rooms with a credential floor; relay-port router exchanges at once, started per second, burst.
+const ROOM_REVOCATIONS = 256, MAX_FLOORS = 4096, ROUTER_SLOTS = 4, ROUTER_RATE = 8, ROUTER_BURST = 16;
+
+// The TURN destination classification: only globally routable unicast counts as public.
+export function isPublicAddress(address) { return classifyPeerAddress(address) === 'public'; }
 
 function pickLanAddress() {
   return Object.values(networkInterfaces()).flat().find(i => i.family === 'IPv4' && !i.internal)?.address ?? null;
 }
 
 /**
- * startGateway({ host, port, relayPortRange, portMapping, mapper, externalAddress, rooms, credentialTtlSeconds, limits, log })
- * Resolves with { info(), credentialsFor(), allowRoom(), revokeRoom(), revokePeer(), stats(), close() }.
+ * startGateway({ host, port, relayPortRange, portMapping, mapper, externalAddress, rooms, credentialTtlSeconds, relayScope, limits, log })
+ * Resolves with { info(), credentialsFor(), allowRoom(), revokeRoom(), revokePeer(), rotate(), stats(), close() }.
  * info() returns public gateway metadata, or null when unreachable. Keep credentialsFor()
  * in the privileged process and expose a bounded, authenticated broker to renderers.
  *
  * Credentials are TURN REST style and scoped: username "<expiry>:<room tag 8>:<peer id|self>",
  * password = base64(HMAC-SHA1(secret, username)). Only rooms passed to allowRoom() (or the
- * `rooms` option) are accepted, and individual peers can be revoked (kick, leave).
+ * `rooms` option) are accepted, and individual peers can be revoked (kick, leave). revokeRoom()
+ * voids every credential issued for that room so far, also after the tag is allowed again.
+ *
+ * relayScope 'internal' (default) relays only between allocations on this gateway: a remote peer
+ * and the owner's own `self` allocation, or two members. 'public' also lets every member relay
+ * UDP to any public host from this machine's address; not recommended when members are untrusted.
  */
 export async function startGateway(options = {}) {
   const ttlSeconds = options.credentialTtlSeconds ?? 7200;
   if (!Number.isSafeInteger(ttlSeconds) || ttlSeconds < 1 || ttlSeconds > 86400) throw new TypeError('credentialTtlSeconds must be 1..86400');
+  const relayScope = options.relayScope ?? 'internal';
+  if (relayScope !== 'internal' && relayScope !== 'public') throw new TypeError("relayScope must be 'internal' or 'public'");
   const log = options.log ?? (() => {});
   const host = options.host ?? pickLanAddress();
   if (!host) throw new Error('No usable local IPv4 address for the gateway.');
@@ -79,83 +74,157 @@ export async function startGateway(options = {}) {
   listenerPorts.udp = await mapPort('udp', port);
   listenerPorts.tcp = await mapPort('tcp', port);
 
+  // Relay ports need router mappings only when relaying leaves this machine ('public' scope);
+  // internal delivery never touches them. Router exchanges are bounded (ROUTER_SLOTS at once,
+  // ROUTER_RATE starts per second); later Allocates wait, within the TURN hook timeout. A mapping
+  // lives exactly while an allocation still uses it: the TURN server aborts `signal` when it stops.
+  const relayUsers = new Map(), relayMapped = new Map(), routerQueue = []; // internal port -> users / mapping
+  let routerBusy = 0, routerTokens = ROUTER_BURST, routerAt = Date.now(), routerTimer = null;
+  const dropMapping = m => { const i = mappings.indexOf(m); if (i >= 0) mappings.splice(i, 1); try { mapper.unmap(m)?.catch?.(() => {}); } catch {} };
+  const releaseRelay = localPort => {
+    const users = (relayUsers.get(localPort) ?? 1) - 1;
+    if (users > 0) { relayUsers.set(localPort, users); return; }
+    relayUsers.delete(localPort);
+    const m = relayMapped.get(localPort);
+    if (m) { relayMapped.delete(localPort); dropMapping(m); }
+  };
+  const pumpRouter = () => {
+    const now = Date.now();
+    routerTokens = Math.min(ROUTER_BURST, routerTokens + (now - routerAt) * ROUTER_RATE / 1000); routerAt = now;
+    while (routerQueue.length && routerBusy < ROUTER_SLOTS && routerTokens >= 1) { routerTokens--; routerBusy++; routerQueue.shift()(); }
+    if (routerQueue.length && routerBusy < ROUTER_SLOTS && !routerTimer) {
+      routerTimer = setTimeout(() => { routerTimer = null; pumpRouter(); }, Math.ceil((1 - routerTokens) * 1000 / ROUTER_RATE));
+      routerTimer.unref?.();
+    }
+  };
+  const routerSlot = signal => new Promise((resolve, reject) => {
+    const start = () => { signal.removeEventListener('abort', leave); resolve(); };
+    const leave = () => { routerQueue.splice(routerQueue.indexOf(start), 1); reject(new Error('allocation ended')); };
+    routerQueue.push(start); signal.addEventListener('abort', leave, { once: true });
+    pumpRouter();
+  });
+  const routerDone = () => { routerBusy--; pumpRouter(); };
+  async function mapRelayPort(localPort, family, signal) {
+    if (signal.aborted) return null;
+    relayUsers.set(localPort, (relayUsers.get(localPort) ?? 0) + 1);
+    signal.addEventListener('abort', () => releaseRelay(localPort), { once: true });
+    await routerSlot(signal);
+    let m;
+    try { m = await mapper.map({ protocol: 'udp', internalPort: localPort, suggestedExternalPort: localPort, lifetimeSeconds: 7200, description: 'peerlane gateway' }); }
+    catch (error) { log('mapping-failed', { protocol: 'udp', internalPort: localPort, message: error.message }); return null; }
+    finally { routerDone(); }
+    // The mapper answers one (protocol, port) request for every caller: a newer allocation on this
+    // port may share the mapping, so one that ended meanwhile releases it only when nobody waits.
+    if (signal.aborted) { if (!relayUsers.has(localPort)) dropMapping(m); return null; }
+    if (!relayMapped.has(localPort)) { relayMapped.set(localPort, m); mappings.push(m); }
+    return m.externalPort;
+  }
+
   let secret = randomBytes(32).toString('base64url');
-  const rooms = new Set((options.rooms ?? []).map(tag => String(tag).slice(0, 8)));
-  const revoked = new Map();
-  const pruneRevoked = () => { for (const [key, until] of revoked) if (until <= Date.now()) revoked.delete(key); };
+  // Allowed room (tag prefix) -> { revoked: label -> ms until every credential issued so far has expired,
+  // issued: newest issue second }. Revocation state is per room: a room can only exhaust its own table.
+  const rooms = new Map(), floors = new Map(); // floors: room -> { at, until }; credentials issued at or before `at` are void
+  const admit = room => rooms.set(room, { revoked: new Map(), issued: 0 });
+  for (const tag of options.rooms ?? []) admit(String(tag).slice(0, 8));
   const sign = name => createHmac('sha1', secret).update(name).digest('base64');
+  const floorOf = room => floors.get(room)?.at ?? -Infinity;
+  // Issue time = expiry - ttl. A revoked room keeps its floor until all older credentials have expired, so
+  // re-allowing the tag never revives them; at the table's bound the secret rotates instead of forgetting one.
+  function retire(room, state) {
+    const now = Date.now(), at = Math.max(Math.floor(now / 1000), state.issued, floorOf(room));
+    if (!floors.has(room)) {
+      for (const [r, f] of floors) if (f.until <= now) floors.delete(r);
+      if (floors.size >= MAX_FLOORS) {
+        secret = randomBytes(32).toString('base64url'); floors.clear();
+        log('secret-rotated', { reason: 'revocation-capacity' });
+        return;
+      }
+    }
+    floors.set(room, { at, until: (at + ttlSeconds + 1) * 1000 });
+  }
   const turn = await createTurnServer({
     listen: [{ transport: 'udp', host, port }, { transport: 'tcp', host, port }],
     relayHost: host,
     relayPortRange: options.relayPortRange ?? [49160, 49359],
     realm: 'peerlane',
-    authenticate: async name => {
-      pruneRevoked();
-      const [expiry, room, label, extra] = name.split(':');
-      if (extra !== undefined || name.length > 128 || !label || !rooms.has(room) || revoked.has(`${room}:${label}`)) return null;
-      const seconds = Number(expiry), now = Date.now();
-      if (!Number.isSafeInteger(seconds) || seconds * 1000 <= now || seconds > Math.floor(now / 1000) + ttlSeconds) return null;
+    authenticate: name => {
+      const [expiry, room, label, extra] = name.split(':'), state = rooms.get(room);
+      if (extra !== undefined || name.length > 128 || !label || !state) return null;
+      const seconds = Number(expiry), now = Date.now(), floor = floorOf(room);
+      // One extra second of horizon: credentials minted right after a revocation carry issue time floor + 1.
+      if (!Number.isSafeInteger(seconds) || seconds * 1000 <= now || seconds > Math.max(Math.floor(now / 1000), floor) + 1 + ttlSeconds) return null;
+      if (seconds - ttlSeconds <= floor || state.revoked.get(label) > now) return null;
       return sign(name);
     },
-    // No custom peer policy: the TURN server's default refuses loopback, link-local and
-    // private peers, and lets this machine's own addresses act only as relay<->relay.
+    // No custom peer policy: loopback, link-local and private peers are refused and this machine's own
+    // addresses are relay<->relay only; the 'internal' scope refuses every other destination as well.
+    peerScope: relayScope,
     externalAddress: external ?? undefined,
-    mapRelayPort: !publicHost && !manual && external && mapper ? async localPort => mapPort('udp', localPort) : undefined,
+    mapRelayPort: relayScope === 'public' && !publicHost && !manual && external && mapper ? mapRelayPort : undefined,
     allocationScope: username => username.split(':')[1],
     limits: { maxAllocationsPerUsername: 6, maxAllocationsPerScope: 32, scopeBitrate: 20_000_000, ...options.limits },
-    // Release a relay port's router mapping as soon as its allocation ends.
-    log: (event, details) => {
-      if (event === 'allocation-deleted' && mapper) {
-        const relayedPort = Number(String(details?.relayed ?? '').split(':').pop());
-        const index = mappings.findIndex(m => m.protocol === 'udp' && m.externalPort === relayedPort && m.internalPort !== port);
-        if (index >= 0) { const [m] = mappings.splice(index, 1); mapper.unmap(m).catch?.(() => {}); }
-      }
-      log(event, details);
-    }
+    log
   });
   // Ports actually bound (port 0 = ephemeral, e.g. tests); directly reachable hosts advertise them.
   const bound = { udp: turn.addresses().find(a => a.transport === 'udp')?.port, tcp: turn.addresses().find(a => a.transport === 'tcp')?.port };
   if (publicHost || manual) { listenerPorts.udp = bound.udp; listenerPorts.tcp = bound.tcp; }
   const bracket = a => a.includes(':') ? `[${a}]` : a;
   const matches = (room, label) => name => { const [, r, l] = name.split(':'); return r === room && (label === undefined || l === label); };
+  function info() {
+    if (!external || !listenerPorts.udp && !listenerPorts.tcp) return null;
+    const urls = [];
+    if (listenerPorts.udp) urls.push(`turn:${bracket(external)}:${listenerPorts.udp}?transport=udp`);
+    if (listenerPorts.tcp) urls.push(`turn:${bracket(external)}:${listenerPorts.tcp}?transport=tcp`);
+    return { urls, internalUrls: [`turn:${bracket(host)}:${bound.udp}?transport=udp`, `turn:${bracket(host)}:${bound.tcp}?transport=tcp`],
+      ttlSeconds, external: [external], internal: host };
+  }
+  function revokeRoom(roomTag) {
+    const room = String(roomTag).slice(0, 8), state = rooms.get(room);
+    if (state) { retire(room, state); rooms.delete(room); }
+    return turn.revoke(matches(room));
+  }
 
   return {
-    turn, mapper,
-    info() {
-      if (!external || !listenerPorts.udp && !listenerPorts.tcp) return null;
-      const urls = [];
-      if (listenerPorts.udp) urls.push(`turn:${bracket(external)}:${listenerPorts.udp}?transport=udp`);
-      if (listenerPorts.tcp) urls.push(`turn:${bracket(external)}:${listenerPorts.tcp}?transport=tcp`);
-      return { urls, internalUrls: [`turn:${bracket(host)}:${bound.udp}?transport=udp`, `turn:${bracket(host)}:${bound.tcp}?transport=tcp`],
-        ttlSeconds, external: [external], internal: host };
-    },
+    turn, mapper, info,
     credentialsFor(roomTag, label) {
-      pruneRevoked();
-      if (typeof roomTag !== 'string' || !TAG.test(roomTag) || typeof label !== 'string' || !LABEL.test(label) || !rooms.has(roomTag.slice(0, 8)) || revoked.has(`${roomTag.slice(0, 8)}:${label}`)) return null;
-      const username = `${Math.floor(Date.now() / 1000) + ttlSeconds}:${roomTag.slice(0, 8)}:${label}`;
+      if (typeof roomTag !== 'string' || !TAG.test(roomTag) || typeof label !== 'string' || !LABEL.test(label)) return null;
+      const room = roomTag.slice(0, 8), state = rooms.get(room), now = Date.now();
+      if (!state || state.revoked.get(label) > now) return null;
+      const issued = Math.max(Math.floor(now / 1000), floorOf(room) + 1);
+      state.issued = Math.max(state.issued, issued);
+      const username = `${issued + ttlSeconds}:${room}:${label}`;
       return { username, credential: sign(username) };
     },
     allowRoom(roomTag) {
       if (typeof roomTag !== 'string' || !TAG.test(roomTag)) throw new TypeError('Invalid room tag');
-      pruneRevoked();
-      if (!rooms.has(roomTag.slice(0, 8)) && revoked.size >= 4096) throw new Error('Gateway revocation capacity reached; retry after credential expiry');
-      if (!rooms.has(roomTag.slice(0, 8)) && rooms.size >= 64) throw new Error('Gateway room capacity reached');
-      rooms.add(roomTag.slice(0, 8));
+      const room = roomTag.slice(0, 8);
+      if (rooms.has(room)) return;
+      if (rooms.size >= 64) throw new Error('Gateway room capacity reached');
+      admit(room);
     },
-    revokeRoom(roomTag) { const room = String(roomTag).slice(0, 8); rooms.delete(room); return turn.revoke(matches(room)); },
+    revokeRoom,
     revokePeer(roomTag, peer) {
-      const room = String(roomTag).slice(0, 8);
-      pruneRevoked();
-      // Keep every denial until all previously issued credentials have expired. At the
-      // memory bound, revoke this room entirely rather than resurrect an older peer.
-      if (!revoked.has(`${room}:${peer}`) && revoked.size >= 4096) return this.revokeRoom(roomTag);
-      revoked.set(`${room}:${peer}`, Date.now() + ttlSeconds * 1000);
+      const room = String(roomTag).slice(0, 8), state = rooms.get(room), now = Date.now();
+      // Only an allowed room has valid credentials (a revoked one is covered by its floor), and only valid labels get any.
+      if (state && typeof peer === 'string' && LABEL.test(peer) && !(state.revoked.get(peer) > now)) {
+        if (!state.revoked.has(peer) && state.revoked.size >= ROOM_REVOCATIONS) {
+          for (const [label, until] of state.revoked) if (until <= now) state.revoked.delete(label);
+          // At this room's bound revoke the room itself rather than forget a denial: its floor voids every older credential.
+          if (state.revoked.size >= ROOM_REVOCATIONS) { log('room-revocations-full', { room }); return revokeRoom(roomTag); }
+        }
+        state.revoked.set(peer, (Math.max(Math.floor(now / 1000), state.issued) + ttlSeconds + 1) * 1000);
+      }
       return turn.revoke(matches(room, peer));
     },
-    rotate() { secret = randomBytes(32).toString('base64url'); return this.info(); },
-    stats() { return { external, rooms: rooms.size, mappings: mappings.map(m => ({ method: m.method, protocol: m.protocol, internalPort: m.internalPort, externalPort: m.externalPort })), turn: turn.stats() }; },
+    rotate() { secret = randomBytes(32).toString('base64url'); floors.clear(); return info(); },
+    stats() {
+      let revocations = 0;
+      for (const state of rooms.values()) revocations += state.revoked.size;
+      return { external, relayScope, rooms: rooms.size, revocations, floors: floors.size,
+        mappings: mappings.map(m => ({ method: m.method, protocol: m.protocol, internalPort: m.internalPort, externalPort: m.externalPort })), turn: turn.stats() };
+    },
     async close() {
-      try { await turn.close(); } finally { if (mapper) await mapper.close(); }
+      try { await turn.close(); } finally { clearTimeout(routerTimer); if (mapper) await mapper.close(); }
     }
   };
 }

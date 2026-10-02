@@ -31,10 +31,10 @@ export async function hostSession(ticket, { gateway = 'auto', gatewayOptions, lo
   try { gw = gateway === 'auto' ? await sharedGateway(gatewayOptions) : gateway || null; } catch (error) { log('gateway-unavailable', { message: error.message }); }
   if (!gw?.info()) {
     // Not reachable from outside (no public address, no router mapping): nothing to offer.
-    return { available: false, async update() {}, async close() {}, stats: () => ({ available: false }) };
+    return { available: false, async update() {}, async refresh() { return false; }, async close() {}, stats: () => ({ available: false }) };
   }
   let currentTag = (await deriveRoom(ticket.secret, ticket.app)).tag;
-  let epoch = ticket.epoch;
+  let epoch = ticket.epoch, expires = ticket.expires;
   let updating = Promise.resolve();
   let closed = false;
   const member = await joinAsGateway({ gates: ticket.gates, secret: ticket.secret, app: ticket.app, auth: ticket.auth, gateway: gw, log });
@@ -46,8 +46,20 @@ export async function hostSession(ticket, { gateway = 'auto', gatewayOptions, lo
         if (closed || !validTicket(next) || next.app !== ticket.app || next.roomId !== ticket.roomId || next.epoch <= epoch) return false;
         const nextTag = (await deriveRoom(next.secret, next.app)).tag;
         if (nextTag === currentTag) return false;
-        await member.rekey(next.secret, { auth: next.auth, dropped });
-        currentTag = nextTag; epoch = next.epoch;
+        await member.rekey(next.secret, { auth: next.auth, dropped, gates: next.gates });
+        currentTag = nextTag; epoch = next.epoch; expires = next.expires;
+        return true;
+      });
+      updating = task.catch(() => {});
+      return task;
+    },
+    /** Apply a reissued ticket for the same epoch (fresh gate tokens before they expire). */
+    refresh(next) {
+      const task = updating.then(async () => {
+        if (typeof next === 'string') next = decodeTicket(next);
+        if (closed || !validTicket(next) || next.app !== ticket.app || next.roomId !== ticket.roomId || next.epoch !== epoch || next.expires <= expires) return false;
+        if ((await deriveRoom(next.secret, next.app)).tag !== currentTag) return false;
+        member.setAuth(next.auth); expires = next.expires;
         return true;
       });
       updating = task.catch(() => {});

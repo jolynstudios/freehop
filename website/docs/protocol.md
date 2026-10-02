@@ -64,11 +64,11 @@ plaintext = JSON { kind, n, ...body }
 | `C→G` | `{"t":"send","room":tag,"to":id or "*","box":string}` | The box is opaque base64url |
 | `G→C` | `{"t":"recv","room":tag,"from":id,"box":string}` | `from` is the sending socket's own peer id |
 | `C→G` | `{"t":"leave","room":tag}` / `{"t":"ping"}` | |
-| `G→C` | `{"t":"error","code":string}` | `schema`, `rate`, `auth`, `room-full`, `room-not-allowed`, `no-such-peer`, `not-joined`, … |
+| `G→C` | `{"t":"error","code":string}` | `schema`, `rate`, `auth`, `auth-expired`, `busy`, `room-full`, `room-not-allowed`, `no-such-peer`, `not-joined`, … |
 
 ### 4.2 Admission
 
-A gate is either open or token-gated. A token is `base64url(JSON claims) "." base64url(HMAC-SHA256(gateSecret, body))` with claims `{exp, room?, aud}`. A token with `room` may only join that room tag. Gate tokens include `aud`, the exact public gate URL. Tickets map each gate URL to its own token; configure `tokenAudience` behind a proxy. Clients ignore `welcome.stun`; STUN comes from application or ticket configuration. Tokens require a future safe-integer `exp`. Expired sockets reject further requests and are closed on the next heartbeat.
+A gate is either open or token-gated. A token is `base64url(JSON claims) "." base64url(HMAC-SHA256(gateSecret, body))` with claims `{exp, room?, aud}`. A token with `room` may only join that room tag. Gate tokens include `aud`, the exact public gate URL. Tickets map each gate URL to its own token; configure `tokenAudience` behind a proxy. Clients ignore `welcome.stun`; STUN comes from application or ticket configuration. Tokens require a future safe-integer `exp`, and both parts must be canonical unpadded base64url. An expired socket is closed at its next request, heartbeat or delivery, whichever comes first. A client renews its token for the same epoch with `session.refresh(ticket)`; the new token is used at the next (re)connect.
 
 ### 4.3 Multiple gates and tracker gates
 
@@ -82,8 +82,8 @@ A gate URL `bt+wss://…` names a public WebTorrent tracker used as a gate.
 
 ### 4.4 Liveness and proxies
 
-- Clients send `{"t":"ping"}` every 30 s, and the gate also pings at the WebSocket level. Pongs count as activity.
-- A socket whose send buffer exceeds 1 MiB is terminated.
+- Clients send `{"t":"ping"}` every 30 s, and the gate also pings at the WebSocket level. Each gate ping carries a fresh random nonce; only a pong that echoes it counts as activity.
+- Output the gate has handed to a socket but not yet flushed is bounded: 1 MiB per socket and 32 MiB for the whole gate. Over the gate-wide budget, the receiver that has been behind the longest is closed first.
 - Behind a local reverse proxy (`trustProxy`), per-address limits use the last `X-Forwarded-For` hop.
 - After a network change a join can briefly meet `peer-taken`; clients retry with backoff.
 
@@ -93,7 +93,7 @@ A gate may answer RFC 8489 Binding requests on UDP, IPv4 and IPv6. It answers Bi
 
 ### 4.6 Bounds
 
-A gate frame is at most 64 KiB and a box at most 48 KiB. Each socket gets a token bucket over the bytes it makes the gate forward, fan-out included: 512 KiB burst, 2 KiB/s refill. Each socket is also limited to 40 messages/s (burst 400). Further limits: 16 peers per room, 32 sockets per source address, a 90 s idle timeout, 1024 total sockets, and at most 64 pending frames or 256 KiB queued per socket. These limits make media tunnelling through a gate impractical, while one five-peer join needs about 100 KB.
+A gate frame is at most 64 KiB and a box at most 48 KiB. Each socket gets a token bucket over the bytes it makes the gate forward, fan-out included: 512 KiB burst, 2 KiB/s refill. Each socket is also limited to 40 messages/s (burst 400). Further limits: 16 peers per room, 32 sockets per source address (an IPv6 /64 counts as one address), a 90 s idle timeout and 1024 admitted sockets. Sockets that have not been admitted yet have their own budget (256 in total, 8 per address, 64 frames or 64 KiB queued while admission is pending), so silent sockets cannot lock admitted clients out; refused and timed-out sockets are torn down within 1 s. These limits make media tunnelling through a gate impractical, while one five-peer join needs about 100 KB.
 
 ## 5. Capabilities (`caps` envelope)
 
@@ -153,15 +153,18 @@ The gateway runs a TURN server (RFC 8656 subset: UDP relay allocations over UDP 
 - The signing key stays in the privileged gateway process. `info()` contains only public metadata; the renderer requests bounded credentials through an origin- and room-checked broker.
 - The gateway accepts only rooms it was told to serve (`allowRoom`). Individual peers can be revoked on kick or leave (`revokePeer`), which tears down their allocations. A whole room is revoked on key rotation or when the session ends, tearing down every old allocation.
 - Credentials are issued only to authenticated members, never in response to a hint.
-- Default TTL is 2 h, renewed at half-life, configurable from 1 second to 24 hours. The server rejects correctly signed expiries beyond this horizon. Peer revocations remain until credentials expire; reaching the revocation bound disables the affected room and prevents new grants until capacity clears.
+- Default TTL is 2 h, renewed at half-life, configurable from 1 second to 24 hours. The server rejects correctly signed expiries beyond this horizon.
+- Peer revocations are kept per room (up to 256) until previously minted credentials expire. A room that exceeds its bound is revoked as a whole; other rooms are never affected. A host member only revokes peers it issued credentials to.
+- Revoking a room records a floor: credentials minted before it are refused even if the same room is allowed again later.
 
 ### 8.3 Policy and hairpinning
 
-- The TURN server's default peer policy refuses loopback, link-local, multicast and private peers, plus 6to4, Teredo and local-use NAT64 transition prefixes.
+- **A gateway relays only inside the session.** With its default `relayScope: 'internal'`, a gateway relays only between allocations on itself and refuses every other destination (403). Every path in §7 meets on the same gateway, including the owner's own `self` allocation, so credentials cannot be used to send traffic to other internet hosts. `relayScope: 'public'` restores general-purpose TURN behaviour; use it only when every member is trusted.
+- The TURN server's general peer policy (`peerScope: 'public'`) refuses loopback, link-local, multicast and private peers, plus 6to4, Teredo, local-use NAT64, 192.0.0.0/24, 198.18.0.0/15 and site-local prefixes, and unwraps IPv4-mapped, IPv4-translated and NAT64 forms before deciding.
 - The gateway machine's own addresses are reachable only relay to relay. Services on the host stay unreachable.
 - Traffic between two allocations on the same gateway is delivered internally. Many home routers lack NAT hairpinning, and the owner's own `self` allocation therefore reaches remote allocations without it.
-- The TURN server bounds unauthenticated UDP errors and Binding answers per source and globally to limit reflection.
-- It bounds TCP connections per source address (16), with a 10 s absolute pre-authentication deadline, unaffected by incoming bytes.
+- The TURN server bounds unauthenticated UDP answers per source and globally to limit reflection. Binding answers and challenge or error answers have separate global budgets, and addresses that authenticated in the last 10 minutes are exempt from the global budgets (not from their per-source limit), so a flood cannot starve renewals.
+- It bounds TCP connections per source address (16), with a 10 s absolute pre-authentication deadline, unaffected by incoming bytes. A TCP connection closes when its allocation ends.
 - Media stays DTLS-SRTP encrypted end to end. The gateway relays ciphertext.
 
 ## 9. Participant bridging
@@ -203,7 +206,7 @@ The [SDK](./sdk/authority.mdx) describes how applications consume the protocol:
 
 - **Gates** learn: socket IP addresses, opaque room tags and peer ids, envelope sizes and timing. They cannot read SDP, ICE candidates, caps or credentials. They cannot forge or re-route envelopes without detection, and cannot inject peers into a room. A hostile gate can drop or delay traffic; using several gates mitigates that.
 - **Room members** are mutually trusted for signalling: any member can forge envelopes in the room's name. Per-peer signatures are a possible v2 addition. Removal requires a secret rotation (§2). SDK ticket expiry does not erase copies of the shared secret or end established media; it is not a replacement for rotation.
-- **Gateways**: credentials are per peer and short-lived. The peer policy prevents use as a proxy into private networks. Quotas: 6 allocations per username, 4 Mbit/s per allocation, 32 allocations and 20 Mbit/s per room, 40 Mbit/s in total, separately per direction; at most 64 allocations overall. A room member could still use a gateway's credentials to relay traffic to arbitrary public hosts until the credentials expire. Expiry blocks further authenticated requests; existing allocations may continue until their granted lifetime ends. Revocation ends them immediately. Operators can shorten the TTL.
+- **Gateways**: credentials are per peer and short-lived. The peer policy prevents use as a proxy into private networks. Quotas: 6 allocations per username, 4 Mbit/s per allocation, 32 allocations and 20 Mbit/s per room, 40 Mbit/s in total, separately per direction; at most 64 allocations overall. By default a gateway relays only between allocations on itself, so a member cannot use its credentials to reach other internet hosts (§8.3). Expiry blocks further authenticated requests; existing allocations may continue until their granted lifetime ends. Revocation ends them immediately, and a participant's desktop gateway releases a room when the participant leaves.
 - **IP privacy**: direct paths expose network addresses to other participants. Gate and tracker operators also see connecting IP addresses. The SDK does not provide an IP-anonymity mode.
 
 ## 12. Known limits

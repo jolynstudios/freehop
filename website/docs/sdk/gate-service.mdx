@@ -9,15 +9,19 @@ The gate is the signalling service you run alongside your application backend, a
 ## Run it
 
 ```bash
-node bin/freehop-gate.mjs          # from a checkout of the repository
-npx freehop-gate                   # in a project that depends on freehop
+node bin/freehop-gate.mjs              # from a checkout of the repository
+./node_modules/.bin/freehop-gate       # in a project that depends on freehop
 ```
+
+Do not run `npx freehop-gate`. Freehop is not on npm, so npx could download a stranger's package and give it your token secret.
 
 It prints one line when it is ready. With STUN configured, for example:
 
 ```json
 {"event":"listening","url":"ws://127.0.0.1:8787/freehop","stun":["stun:gate.example.com:3478"]}
 ```
+
+Without a token secret it also prints one warning line, because any client can then use it.
 
 ## Configuration
 
@@ -30,19 +34,20 @@ The service is configured with environment variables:
 | `FREEHOP_GATE_PATH` | `/freehop` | WebSocket path. Clients connect to `wss://<your host><path>`. |
 | `FREEHOP_GATE_PUBLIC_HOST` | none | Public host name advertised in the `stun:` URLs. Needed when STUN binds a wildcard address. |
 | `FREEHOP_GATE_STUN` | none | STUN responders to start, for example `0.0.0.0:3478,[::]:3478` (IPv4 and IPv6). |
-| `FREEHOP_GATE_TOKEN_SECRET` | none | Makes the gate token-gated: only clients with a token minted with this secret get in. Use the same value in the authority's `gateTokenSecrets` map for this gate URL. |
+| `FREEHOP_GATE_TOKEN_SECRET` | none | Makes the gate token-gated: only clients with a token minted with this secret get in. Use the same value in the authority's `gateTokenSecrets` map for this gate URL. At least 32 characters, for example from `openssl rand -base64 32`. |
 | `FREEHOP_GATE_TOKEN_AUDIENCE` | required with a secret | Exact public WebSocket URL, e.g. `wss://gate.example.com/freehop`. Must match the authority’s URL and token audience. |
-| `FREEHOP_GATE_ALLOW_ANONYMOUS` | off | Set `1` explicitly to run a public community gate without admission tokens. |
+| `FREEHOP_GATE_ALLOW_ANONYMOUS` | off | Set `1` explicitly to run a public community gate without admission tokens. A gate reachable beyond loopback (a `FREEHOP_GATE_HOST` that is not loopback, `FREEHOP_GATE_TRUST_PROXY=1` or `FREEHOP_GATE_PUBLIC_HOST`) refuses to start without a token secret or this setting. |
 | `FREEHOP_GATE_TRUST_PROXY` | off | `1` behind a local reverse proxy: per-address limits then use the last `X-Forwarded-For` hop. |
 
 ## Deploy with systemd and Caddy
 
-A gate fits next to anything else on a small server. These steps install it under `/opt/freehop` and run it as an unprivileged user, on loopback, behind Caddy.
+A gate fits next to anything else on a small server. These steps install it under `/opt/freehop` and run it as an unprivileged user, on loopback, behind Caddy. The service user installs the locked dependencies itself, with install scripts turned off.
 
 ```bash
 sudo useradd --system --home-dir /opt/freehop --shell /usr/sbin/nologin freehop
-sudo git clone https://github.com/jolynstudios/freehop /opt/freehop
-cd /opt/freehop && sudo npm install --omit=dev
+sudo install -d -o freehop -g freehop /opt/freehop
+sudo -u freehop git clone https://github.com/jolynstudios/freehop /opt/freehop
+cd /opt/freehop && sudo -u freehop -H npm ci --omit=dev --ignore-scripts
 sudo install -d -m 700 /etc/freehop
 echo "FREEHOP_GATE_TOKEN_SECRET=$(openssl rand -base64 32)" | sudo tee /etc/freehop/gate.env > /dev/null
 ```
@@ -92,7 +97,8 @@ RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
 CapabilityBoundingSet=
 UMask=0077
 # V8 uses JIT executable memory; do not enable MemoryDenyWriteExecute here.
-MemoryMax=256M
+# The gate's default limits need about 225 MiB at worst, plus garbage from bursts (src/gate/gate.mjs).
+MemoryMax=512M
 LimitNOFILE=8192
 
 [Install]
@@ -116,6 +122,8 @@ gate.example.com {
 
 Clients, and the authority's `gates` list, then use `wss://gate.example.com/freehop`.
 
+With `FREEHOP_GATE_TRUST_PROXY=1` the proxy must overwrite `X-Forwarded-For`, or clients can claim any address. Caddy does this by default. With nginx, add `proxy_set_header X-Forwarded-For $remote_addr;`.
+
 ### Firewall
 
 | Port | Why |
@@ -128,7 +136,7 @@ Nothing else. There are no TURN or relay ports to open on a gate host, because a
 ## Operate it
 
 - **Health check.** `GET /healthz` on the gate's own port answers `ok`.
-- **Statistics.** Every five minutes the service prints a JSON line with `"event":"stats"`: open sockets, rooms, joins, frames and bytes in and out, envelopes forwarded, refusals, rate limits, and STUN counters.
+- **Statistics.** Every five minutes the service prints a JSON line with `"event":"stats"`: open sockets, sockets still being admitted, rooms, joins, frames and bytes in and out, buffered output, envelopes forwarded, refusals, rate limits, slow receivers closed, and STUN counters.
 - **Events.** Notable events go to standard error as JSON lines with a timestamp.
 - **Shutdown.** `SIGINT` and `SIGTERM` close every socket and the STUN responders cleanly.
 

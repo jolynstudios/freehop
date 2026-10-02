@@ -17,16 +17,21 @@ export const DEFAULT_LIMITS = Object.freeze({ maxAllocations: 64, maxAllocations
 
 const RESPONSE_CACHE_MS = 40_000, RESPONSE_CACHE_MAX = 2048, MAX_INFLIGHT = 256, SWEEP_MS = 1000, ADDRESS_REFRESH_MS = 10_000;
 const TCP_DATA_HIGH_WATER = 256 * 1024, TCP_PAUSE_WATER = 1024 * 1024, TLS_HANDSHAKE_MS = 10_000, MAX_UNKNOWN_REPORTED = 16;
+const TRUSTED_MS = 600_000, TRUSTED_MAX = 4096, STREAM_LINGER_MS = 1000;
 const TURN_METHODS = new Set([METHOD.ALLOCATE, METHOD.REFRESH, METHOD.CREATE_PERMISSION, METHOD.CHANNEL_BIND]);
 const KNOWN_REQUIRED = new Set(Object.values(ATTR).filter(t => t < 0x8000));
 const ALLOW = Object.freeze({ ownOnly: false }), OWN_ONLY = Object.freeze({ ownOnly: true });
 
 const prefix = (address, bits) => ({ bytes: ipToBytes(address), bits });
-const DENY = [prefix('0.0.0.0', 8), prefix('127.0.0.0', 8), prefix('169.254.0.0', 16), prefix('224.0.0.0', 4), prefix('240.0.0.0', 4),
-  prefix('::', 96), prefix('fe80::', 10), prefix('ff00::', 8),
+// 192.0.0.0/24 holds protocol anycast (PCP 192.0.0.9) and DS-Lite B4/AFTR addresses, i.e. the participant's own
+// router; fec0::/10 is deprecated site-local. 198.18.0.0/15 (benchmarking) is never globally routed.
+const DENY = [prefix('0.0.0.0', 8), prefix('127.0.0.0', 8), prefix('169.254.0.0', 16), prefix('192.0.0.0', 24), prefix('224.0.0.0', 4), prefix('240.0.0.0', 4),
+  prefix('::', 96), prefix('fe80::', 10), prefix('fec0::', 10), prefix('ff00::', 8),
   prefix('2002::', 16), prefix('2001::', 32), prefix('64:ff9b:1::', 48)];
-const PRIVATE = [prefix('10.0.0.0', 8), prefix('172.16.0.0', 12), prefix('192.168.0.0', 16), prefix('100.64.0.0', 10), prefix('fc00::', 7)];
-const MAPPED = prefix('::ffff:0:0', 96), NAT64 = prefix('64:ff9b::', 96);
+const PRIVATE = [prefix('10.0.0.0', 8), prefix('172.16.0.0', 12), prefix('192.168.0.0', 16), prefix('100.64.0.0', 10), prefix('198.18.0.0', 15), prefix('fc00::', 7)];
+// IPv4-mapped, IPv4-translated (SIIT ::ffff:0:0:0/96) and well-known NAT64 addresses stand for their embedded IPv4.
+const MAPPED = prefix('::ffff:0:0', 96), EMBEDDED_V4 = [MAPPED, prefix('::ffff:0:0:0', 96), prefix('64:ff9b::', 96)];
+const unwrapV4 = ip => ip.length === 16 && EMBEDDED_V4.some(p => inPrefix(ip, p)) ? ip.subarray(12) : ip;
 
 function inPrefix(ip, { bytes, bits }) {
   if (ip.length !== bytes.length) return false;
@@ -37,15 +42,18 @@ function inPrefix(ip, { bytes, bits }) {
   return true;
 }
 
-// 'deny' (unspecified, loopback, link-local, multicast, broadcast/reserved, 0/8, IPv4-compatible,
-// and IPv4-mapped/NAT64 forms of those), 'private' (RFC 1918, 100.64/10, fc00::/7) or 'public'.
+// 'deny' (unspecified, loopback, link-local, site-local, multicast, broadcast/reserved, 0/8, 192.0.0/24,
+// IPv4-compatible, 6to4/Teredo/local NAT64, and IPv4-embedding forms of those), 'private' (RFC 1918,
+// 100.64/10, 198.18/15, fc00::/7) or 'public'.
 export function classifyPeerAddress(address) {
-  let ip = typeof address === 'string' ? ipToBytes(address) : address;
-  if (!ip) return 'deny';
-  if (ip.length === 16 && (inPrefix(ip, MAPPED) || inPrefix(ip, NAT64))) ip = ip.subarray(12);
+  const raw = typeof address === 'string' ? ipToBytes(address) : address;
+  if (raw?.length !== 4 && raw?.length !== 16) return 'deny';
+  const ip = unwrapV4(raw);
   if (DENY.some(p => inPrefix(ip, p))) return 'deny';
   return PRIVATE.some(p => inPrefix(ip, p)) ? 'private' : 'public';
 }
+// Canonical text for ownership checks, so no IPv4-embedding IPv6 spelling of our own IPv4 escapes them.
+const ownKey = address => { const b = ipToBytes(address); return b ? bytesToIp(unwrapV4(b)) : null; };
 
 const isWildcard = a => a === '0.0.0.0' || a === '::';
 const isThenable = v => v !== null && (typeof v === 'object' || typeof v === 'function') && typeof v.then === 'function';
@@ -119,11 +127,17 @@ function withTimeout(value, ms) {
 const failure = (code, reason, extra = []) => ({ error: true, attributes: [{ type: ATTR.ERROR_CODE, value: errorCodeValue(code, reason) }, ...extra] });
 const success = (attributes = []) => ({ error: false, attributes });
 
+// peerScope 'public' (default): peers per the destination policy (classifyPeerAddress, allowPrivatePeers, or
+// allowPeer). 'internal': only this server's own addresses, relay<->relay delivered in-process; everything
+// else gets 403 (allowPeer can only narrow it). mapRelayPort(localPort, family, signal): `signal` aborts once
+// the mapping is no longer needed (the allocation ended or failed, or the hook timed out or failed).
 export async function createTurnServer(options = {}) {
   if (typeof options.authenticate !== 'function') throw new TypeError('createTurnServer: authenticate(username, realm) => password|null is required');
   const realm = String(options.realm ?? 'peerlane'), realmBuf = Buffer.from(realm, 'utf8');
   if (!realmBuf.length || realmBuf.length > 763) throw new RangeError('realm must be 1..763 bytes');
   const limits = { ...DEFAULT_LIMITS, ...options.limits };
+  const peerScope = options.peerScope ?? 'public';
+  if (peerScope !== 'public' && peerScope !== 'internal') throw new TypeError("peerScope must be 'public' or 'internal'");
   const software = options.software === undefined ? 'peerlane-turn' : options.software ? String(options.software).slice(0, 127) : null;
   const softwareAttr = software && { type: ATTR.SOFTWARE, value: software };
   const relayHosts = { 4: null, 6: null }, external = { 4: null, 6: null };
@@ -204,23 +218,30 @@ export async function createTurnServer(options = {}) {
   }
   const respond = (ctx, msg, cls, attributes, integrityKey) =>
     sendToClient(ctx, encode({ method: msg.method, cls, transactionId: msg.transactionId, attributes }, { integrityKey, fingerprint: true }));
-  // Error answers (401 challenges above all) go to unauthenticated UDP sources, which may be
-  // spoofed: a per-source token bucket keeps the server from being a reflector.
-  const errorBudget = new Map();
-  const responseBudget = { level: limits.udpResponseBurst, at: Date.now() };
-  const errorAllowed = ctx => {
+  // Unauthenticated UDP answers (Binding, 401/438 challenges, errors) may go to spoofed sources: every source
+  // address has a token bucket, and two global buckets bound the total, one for Binding and one for challenges
+  // and errors, so a Binding flood cannot starve authentication. Addresses that authenticated within the last
+  // ten minutes (bounded LRU) skip the global buckets but keep their own.
+  const errorBudget = new Map(), recentAuth = new Map();
+  const bindingBudget = { level: limits.udpResponseBurst, at: Date.now() }, challengeBudget = { level: limits.udpResponseBurst, at: Date.now() };
+  const answerAllowed = (ctx, pool) => {
     if (ctx.transport !== 'udp') return true;
-    const now = Date.now();
-    responseBudget.level = Math.min(limits.udpResponseBurst, responseBudget.level + (now - responseBudget.at) / 1000 * limits.udpResponseRate);
-    responseBudget.at = now;
-    if (responseBudget.level < 1) { counters.droppedErrorRate++; return false; }
+    const now = Date.now(), trusted = now - (recentAuth.get(ctx.address) ?? -Infinity) < TRUSTED_MS;
+    if (!trusted) {
+      pool.level = Math.min(limits.udpResponseBurst, pool.level + (now - pool.at) / 1000 * limits.udpResponseRate); pool.at = now;
+      if (pool.level < 1) { counters.droppedErrorRate++; return false; }
+    }
     let b = errorBudget.get(ctx.address);
     if (!b) { if (errorBudget.size > 10000) errorBudget.delete(errorBudget.keys().next().value); b = { level: limits.errorBurst, at: now }; errorBudget.set(ctx.address, b); }
     b.level = Math.min(limits.errorBurst, b.level + (now - b.at) / 1000 * limits.errorRate); b.at = now;
     if (b.level < 1) { counters.droppedErrorRate++; return false; }
-    b.level -= 1; responseBudget.level -= 1; return true;
+    b.level -= 1; if (!trusted) pool.level -= 1; return true;
   };
-  const sendError = (ctx, msg, code, reason, extra = []) => errorAllowed(ctx) && respond(ctx, msg, CLASS.ERROR, failure(code, reason, extra).attributes);
+  const authenticated = address => {
+    recentAuth.delete(address); recentAuth.set(address, Date.now());
+    if (recentAuth.size > TRUSTED_MAX) recentAuth.delete(recentAuth.keys().next().value);
+  };
+  const sendError = (ctx, msg, code, reason, extra = []) => answerAllowed(ctx, challengeBudget) && respond(ctx, msg, CLASS.ERROR, failure(code, reason, extra).attributes);
   const challenge = (ctx, msg, code, reason) => sendError(ctx, msg, code, reason, [{ type: ATTR.REALM, value: realmBuf }, { type: ATTR.NONCE, value: makeNonce(ctx) }]);
 
   function unknownRequired(msg) {
@@ -244,9 +265,9 @@ export async function createTurnServer(options = {}) {
   }
 
   function onBinding(ctx, msg) {
-    if (!errorAllowed(ctx)) return;
+    if (!answerAllowed(ctx, bindingBudget)) return;
     const unknown = unknownRequired(msg);
-    if (unknown.length) return sendError(ctx, msg, 420, 'Unknown Attribute', [unknownAttr(unknown)]);
+    if (unknown.length) return respond(ctx, msg, CLASS.ERROR, failure(420, 'Unknown Attribute', [unknownAttr(unknown)]).attributes);
     counters.bindings++;
     respond(ctx, msg, CLASS.SUCCESS, [{ type: ATTR.XOR_MAPPED_ADDRESS, value: encodeXorAddress(ctx, msg.transactionId) }]);
   }
@@ -296,7 +317,9 @@ export async function createTurnServer(options = {}) {
     if (password === null || password === undefined || password === false) return fail('unknown-user');
     let key;
     try { key = longTermKey(username, realmBuf, password); } catch { return fail('bad-password'); }
-    return verifyIntegrity(msg, key) ? { username: name, key } : fail('integrity');
+    if (!verifyIntegrity(msg, key)) return fail('integrity');
+    authenticated(ctx.address);
+    return { username: name, key };
   }
 
   function lifetimeFrom(attr) { // seconds; 0 only when explicitly requested (Refresh deletes)
@@ -306,17 +329,19 @@ export async function createTurnServer(options = {}) {
   }
 
   function peerDecision(peer, username) {
+    const own = ownAddresses.has(ownKey(peer.address)); // e.g. our LAN/public relayed address, in any spelling
+    if (peerScope === 'internal' && !own) return null;  // relay↔relay inside this server only
     if (options.allowPeer) {
       let ok = false;
       try {
         ok = options.allowPeer({ family: peer.family, address: peer.address, port: peer.port }, { username });
         if (isThenable(ok)) { fault(new TypeError('allowPeer must return a boolean synchronously'), 'allowPeer'); ok = false; }
       } catch (e) { fault(e, 'allowPeer'); }
-      return ok === true ? ALLOW : null;
+      return ok !== true ? null : peerScope === 'internal' ? OWN_ONLY : ALLOW;
     }
     const c = classifyPeerAddress(peer.address);
     if (c === 'deny') return null;
-    if (ownAddresses.has(peer.address)) return OWN_ONLY; // e.g. our LAN/public relayed address: relay↔relay only
+    if (own) return OWN_ONLY;
     return c === 'public' || (c === 'private' && options.allowPrivatePeers) ? ALLOW : null;
   }
   function prune(alloc, now) {
@@ -399,8 +424,11 @@ export async function createTurnServer(options = {}) {
     const localPort = socket.address().port, bound = normalizeAddress(socket.address().address)?.address;
     let externalPort = localPort;
     if (options.mapRelayPort) {
-      try { const p = await withTimeout(options.mapRelayPort(localPort, family), limits.hookTimeoutMs); if (Number.isInteger(p) && p > 0 && p <= 0xffff) externalPort = p; }
-      catch (e) { log('map-port-error', { localPort, family, message: e?.message }); }
+      const release = alloc.release = new AbortController();
+      try {
+        const p = await withTimeout(options.mapRelayPort(localPort, family, release.signal), limits.hookTimeoutMs);
+        if (Number.isInteger(p) && p > 0 && p <= 0xffff) externalPort = p; else release.abort();
+      } catch (e) { release.abort(); log('map-port-error', { localPort, family, message: e?.message }); }
     }
     const localAddress = (bound && !isWildcard(bound) ? bound : await defaultLocalAddress(family, ctx)) ?? bound;
     if (aborted()) { deleteAllocation(alloc, 'aborted'); return null; }
@@ -523,7 +551,7 @@ export async function createTurnServer(options = {}) {
     return wild && ownAddresses.has(ip) ? wild : null;
   }
   function toPeer(alloc, ip, port, data, ownOnly) {
-    if (selfEndpoints.has(`${ip}|${port}`)) { counters.droppedPolicy++; return; }
+    if (selfEndpoints.has(`${alloc.family === 4 ? ip : ownKey(ip)}|${port}`)) { counters.droppedPolicy++; return; }
     const target = relayTarget(ip, port, alloc.family);
     if (!target && ownOnly) { counters.droppedPolicy++; return; }
     if (!take(alloc.up, globalUp, data.length, alloc.scope?.up)) { counters.droppedRateLimited++; return; }
@@ -560,6 +588,7 @@ export async function createTurnServer(options = {}) {
   function deleteAllocation(alloc, reason) {
     if (alloc.closed) return;
     alloc.closed = true;
+    alloc.release?.abort();
     if (allocations.get(alloc.key) === alloc) allocations.delete(alloc.key);
     if (alloc.scope) { alloc.scope.allocations.delete(alloc); if (!alloc.scope.allocations.size) alloc.scope.idleAt = Date.now(); }
     const owned = byUser.get(alloc.username);
@@ -567,12 +596,23 @@ export async function createTurnServer(options = {}) {
     for (const k of alloc.indexKeys) if (relayIndex.get(k) === alloc) relayIndex.delete(k);
     if (alloc.internal) { const k = `${alloc.family}|${alloc.internal.port}`; if (wildcardPorts.get(k) === alloc) wildcardPorts.delete(k); }
     if (alloc.socket) closeRelaySocket(alloc.socket);
+    // A TCP/TLS connection exists for its allocation: once that ends (Refresh 0, expiry, revocation), so does
+    // the connection, after its final response has been flushed.
     const conn = alloc.ctx.conn;
-    if (conn?.alloc === alloc) { conn.alloc = null; if (!conn.closed) conn.socket.setTimeout(limits.tcpIdleMs); }
+    if (conn?.alloc === alloc) { conn.alloc = null; endStream(conn); }
     if (alloc.ready) {
       counters.allocationsDeleted++;
       log('allocation-deleted', { username: alloc.username, reason, relayed: `${alloc.relayed.address}:${alloc.relayed.port}` });
     }
+  }
+  function endStream(conn) {
+    if (conn.ending || conn.closed) return;
+    conn.ending = true; conn.backlog.length = 0;
+    setImmediate(() => {
+      if (conn.closed || conn.socket.destroyed) return;
+      conn.socket.end();
+      setTimeout(() => conn.socket.destroy(), STREAM_LINGER_MS).unref();
+    });
   }
   function purgeCache(tuple) { for (const [k, v] of responseCache) if (v.tuple === tuple) responseCache.delete(k); }
   function tearDown(alloc, reason) { purgeCache(alloc.key); deleteAllocation(alloc, reason); alloc.ctx.conn?.socket.destroy(); }
@@ -619,7 +659,7 @@ export async function createTurnServer(options = {}) {
     if (pause && !conn.paused) { conn.paused = true; conn.socket.pause(); } else if (!pause && conn.paused) { conn.paused = false; conn.socket.resume(); }
   }
   function pump(conn) {
-    while (conn.backlog.length && !conn.busy && !conn.closed) {
+    while (conn.backlog.length && !conn.busy && !conn.closed && !conn.ending) {
       let r;
       try { r = onClientMessage(conn.ctx, conn.backlog.shift()); } catch (e) { fault(e, 'stream'); conn.socket.destroy(); return; }
       if (isThenable(r)) {
@@ -641,6 +681,7 @@ export async function createTurnServer(options = {}) {
     conn.preAuthTimer.unref?.();
     socket.setTimeout(limits.tcpPreAuthMs, () => { counters.tcpIdleClosed++; socket.destroy(); });
     socket.on('data', chunk => {
+      if (conn.ending) return;
       try {
         counters.bytesFromClients += chunk.length;
         conn.pending.push(chunk); conn.size += chunk.length;
@@ -657,7 +698,9 @@ export async function createTurnServer(options = {}) {
     socket.on('close', () => {
       clearTimeout(conn.preAuthTimer);
       conn.closed = true; conn.backlog.length = 0; conns.delete(conn);
-      if (conn.alloc) deleteAllocation(conn.alloc, 'connection-closed');
+      // Also an Allocate still binding or mapping: it aborts now, releasing its port mapping.
+      const alloc = allocations.get(conn.ctx.tupleKey);
+      if (alloc) deleteAllocation(alloc, 'connection-closed');
     });
   }
   async function openListener(spec, index) {

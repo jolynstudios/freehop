@@ -118,12 +118,15 @@ test('revocation saturation fails closed for the affected room without reviving 
   const gw = await startGateway({host: '127.0.0.1', port: 0, portMapping: false, externalAddress: '198.51.100.7', rooms: [tag, other]});
   const c = await turnClient(gw.turn.addresses().find(a => a.transport === 'udp').port);
   try {
-    const first = gw.credentialsFor(tag, 'first');
+    const first = gw.credentialsFor(tag, 'first'), kept = gw.credentialsFor(tag, 'kept');
     gw.revokePeer(tag, 'first');
     for (let i = 0; i < 4100; i++) gw.revokePeer(tag, `peer-${i}`);
     assert.equal((await c.allocate(first.username, first.credential)).code, 401);
     assert.equal(gw.credentialsFor(tag, 'fresh-alias'), null);
-    assert.throws(() => gw.allowRoom(tag), /revocation capacity/);
+    // Revocation tables are per room now: allowRoom is never refused because of them, and the
+    // room's credential floor keeps every credential issued before the overflow void.
+    gw.allowRoom(tag);
+    assert.equal((await c.allocate(kept.username, kept.credential)).code, 401, 'a re-allowed room does not revive old credentials');
     const valid = gw.credentialsFor(other, 'remaining');
     assert.equal((await c.allocate(valid.username, valid.credential)).cls, stun.CLASS.SUCCESS);
   } finally {c.close(); await gw.close();}

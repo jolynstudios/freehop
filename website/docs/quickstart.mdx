@@ -79,7 +79,7 @@ FREEHOP_GATE_TRUST_PROXY=1 \
 node bin/freehop-gate.mjs
 ```
 
-In a project that depends on `freehop`, `npx freehop-gate` runs the same service. Put it behind your TLS proxy so clients reach it as `wss://gate.example.com/freehop`. [Gate service](./sdk/gate-service.mdx) has a systemd unit and a Caddy snippet.
+In a project that depends on `freehop`, `./node_modules/.bin/freehop-gate` runs the same service. Do not use `npx freehop-gate`: Freehop is not on npm, so npx could fetch a stranger's package and hand it your token secret. Put it behind your TLS proxy so clients reach it as `wss://gate.example.com/freehop`. [Gate service](./sdk/gate-service.mdx) has a systemd unit and a Caddy snippet.
 
 :::tip[No gate of your own]
 

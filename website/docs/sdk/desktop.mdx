@@ -50,6 +50,7 @@ It returns `{ gateway, close() }`. `gateway` stays `null` until a page first ask
 | `portMapping` | `true` | Ask the router for mappings (PCP, then NAT-PMP, then UPnP IGD). `false` disables it |
 | `externalAddress` | none | With `portMapping: false`: the public address of ports you forwarded by hand |
 | `credentialTtlSeconds` | `7200` | Lifetime of per-peer credentials, bounded to 1–86400 seconds |
+| `relayScope` | `'internal'` | `'internal'` relays only between allocations on this gateway, so nobody can use it to reach other internet hosts. `'public'` behaves like a general TURN server; use it only when every member is trusted |
 | `limits` | built-in | TURN quotas; by default 6 allocations per username, 4 Mbit/s per allocation, 32 allocations and 20 Mbit/s per room, 40 Mbit/s in total |
 
 ## Preload: window.freehopGateway
@@ -64,7 +65,7 @@ The preload (`freehop/electron/preload`) exposes `window.freehopGateway` **only*
 | `revokePeer(tag, peer)` | Revokes one peer's credentials and allocations in a room |
 | `revokeRoom(tag)` | Revokes a whole room |
 
-The main process validates the sending frame and its current origin, as well as every argument (room tags and peer ids must be base64url of the expected length) before it touches the gateway. The IPC channels are `freehop:gateway-info`, `freehop:allow-room`, `freehop:credentials`, `freehop:revoke-peer` and `freehop:revoke-room`.
+The main process validates the sending frame and its current origin, as well as every argument (room tags and peer ids must be base64url of the expected length) before it touches the gateway. A window's rooms are released on the gateway when its page navigates away, its origin changes or the window closes, so a page that never called `leave()` leaves nothing behind. The IPC channels are `freehop:gateway-info`, `freehop:allow-room`, `freehop:credentials`, `freehop:revoke-peer` and `freehop:revoke-room`.
 
 ## In your page
 

@@ -57,9 +57,10 @@ The gate enforces this by construction. Its byte budgets make media tunnelling i
 | Bytes a socket makes the gate forward (fan-out included) | 512 KiB burst, refilled at 2 KiB/s |
 | Messages per socket | 40 per second, burst 400 |
 | Rooms per socket / peers per room | 4 / 16 |
-| Sockets per source address | 32 |
+| Sockets per source address (an IPv6 /64 counts as one address) | 32 |
+| Sockets still being admitted | 256 in total, 8 per address; torn down within 1 s when refused |
 | `hello` deadline / idle timeout | 5 s / 90 s |
-| Unread send buffer before the socket is closed | 1 MiB |
+| Unflushed output before a socket is closed | 1 MiB per socket, 32 MiB for the whole gate |
 
 ## Many gates, and no gates at all
 

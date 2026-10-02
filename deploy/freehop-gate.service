@@ -38,7 +38,8 @@ RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
 CapabilityBoundingSet=
 UMask=0077
 # V8 uses JIT executable memory; do not enable MemoryDenyWriteExecute here.
-MemoryMax=256M
+# The gate's default limits need about 225 MiB at worst, plus garbage from bursts (src/gate/gate.mjs).
+MemoryMax=512M
 LimitNOFILE=8192
 
 [Install]

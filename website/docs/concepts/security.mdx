@@ -66,9 +66,9 @@ A voluntary departure also needs rotation: `await authority.leave(roomId, member
 
 ## Gateways
 
-Gateway credentials are minted per peer and per room, are valid for 2 hours by default (configurable from 1 to 86400 seconds) and are only issued to authenticated members. The gateway's default policy refuses loopback, link-local, multicast and private peer addresses, keeps services on its own host unreachable, and enforces quotas (6 allocations per username, 4 Mbit/s per allocation, 32 allocations and 20 Mbit/s per room, 40 Mbit/s in total).
+Gateway credentials are minted per peer and per room, are valid for 2 hours by default (configurable from 1 to 86400 seconds) and are only issued to authenticated members. A gateway relays **only inside its session**: traffic goes between allocations on the gateway itself, and every other destination is refused. Nobody can use a participant's gateway to send traffic to other hosts on the internet, or into the participant's home network. Services on the gateway's own machine stay unreachable, and quotas apply (6 allocations per username, 4 Mbit/s per allocation, 32 allocations and 20 Mbit/s per room, 40 Mbit/s in total).
 
-One residual risk is documented in the protocol: a room member could use a gateway's credentials to relay traffic to arbitrary public hosts. Credential expiry blocks authenticated requests; existing allocations can continue until their granted lifetime ends. Revocation ends them immediately. Operators who care can shorten the credential lifetime (`credentialTtlSeconds`).
+Credential expiry blocks authenticated requests; existing allocations can continue until their granted lifetime ends. Revocation ends them immediately: a rotation revokes the whole old room, a participant's desktop gateway releases a room when the participant leaves or the page navigates away, and credentials minted before a revocation never work again for that room.
 
 On the desktop, configure the same exact HTTPS origins (HTTP is allowed only on loopback) in `installFreehopGateway({ ipcMain, allowedOrigins })` and the preload argument `--freehop-origins=`. The main process rejects IPC from other origins and subframes.
 

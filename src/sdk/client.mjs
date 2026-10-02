@@ -17,8 +17,9 @@ export { decodeTicket, encodeTicket, validTicket };
 export async function connect(ticket, options = {}) {
   if (typeof ticket === 'string') ticket = decodeTicket(ticket);
   if (!validTicket(ticket)) throw new TypeError('Invalid ticket.');
-  // Desktop apps expose their gateway through the Freehop preload (window.freehopGateway).
-  const desktop = options.desktopGateway === undefined ? globalThis.freehopGateway : options.desktopGateway;
+  // Desktop apps expose their gateway through the Freehop preload (window.freehopGateway). An
+  // explicit options.gateway is the only gateway: grants and revocations never go to another one.
+  const desktop = options.gateway ? null : options.desktopGateway === undefined ? globalThis.freehopGateway : options.desktopGateway;
   let gateway = options.gateway;
   if (!gateway && desktop?.info && desktop?.credentialsFor) { try { const info = await desktop.info(); if (info) gateway = {...info, credentialsFor: (tag, peer) => desktop.credentialsFor(tag, peer)}; } catch { gateway = null; } }
   const allow = async secret => { if (gateway && desktop?.allowRoom) await desktop.allowRoom((await deriveRoom(secret, ticket.app)).tag).catch(() => {}); };
@@ -34,6 +35,15 @@ export async function connect(ticket, options = {}) {
     room.drop(peer);
     if (gateway && desktop?.revokePeer) await desktop.revokePeer(room.tag, peer).catch(() => {});
   };
+  // Release a room tag on the desktop gateway. A failure never blocks a rotation or a leave; the
+  // tag is retried on leave so the gateway does not keep serving a room nobody here uses.
+  const unrevoked = new Set();
+  const release = async tag => {
+    if (!gateway || !desktop?.revokeRoom) return;
+    try { await desktop.revokeRoom(tag); unrevoked.delete(tag); }
+    catch (error) { unrevoked.add(tag); options.log?.('gateway-revoke-failed', { message: error?.message ?? String(error) }); }
+  };
+  const leaveRoom = room.leave.bind(room);
 
   return Object.assign(room, {
     ticket: () => current,
@@ -47,14 +57,33 @@ export async function connect(ticket, options = {}) {
         await allow(next.secret);
         for (const peer of dropped) await remove(peer);
         // Revoke the whole old epoch, including any unreported identity's credentials.
-        if (gateway && desktop?.revokeRoom) await desktop.revokeRoom(previousTag);
-        await room.rekey(next.secret, { auth: next.auth });
+        await release(previousTag);
+        await room.rekey(next.secret, { auth: next.auth, gates: next.gates, stun: options.stun ?? next.stun });
         trackPeers.clear();
         current = next;
         return true;
       });
       updating = task.catch(() => {});
       return task;
+    },
+    /** Apply a reissued ticket for the same room and epoch (fresh gate tokens before they expire). */
+    refresh(next) {
+      const task = updating.then(async () => {
+        if (typeof next === 'string') next = decodeTicket(next);
+        if (!validTicket(next) || room.closed || next.roomId !== current.roomId || next.app !== current.app || next.epoch !== current.epoch || next.expires <= current.expires) return false;
+        if ((await deriveRoom(next.secret, next.app)).tag !== room.tag) return false;
+        room.options = { ...room.options, auth: next.auth };   // read at the next gate (re)connect
+        current = next;
+        return true;
+      });
+      updating = task.catch(() => {});
+      return task;
+    },
+    /** Leave the room and release it on this participant's desktop gateway. */
+    async leave() {
+      const tag = room.tag;
+      try { await leaveRoom(); }
+      finally { for (const t of new Set([tag, ...unrevoked])) await release(t); }
     },
     /** Local disconnection only. Membership removal requires authority.kick() and update() on all remaining members. */
     async disconnectPeer(peer) { await remove(peer); },

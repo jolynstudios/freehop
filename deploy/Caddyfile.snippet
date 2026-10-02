@@ -1,5 +1,6 @@
 # Inside the existing site block for play.example.com: the gate shares the TLS origin.
 # UDP 3478 (STUN) must be open in the host firewall; no TURN/relay ports are needed.
+# Caddy replaces X-Forwarded-For with the client address, which FREEHOP_GATE_TRUST_PROXY=1 relies on.
 handle /freehop {
 	reverse_proxy 127.0.0.1:8787
 }

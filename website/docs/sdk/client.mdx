@@ -52,13 +52,14 @@ Media is captured with echo cancellation, noise suppression and automatic gain c
 | `setCamera(enabled)` | Turns the camera on, or stops it and frees the device. |
 | `attach(track, element)` | Plays a remote track in an `<audio>` or `<video>` element (sets `srcObject`, autoplay, inline playback). |
 | `levels()` | Resolves to `{ [peerId]: 0..1 }`: the current speaking level of each origin peer, from inbound audio statistics. |
-| `update(ticket, { dropped })` | Applies an unexpired newer ticket with a new secret for the same app and room. Closes old links, revokes the old desktop gateway epoch and reconnects approved members. Resolves to `false` for an invalid update. |
+| `update(ticket, { dropped })` | Applies an unexpired newer ticket with a new secret for the same app and room. Closes old links, revokes the old desktop gateway epoch, adopts the new ticket's gates and STUN servers, and reconnects approved members. A failed gateway revocation never blocks the rotation; it is retried on `leave()`. Resolves to `false` for an invalid update. |
+| `refresh(ticket)` | Applies a reissued ticket for the **same** epoch and secret with a later expiry, for example fresh gate tokens before a long call outlives them. The new tokens are used at the next gate (re)connect. Resolves to `false` for an invalid refresh. |
 | `disconnectPeer(peerId)` | Disconnects a peer locally and revokes its local gateway credentials. Does not revoke membership or exclude aliases. |
 | `kick(peerId)` | Throws migration guidance. Use backend `authority.kick()` and distribute replacement tickets to revoke membership. |
 | `drop(peerId)` | Disconnects a peer locally, without touching a gateway. |
 | `ticket()` | The current ticket. |
 | `stats()` | Resolves to a snapshot of gates, links, paths, media counters and bridges (see below). |
-| `leave()` | Says goodbye to every member, closes all links and gates, and stops the devices it captured. |
+| `leave()` | Says goodbye to every member, closes all links and gates, stops the devices it captured, and releases the room on this participant's desktop gateway. |
 
 ## Events
 

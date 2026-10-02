@@ -11,14 +11,14 @@ Freehop was qualified on 2 October 2026 in an isolated network lab: real browser
 
 <StatGrid>
   <Stat value="40/40" label="lab runs passed, 0 failed" note="11 scenarios × 3 Chromium trials, plus 7 cross-engine runs" />
-  <Stat value="113/113" label="unit tests" note="STUN, TURN, port mapper, gate and gateway" />
+  <Stat value="146/146" label="unit tests" note="STUN, TURN, port mapper, gate and gateway" />
   <Stat value="800/800" label="TURN messages over UDP" note="coturn's turnutils_uclient, 0 lost" />
   <Stat value="800/800" label="TURN messages over TCP" note="coturn's turnutils_uclient, 0 lost" />
 </StatGrid>
 
 :::note[Scope]
 
-This is kernel-NAT qualification in network namespaces, not a test on physical ISP, carrier or corporate networks. The 40-run matrix predates the subsequent security fixes. The updated runtime passed 113 unit tests, the local browser suites and five targeted NAT scenarios (forwarding, desktop gateway, host relay, UDP-blocked TCP and a host-relayed call surviving all gates going down); the full 40-run matrix has not been repeated for this revision. See [Not yet verified](#not-yet-verified) below.
+This is kernel-NAT qualification in network namespaces, not a test on physical ISP, carrier or corporate networks. The 40-run matrix was re-run on 2 October 2026 on the current revision, after the security fixes: gateways and host nodes now relay only inside their session, and every scenario still passed. See [Not yet verified](#not-yet-verified) below.
 
 :::
 
@@ -46,20 +46,20 @@ Peers are named by letter: `a`, `b` and `c` are browser participants, `g` is a d
 
 | Scenario | Networks | Browsers | Passed | Paths per pair | Gate traffic per run |
 |---|---|---|---|---|---|
-| `direct-eim` | a=eim, b=eim | Chromium | 3/3 | a–b <PathBadge kind="direct" /> | 31 KB |
+| `direct-eim` | a=eim, b=eim | Chromium | 3/3 | a–b <PathBadge kind="direct" /> | 31–32 KB |
 | `direct-eim` | a=eim, b=eim | Firefox, WebKit | 1/1 | a–b <PathBadge kind="direct" /> | 34 KB |
 | `ipv6-direct` | a=v6, b=v6 | Chromium | 3/3 | a–b <PathBadge kind="direct" /> over IPv6 | 34 KB |
-| `ipv6-direct` | a=v6, b=v6 | Firefox, WebKit | 1/1 | a–b <PathBadge kind="direct" /> | 30 KB |
+| `ipv6-direct` | a=v6, b=v6 | Firefox, WebKit | 1/1 | a–b <PathBadge kind="direct" /> | 36 KB |
 | `hard-pair` | a=random, b=random | Chromium | 3/3 | a–b <PathBadge kind="unreachable" /> (expected: nobody else in the session) | 93 KB |
 | `hard-pair-bridge` | a=random, b=random, c=public | Chromium | 3/3 | a–c, b–c <PathBadge kind="direct" />, a–b <PathBadge kind="bridged" via="c" /> | 91 KB |
-| `hard-pair-bridge` | as above | Firefox, WebKit, Chromium as c | 1/1 | as above | 115 KB |
+| `hard-pair-bridge` | as above | Firefox, WebKit, Chromium as c | 1/1 | as above | 80 KB |
 | `two-peer-desktop-host` | a=random, g=upnp | Chromium | 3/3 | a–g <PathBadge kind="gateway" via="g" /> | 37–66 KB |
 | `two-peer-desktop-host` | as above | WebKit, Firefox as g | 1/1 | a–g <PathBadge kind="gateway" via="g" /> | 34 KB |
 | `hard-pair-gateway` | a=random, b=random, g=upnp | Chromium | 3/3 | a–g, b–g <PathBadge kind="gateway" via="g" />, a–b <PathBadge kind="relay" via="g" /> | 143–201 KB |
-| `hard-pair-gateway` | as above | Firefox, WebKit, Chromium as g | 1/1 | as above | 146 KB |
-| `udpblock-gateway` | a=udpblock, g=upnp | Chromium | 3/3 | a–g <PathBadge kind="gateway" via="g" /> (TURN over TCP) | 34–63 KB |
-| `udpblock-gateway` | as above | Firefox, Chromium as g | 1/1 | a–g <PathBadge kind="gateway" via="g" /> | 31 KB |
-| `udpblock-pair-gateway` | a=udpblock, b=udpblock, g=upnp | Chromium | 3/3 | a–g, b–g <PathBadge kind="gateway" via="g" />, a–b <PathBadge kind="relay" via="g" /> | 130–158 KB |
+| `hard-pair-gateway` | as above | Firefox, WebKit, Chromium as g | 1/1 | as above | 203 KB |
+| `udpblock-gateway` | a=udpblock, g=upnp | Chromium | 3/3 | a–g <PathBadge kind="gateway" via="g" /> (TURN over TCP) | 63 KB |
+| `udpblock-gateway` | as above | Firefox, Chromium as g | 1/1 | a–g <PathBadge kind="gateway" via="g" /> | 54 KB |
+| `udpblock-pair-gateway` | a=udpblock, b=udpblock, g=upnp | Chromium | 3/3 | a–g, b–g <PathBadge kind="gateway" via="g" />, a–b <PathBadge kind="relay" via="g" /> | 186 KB |
 | `hard-pair-host-node` | a=random, b=random, h=public | Chromium | 3/3 | a–b <PathBadge kind="relay" via="h" /> (no desktop participant) | 73 KB |
 | `hard-pair-host-node` | as above | Firefox, WebKit | 1/1 | a–b <PathBadge kind="relay" via="h" /> | 62 KB |
 | `udpblock-pair-host-node` | a=udpblock, b=udpblock, h=public | Chromium | 3/3 | a–b <PathBadge kind="relay" via="h" /> | 65 KB |
@@ -73,7 +73,7 @@ Earlier research that only tried direct routes proved its own boundary: two full
 
 ## Other evidence
 
-### Unit tests: 113 of 113
+### Unit tests: 146 of 146
 
 - STUN codec with the RFC 5769 test vectors, plus fuzzing.
 - TURN server: integrity, framing, quotas, room bandwidth, IPv6 destination policy and TCP deadlines.

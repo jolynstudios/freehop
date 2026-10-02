@@ -56,7 +56,8 @@ session.on('peer-left', ({ id, reason }) => …);
 await session.setMicrophone(false); await session.setCamera(true);
 const levels = await session.levels();                   // speaking indicators
 await session.update(newTicket, { dropped: [kickedPeerId] });   // after a kick
-await session.leave();
+await session.refresh(reissuedTicket);   // same epoch, fresh gate tokens for long calls
+await session.leave();                   // also releases the room on a desktop gateway
 ```
 `session.disconnectPeer(peerId)` removes only a local connection. It does not revoke membership. The former `session.kick()` throws a migration error; use `authority.kick()` and distribute replacement tickets for removal.
 
@@ -78,6 +79,8 @@ new BrowserWindow({ webPreferences: { preload: require.resolve('freehop/electron
 PCP/NAT-PMP/UPnP router mapping) on first use, allows that room, and offers it to the room's
 peers with per-peer credentials. Participants behind hard NATs or UDP-blocking networks can then
 reach the desktop participant without any third party. The minting key stays in the main process; the renderer requests short-lived credentials through an origin-checked broker. HTTPS origins are required except for loopback development. A raw gateway integration supplies `credentialsFor(tag, peer)` alongside its public `info()` metadata, rather than sending the key to a page.
+
+The gateway relays only between allocations on itself (`relayScope: 'internal'`, the default), so room members cannot use it to reach other internet hosts. A window's rooms are released when its page leaves, navigates away or closes.
 
 ## 5. Hosts: let the session's own host relay for it (`freehop/host`)
 Whoever hosts a session can make its machine the session's gateway: an app server, a

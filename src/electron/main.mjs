@@ -24,10 +24,20 @@ export function installFreehopGateway({ ipcMain, allowedOrigins, options = {}, l
     catch { return false; }
   };
   const grants = new WeakMap();
+  // A window's rooms are released on the gateway when its page navigates away, its origin
+  // changes or the window is destroyed: a page that never called leave() leaves nothing behind.
+  const releaseAll = grant => { if (!grant) return; for (const tag of grant.tags) gateway?.revokeRoom(tag); grant.tags.clear(); };
+  const watched = new WeakSet();
+  const watch = sender => {
+    if (watched.has(sender) || typeof sender?.on !== 'function') return;
+    watched.add(sender);
+    sender.on('did-navigate', () => releaseAll(grants.get(sender)));   // main-frame navigations only (not in-page)
+    sender.once?.('destroyed', () => { releaseAll(grants.get(sender)); grants.delete(sender); });
+  };
   const roomsFor = event => {
     const origin = new URL(event.senderFrame.url).origin;
     let grant = grants.get(event.sender);
-    if (!grant || grant.origin !== origin) { grant = {origin, tags: new Set()}; grants.set(event.sender, grant); }
+    if (!grant || grant.origin !== origin) { releaseAll(grant); grant = {origin, tags: new Set()}; grants.set(event.sender, grant); watch(event.sender); }
     return grant.tags;
   };
   let gateway = null, starting = null, closed = false;

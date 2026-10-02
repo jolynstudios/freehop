@@ -5,7 +5,7 @@ import styles from './Proof.module.css';
 
 const STATS = [
   {value: '40/40', label: 'historical lab runs passed', note: '11 network scenarios × 3 trials, plus 7 cross-engine runs'},
-  {value: '113/113', label: 'unit tests', note: 'STUN codec, TURN server, port mapper, gate and gateway'},
+  {value: '146/146', label: 'unit tests', note: 'STUN codec, TURN server, port mapper, gate and gateway'},
   {value: '800/800', label: 'TURN messages, UDP and TCP', note: "coturn's turnutils_uclient against Freehop's TURN: 0 lost"},
   {value: '3', label: 'browser engines', note: 'Chromium 151, Firefox 153 and WebKit 26.5'},
 ];
@@ -13,14 +13,14 @@ const STATS = [
 type Row = {setup: string; detail: string; kind: PathKind; via?: string; runs: string; gate: string};
 const ROWS: Row[] = [
   {setup: 'Two home routers', detail: 'direct-eim', kind: 'direct', runs: '3/3 + 1/1', gate: '31–34 KB'},
-  {setup: 'IPv6, IPv4 UDP blocked', detail: 'ipv6-direct', kind: 'direct', runs: '3/3 + 1/1', gate: '30–34 KB'},
+  {setup: 'IPv6, IPv4 UDP blocked', detail: 'ipv6-direct', kind: 'direct', runs: '3/3 + 1/1', gate: '34–36 KB'},
   {setup: 'Strict NAT and a desktop participant (UPnP)', detail: 'two-peer-desktop-host', kind: 'gateway', runs: '3/3 + 1/1', gate: '34–66 KB'},
-  {setup: 'UDP-blocked and a desktop participant', detail: 'udpblock-gateway, TURN over TCP', kind: 'gateway', runs: '3/3 + 1/1', gate: '31–63 KB'},
-  {setup: 'Two strict NATs and a desktop participant', detail: 'hard-pair-gateway', kind: 'relay', via: 'desktop participant', runs: '3/3 + 1/1', gate: '143–201 KB'},
-  {setup: 'Two UDP-blocked and a desktop participant', detail: 'udpblock-pair-gateway', kind: 'relay', via: 'desktop participant', runs: '3/3', gate: '130–158 KB'},
+  {setup: 'UDP-blocked and a desktop participant', detail: 'udpblock-gateway, TURN over TCP', kind: 'gateway', runs: '3/3 + 1/1', gate: '54–63 KB'},
+  {setup: 'Two strict NATs and a desktop participant', detail: 'hard-pair-gateway', kind: 'relay', via: 'desktop participant', runs: '3/3 + 1/1', gate: '143–203 KB'},
+  {setup: 'Two UDP-blocked and a desktop participant', detail: 'udpblock-pair-gateway', kind: 'relay', via: 'desktop participant', runs: '3/3', gate: '186 KB'},
   {setup: 'Two strict NATs and a host node', detail: 'hard-pair-host-node', kind: 'relay', via: 'host node', runs: '3/3 + 1/1', gate: '62–73 KB'},
   {setup: 'Two UDP-blocked and a host node', detail: 'udpblock-pair-host-node', kind: 'relay', via: 'host node', runs: '3/3', gate: '65 KB'},
-  {setup: 'Two strict NATs and an open participant', detail: 'hard-pair-bridge', kind: 'bridged', via: 'participant', runs: '3/3 + 1/1', gate: '91–115 KB'},
+  {setup: 'Two strict NATs and an open participant', detail: 'hard-pair-bridge', kind: 'bridged', via: 'participant', runs: '3/3 + 1/1', gate: '80–91 KB'},
   {setup: 'Two strict NATs, nobody else', detail: 'hard-pair, expected', kind: 'unreachable', runs: '3/3', gate: '93 KB'},
   {setup: 'A network that reaches only the gate', detail: 'gate-only, expected', kind: 'unreachable', runs: '3/3', gate: '207 KB'},
 ];
@@ -88,7 +88,7 @@ export default function Proof() {
           </tbody>
         </table>
         <p id="proof-table-note" className={styles.caption}>
-          Original qualification, 2 October 2026, before the later security fixes. "+ 1/1" is the extra Firefox/WebKit run. The updated runtime passed 113 unit tests, browser suites and five targeted NAT scenarios; the full matrix has not been rerun.
+          Re-run on 2 October 2026 on the current revision, after the security fixes. "+ 1/1" is the extra run with Firefox and WebKit behind the hard networks.
         </p>
       </div>
 

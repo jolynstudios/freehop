@@ -38,7 +38,7 @@ There are no capacity benchmarks for 32, 64 or 128 participants yet. Raising `ma
 
 - **IP addresses.** Direct paths expose network addresses to other participants. Gate and tracker operators see connecting IP addresses too. Freehop does not offer an IP-anonymity mode.
 - **Members trust each other for signalling.** All members share one room key, so any member can forge envelopes in the room's name. Removing someone always requires a key rotation.
-- **Gateway credentials.** Until they expire, a room member could use a gateway's credentials to relay traffic to arbitrary public hosts. You can shorten the credential lifetime.
+- **Gateway credentials.** A gateway relays only between people in its own session, so its credentials cannot be used to reach other internet hosts. Inside the session, a member can use its share of the gateway's quota until the credentials expire or the room rotates.
 
 ### Forwarding
 

@@ -16,7 +16,8 @@ const PEER_ID = /^[A-Za-z0-9_-]{22}$/;
 export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, auth, WebSocketImpl = globalThis.WebSocket, departGraceMs = 8000, log = () => {} }) {
   if (!gateway?.info?.() || typeof gateway.credentialsFor !== 'function') throw new TypeError('A reachable gateway from startGateway() is required.');
   // Host nodes join through WebSocket gates; tracker gates (bt+wss://) are used by clients only.
-  const usable = gates.filter(url => !url.startsWith('bt+'));
+  const socketGates = list => list.filter(url => !url.startsWith('bt+'));
+  let usable = socketGates(gates);
   if (!usable.length) throw new TypeError('A host node needs at least one WebSocket gate (ws:// or wss://) in its ticket.');
   if (typeof WebSocketImpl !== 'function') throw new TypeError('No WebSocket implementation: use Node.js 22 or newer, or pass WebSocketImpl.');
   const id = GATEWAY_ID_PREFIX + randomId(16).slice(0, 19);
@@ -27,6 +28,7 @@ export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, 
   const greeted = new Map();     // peer -> expiry of the credentials we sent
   const sequences = new Map();   // peer -> highest envelope counter seen (replay guard)
   const tags = new Set();        // every room tag this member served (kept until close)
+  const issued = new Set();      // peers that received credentials in this epoch: the only revocation targets
   let rekeyTask = Promise.resolve();
 
   const capsFor = peer => {
@@ -43,19 +45,32 @@ export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, 
     if (closed || epoch !== room) return;
     let sent = false;
     for (const gate of presence.get(peer) ?? []) sent = gate.send(peer, box) || sent;
-    if (sent) { if (!greeted.has(peer)) stats.peersServed++; greeted.set(peer, Number(caps.gateway.username.split(':')[0])); stats.envelopesSent++; }
+    if (sent) {
+      if (!greeted.has(peer)) stats.peersServed++;
+      greeted.set(peer, Number(caps.gateway.username.split(':')[0])); stats.envelopesSent++;
+      issued.add(peer); if (issued.size > 1024) issued.delete(issued.values().next().value);
+    }
   }
   function openGates() {
     clients = usable.map(url => {
-      const gate = new GateClient(url, { room: room.tag, peer: id, auth: currentAuth, WebSocketImpl });
+      // Auth is read at every (re)connect, so refreshed tokens apply without a rotation.
+      const gate = new GateClient(url, { room: room.tag, peer: id, auth: gateUrl => currentAuth && typeof currentAuth === 'object' ? currentAuth[gateUrl] : currentAuth, WebSocketImpl });
       const seen = peer => {
         if (!presence.has(peer) && presence.size >= 64) return false;
         const set = presence.get(peer) ?? new Set(); set.add(gate); presence.set(peer, set); return true;
       };
-      // Roster entries consume no state: clients must first prove membership.
+      // Roster entries consume no state for strangers: clients must first prove membership. A
+      // peer that already authenticated in this epoch is restored after our own gate reconnects,
+      // and greeted again if the sweep forgot it, so credential renewal continues.
+      const restore = peer => {
+        if (closed || typeof peer !== 'string' || !sequences.has(peer) || !seen(peer)) return;
+        lastContact.set(peer, Date.now());
+        if (!greeted.has(peer)) greet(peer);
+      };
+      gate.on('joined', ({ peers } = {}) => { if (Array.isArray(peers)) for (const peer of peers.slice(0, 256)) restore(peer); });
       gate.on('left', () => { for (const [peer, sources] of presence) { sources.delete(gate); if (!sources.size) lastContact.set(peer, Date.now()); } });
       gate.on('peer', ({ peer, on }) => {
-        if (on) return;
+        if (on) { restore(peer); return; }
         presence.get(peer)?.delete(gate);
         if (presence.has(peer) && !presence.get(peer).size) lastContact.set(peer, Date.now());
       });
@@ -78,8 +93,10 @@ export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, 
       return gate;
     });
   }
+  // Only peers we issued credentials to are revoked: a member cannot fill the gateway's
+  // revocation table with made-up ids (a departure of an unknown id has nothing to revoke).
   function drop(peer) {
-    for (const tag of tags) stats.revoked += gateway.revokePeer(tag, peer) ?? 0;
+    if (issued.delete(peer)) for (const tag of tags) stats.revoked += gateway.revokePeer(tag, peer) ?? 0;
     greeted.delete(peer); presence.delete(peer); lastContact.delete(peer);
   }
   async function enter(newSecret) {
@@ -108,23 +125,37 @@ export async function joinAsGateway({ gates, secret, app = 'peerlane', gateway, 
     id,
     stats: () => ({ ...stats, peers: presence.size }),
     drop,
-    // Every old-epoch allocation is revoked, including aliases the backend never learned.
-    rekey(newSecret, { auth: nextAuth, dropped = [] } = {}) {
+    // Every old-epoch allocation is revoked, including aliases the backend never learned. The new
+    // room is admitted first: if the gateway refuses it, the old room keeps working and a retry of
+    // the same rotation runs again (state only advances after success).
+    rekey(newSecret, { auth: nextAuth, dropped = [], gates: nextGates } = {}) {
       const task = rekeyTask.then(async () => {
         if (closed) return;
         const next = await deriveRoom(newSecret, app);
         if (closed || next.tag === room.tag) return;
+        const nextUsable = nextGates === undefined ? usable : Array.isArray(nextGates) ? socketGates(nextGates) : [];
+        if (!nextUsable.length) throw new TypeError('A host node needs at least one WebSocket gate (ws:// or wss://) in its ticket.');
+        try { gateway.allowRoom(next.tag); }
+        catch (error) {
+          // At room capacity the old epoch's slots are what the new room needs: retire them first.
+          // Any other refusal leaves the old room untouched, so the rotation can simply be retried.
+          if (!/capacity/i.test(String(error?.message))) throw error;
+          for (const tag of tags) gateway.revokeRoom(tag);
+          gateway.allowRoom(next.tag);
+        }
         for (const peer of dropped) drop(peer);
-        currentAuth = nextAuth;
+        currentAuth = nextAuth; usable = nextUsable;
         for (const gate of clients) gate.close();
-        for (const tag of tags) gateway.revokeRoom(tag);
-        tags.clear(); presence.clear(); lastContact.clear(); greeted.clear(); sequences.clear();
-        room = next; tags.add(room.tag); gateway.allowRoom(room.tag);
+        for (const tag of tags) if (tag !== next.tag) gateway.revokeRoom(tag);
+        tags.clear(); presence.clear(); lastContact.clear(); greeted.clear(); sequences.clear(); issued.clear();
+        room = next; tags.add(room.tag);
         openGates();
       });
       rekeyTask = task.catch(() => {});
       return task;
     },
+    /** Use refreshed gate tokens for the same epoch at the next (re)connect. */
+    setAuth(nextAuth) { if (!closed) currentAuth = nextAuth; },
     async close() {
       closed = true; clearInterval(renew); clearInterval(sweeper);
       for (const peer of greeted.keys()) {
