@@ -52,7 +52,9 @@ plaintext = JSON { kind, n, ...body }
   duplicates. The same envelope legitimately arrives via several gates and the mesh.
 - Kinds: `caps`, `description`, `candidate`, `bye`, `restart-request`, `bridge-request`,
   `bridge-offer`, `bridge-accept`, `bridge-confirm`, `bridge-ready`, `bridge-active`, `bridge-release`, `bridge-fail`,
-  `forward-map`, `forward-unmap`. Unknown kinds are dropped. Tracker gates add a
+  `forward-map`, `forward-unmap`, `app`. Unknown kinds are dropped. `app` carries application data
+  (`session.send`): at most 4096 characters of JSON, and each receiver accepts at most 20 per
+  second from one sender (burst 40). Tracker gates add a
   room-broadcast `hello` (to `*`).
 - **Admission.** Gate rosters and arrival events are unauthenticated hints. A hint only makes a
   peer greet the hinted id with its sealed caps, at most once per 20 s and for at most 64

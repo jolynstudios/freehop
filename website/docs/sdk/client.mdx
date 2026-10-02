@@ -53,6 +53,8 @@ Media is captured with echo cancellation, noise suppression and automatic gain c
 | `attach(track, element)` | Plays a remote track in an `<audio>` or `<video>` element (sets `srcObject`, autoplay, inline playback). |
 | `levels()` | Resolves to `{ [peerId]: 0..1 }`: the current speaking level of each origin peer, from inbound audio statistics. |
 | `update(ticket, { dropped })` | Applies an unexpired newer ticket with a new secret for the same app and room. Closes old links, revokes the old desktop gateway epoch, adopts the new ticket's gates and STUN servers, and reconnects approved members. A failed gateway revocation never blocks the rotation; it is retried on `leave()`. Resolves to `false` for an invalid update. |
+| `switchDevice(kind, deviceId)` | Uses another microphone (`'audio'`) or camera (`'video'`), by `deviceId` from `navigator.mediaDevices.enumerateDevices()`, or `null` for the default. A running track is replaced on every link without renegotiation and keeps its mute state; otherwise the choice applies to the next `setMicrophone(true)` or `setCamera(true)`. Initial choices can be passed as `connect(ticket, { devices: { audio, video } })`. |
+| `send(data, { to })` | Sends application data (any JSON value, at most 4096 characters) to one member, or to every member without `to`. It is sealed like signalling and travels over the peers' own data channel once they are linked. Receivers get a `message` event `{ from, data }` and accept at most 20 messages per second from one sender. Treat the data as untrusted input. Resolves to the number of members it was sent to. |
 | `refresh(ticket)` | Applies a reissued ticket for the **same** epoch and secret with a later expiry, for example fresh gate tokens before a long call outlives them. The new tokens are used at the next gate (re)connect. Resolves to `false` for an invalid refresh. |
 | `disconnectPeer(peerId)` | Disconnects a peer locally and revokes its local gateway credentials. Does not revoke membership or exclude aliases. |
 | `kick(peerId)` | Throws migration guidance. Use backend `authority.kick()` and distribute replacement tickets to revoke membership. |
@@ -67,6 +69,7 @@ Media is captured with echo cancellation, noise suppression and automatic gain c
 |---|---|---|
 | `peer` | `{ id }` | A member authenticated with its first sealed envelope. |
 | `peer-left` | `{ id, reason }` | `reason` is `bye` (it left), `dropped` (local removal), `rekey` (an old-epoch link closed) or `gone` (absent from every gate for 8 s without a connected link; it may come back). |
+| `message` | `{ from, data }` | Application data a member sent with `send()`. Untrusted input: render it as text. |
 | `track` | `{ peer, via, track, stream }` | A remote track. `peer` is the origin. `via` is the forwarding participant when the pair is bridged, otherwise `null`. |
 | `track-ended` | `{ peer, via, stream }` | A forwarded stream was withdrawn. |
 | `path` | `{ peer, kind, via, ... }` | The route to a peer changed. See below. |

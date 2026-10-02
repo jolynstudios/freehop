@@ -17,7 +17,14 @@ const pairKey = (a, b) => a < b ? `${a}|${b}` : `${b}|${a}`;
 // prefix is only a hint; their gateway is learned from sealed caps like anything else.
 const isGatewayMember = id => id.startsWith('gw_');
 const KINDS = new Set(['caps', 'description', 'candidate', 'bye', 'restart-request', 'bridge-request', 'bridge-offer', 'bridge-accept',
-  'bridge-confirm', 'bridge-ready', 'bridge-active', 'bridge-release', 'bridge-fail', 'forward-map', 'forward-unmap']);
+  'bridge-confirm', 'bridge-ready', 'bridge-active', 'bridge-release', 'bridge-fail', 'forward-map', 'forward-unmap', 'app']);
+// Application messages (session.send): sealed like all signalling, at most 4096 characters of JSON; each
+// receiver accepts at most 20 per second from one sender (burst 40).
+export const APP_MESSAGE_BYTES = 4096;
+const MIC = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+const CAM = { width: { ideal: 640 }, height: { ideal: 360 }, frameRate: { ideal: 24, max: 30 } };
+const deviceId = id => id === null || id === undefined || typeof id === 'string' && id.length > 0 && id.length <= 256;
+const APP_RATE = 20, APP_BURST = 40;
 
 export const DEFAULT_TIMING = Object.freeze({ capsWaitMs: 150, politeWaitMs: 1500, endpointMs: 5000, sessionMs: 7000,
   bridgedRetryMs: 30000, maxRetryMs: 300000, restartFallbackMs: 2500, mediaWatchMs: 5000,
@@ -101,7 +108,11 @@ export class Room extends Emitter {
     this.bridgeOffers = new Map();// as a forwarder: pairKey -> { a, b, at } offers we made
     this.counters = { sent: 0, viaMesh: 0, viaGate: 0, viaIntroducer: 0, queued: 0, undeliverable: 0, received: 0, rejected: 0, duplicates: 0,
       meshForwarded: 0, candidateErrors: 0, negotiationErrors: 0, linkErrors: 0, escalations: 0, bridgesUsed: 0, bridgesServed: 0,
-      offerTimeouts: 0, mediaStalls: 0 };
+      offerTimeouts: 0, mediaStalls: 0, appSent: 0, appReceived: 0, appDropped: 0 };
+    this.appBudget = new Map();   // sender -> { tokens, at }
+    // Preferred capture devices (options.devices, switchDevice); every later capture uses them.
+    if (!deviceId(options.devices?.audio) || !deviceId(options.devices?.video)) throw new TypeError('Invalid capture device id');
+    this.devices = { audio: options.devices?.audio ?? null, video: options.devices?.video ?? null };
     this.sendCounter = 0; this.closed = false; this.localStream = null; this.ownsMedia = false;
     this.sendProgress = new Map(); this.meshBudget = new Map();
   }
@@ -185,6 +196,29 @@ export class Room extends Emitter {
 
   // Disconnect a peer now (e.g. after a kick, together with rekey()).
   drop(peer) { this.dropPeer(peer, 'dropped'); }
+
+  /**
+   * Send application data (any JSON value, at most 4096 characters) to one member (`{ to: peerId }`) or to every
+   * member. It travels sealed, like signalling: over the peers' own data channel once linked,
+   * otherwise through the gates. Receivers get a 'message' event { from, data }; treat it as
+   * untrusted input. Resolves to the number of members it was handed to.
+   */
+  async send(data, { to } = {}) {
+    if (this.closed) return 0;
+    let size; try { size = JSON.stringify(data ?? null).length; } catch { throw new TypeError('Message data must be JSON-serialisable.'); }
+    if (data === undefined || size > APP_MESSAGE_BYTES) throw new RangeError(`Message data must be at most ${APP_MESSAGE_BYTES} characters of JSON.`);
+    const targets = to === undefined ? [...this.known] : this.known.has(to) ? [to] : [];
+    for (const peer of targets) { this.signalTo(peer, { kind: 'app', data }).catch(() => {}); this.counters.appSent++; }
+    return targets.length;
+  }
+
+  takeAppToken(from) {
+    const now = Date.now(), b = this.appBudget.get(from) ?? { tokens: APP_BURST, at: now };
+    b.tokens = Math.min(APP_BURST, b.tokens + (now - b.at) * APP_RATE / 1000); b.at = now;
+    this.appBudget.set(from, b);
+    if (b.tokens < 1) return false;
+    b.tokens -= 1; return true;
+  }
 
   count(name, error) { this.counters[name] = (this.counters[name] ?? 0) + 1; if (error) this.log(name, { message: error?.message ?? String(error) }); }
 
@@ -297,7 +331,7 @@ export class Room extends Emitter {
     clearTimeout(this.pendingLinks.get(peer)); this.pendingLinks.delete(peer);
     this.links.get(peer)?.close(); this.links.delete(peer);
     this.known.delete(peer); this.hintedAt.delete(peer); this.caps.delete(peer); this.presence.delete(peer); this.early.delete(peer); this.outbox.delete(peer);
-    this.sendProgress.delete(peer); this.meshBudget.delete(peer);
+    this.sendProgress.delete(peer); this.meshBudget.delete(peer); this.appBudget.delete(peer);
     this.lastContact.delete(peer); this.gatewayCreds.delete(`${this.tag8}:${peer}`);
     // The replay window survives a soft departure: a returning peer keeps its counter.
     if (reason !== 'gone') this.sequences.delete(peer);
@@ -435,6 +469,14 @@ export class Room extends Emitter {
         const link = this.links.get(from);
         if (link) link.enqueue(() => link.onCandidate(p));
         else { const list = this.early.get(from) ?? []; list.push(p.candidate); if (list.length > 64) list.shift(); this.early.set(from, list); }
+        return;
+      }
+      case 'app': {
+        // Untrusted application data from a room member: bounded, rate-limited, never interpreted here.
+        let size; try { size = JSON.stringify(p.data ?? null).length; } catch { size = Infinity; }
+        if (p.data === undefined || size > APP_MESSAGE_BYTES || !this.takeAppToken(from)) { this.counters.appDropped++; return; }
+        this.counters.appReceived++;
+        this.emit('message', { from, data: p.data });
         return;
       }
       case 'restart-request': {
@@ -811,7 +853,7 @@ export class Room extends Emitter {
       return;
     }
     if (track) { track.enabled = true; return; }
-    const captured = await this.getUserMedia({ [kind]: constraints });
+    const captured = await this.getUserMedia({ [kind]: this.constraintsFor(kind, constraints) });
     if (this.closed) { for (const t of captured.getTracks()) t.stop(); return; }
     track = captured.getTracks().find(t => t.kind === kind);
     if (!track) return;
@@ -823,8 +865,32 @@ export class Room extends Emitter {
     }
   }
 
-  setMicrophone(enabled) { return this.#enableTrack('audio', enabled, { echoCancellation: true, noiseSuppression: true, autoGainControl: true }); }
-  setCamera(enabled) { return this.#enableTrack('video', enabled, { width: { ideal: 640 }, height: { ideal: 360 }, frameRate: { ideal: 24, max: 30 } }); }
+  setMicrophone(enabled) { return this.#enableTrack('audio', enabled, MIC); }
+  setCamera(enabled) { return this.#enableTrack('video', enabled, CAM); }
+
+  constraintsFor(kind, base) { const id = this.devices[kind]; return id ? { ...base, deviceId: { exact: id } } : base; }
+
+  /**
+   * Use another microphone ('audio') or camera ('video'): a deviceId from enumerateDevices(), or
+   * null for the default. A running track is replaced on every link without renegotiation and
+   * keeps its mute state; otherwise the choice applies to the next setMicrophone/setCamera(true).
+   */
+  async switchDevice(kind, id) {
+    if (kind !== 'audio' && kind !== 'video') throw new TypeError("kind must be 'audio' or 'video'");
+    if (!deviceId(id)) throw new TypeError('Invalid capture device id');
+    this.devices = { ...this.devices, [kind]: id ?? null };
+    const old = this.localStream?.getTracks().find(t => t.kind === kind);
+    if (this.closed || !old) return !this.closed;
+    const captured = await this.getUserMedia({ [kind]: this.constraintsFor(kind, kind === 'audio' ? MIC : CAM) });
+    const track = captured.getTracks().find(t => t.kind === kind);
+    // Never keep a device that was captured after leave(), or for a track that was switched off meanwhile.
+    if (this.closed || !track || !this.localStream.getTracks().includes(old)) { for (const t of captured.getTracks()) t.stop(); return false; }
+    track.enabled = old.enabled;
+    this.localStream.addTrack(track); this.localStream.removeTrack(old);
+    for (const link of this.links.values()) await link.senders.get(kind)?.replaceTrack(track);
+    old.stop();
+    return true;
+  }
 
   async applyEncodingLimits(link) {
     const forwarded = new Set();

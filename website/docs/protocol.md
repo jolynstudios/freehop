@@ -47,7 +47,7 @@ plaintext = JSON { kind, n, ...body }
 
 - `to` is the recipient's peer id. The AAD binds room, sender and recipient. A gate that re-labels or re-routes an envelope makes it fail authentication.
 - `n` is a per-sender counter. Receivers keep a 1024-wide replay window per sender and drop duplicates. The same envelope legitimately arrives via several gates and the mesh.
-- Kinds: `caps`, `description`, `candidate`, `bye`, `restart-request`, `bridge-request`, `bridge-offer`, `bridge-accept`, `bridge-confirm`, `bridge-ready`, `bridge-active`, `bridge-release`, `bridge-fail`, `forward-map`, `forward-unmap`. Unknown kinds are dropped. Tracker gates add a room-broadcast `hello` (to `*`).
+- Kinds: `caps`, `description`, `candidate`, `bye`, `restart-request`, `bridge-request`, `bridge-offer`, `bridge-accept`, `bridge-confirm`, `bridge-ready`, `bridge-active`, `bridge-release`, `bridge-fail`, `forward-map`, `forward-unmap`, `app`. Unknown kinds are dropped. `app` carries application data (`session.send`): at most 4096 characters of JSON, and each receiver accepts at most 20 per second from one sender (burst 40). Tracker gates add a room-broadcast `hello` (to `*`).
 - **Admission.** Gate rosters and arrival events are unauthenticated hints. A hint only makes a peer greet the hinted id with its sealed caps, at most once per 20 s and for at most 64 hints. A peer becomes a member, with `peer` events, a link and a slot, only after an envelope from it authenticates. A gate cannot authenticate an invented member, but can still prevent discovery or disrupt recovery by dropping traffic. Roster presence alone does not prove membership.
 
 ## 4. Gate protocol (WebSocket, UTF-8 JSON text frames)

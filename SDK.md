@@ -56,6 +56,9 @@ session.on('peer-left', ({ id, reason }) => …);
 await session.setMicrophone(false); await session.setCamera(true);
 const levels = await session.levels();                   // speaking indicators
 await session.update(newTicket, { dropped: [kickedPeerId] });   // after a kick
+await session.switchDevice('audio', deviceId);      // another microphone or camera, no renegotiation
+await session.send({ type: 'chat', text: 'hi' });   // app data to everyone (or { to: peerId })
+session.on('message', ({ from, data }) => …);      // untrusted input: render as text
 await session.refresh(reissuedTicket);   // same epoch, fresh gate tokens for long calls
 await session.leave();                   // also releases the room on a desktop gateway
 ```
