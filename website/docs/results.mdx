@@ -11,14 +11,14 @@ Freehop was qualified on 2 October 2026 in an isolated network lab: real browser
 
 <StatGrid>
   <Stat value="40/40" label="lab runs passed, 0 failed" note="11 scenarios × 3 Chromium trials, plus 7 cross-engine runs" />
-  <Stat value="97/97" label="unit tests" note="STUN, TURN, port mapper, gate and gateway" />
+  <Stat value="113/113" label="unit tests" note="STUN, TURN, port mapper, gate and gateway" />
   <Stat value="800/800" label="TURN messages over UDP" note="coturn's turnutils_uclient, 0 lost" />
   <Stat value="800/800" label="TURN messages over TCP" note="coturn's turnutils_uclient, 0 lost" />
 </StatGrid>
 
 :::note[Scope]
 
-This is kernel-NAT qualification in network namespaces, not a test on physical ISP, carrier or corporate networks. The 40-run matrix predates the subsequent security fixes. The updated runtime passed 97 unit tests, the local browser suites and a targeted hard-NAT forwarding run; the full 40-run matrix has not been repeated for this revision. See [Not yet verified](#not-yet-verified) below.
+This is kernel-NAT qualification in network namespaces, not a test on physical ISP, carrier or corporate networks. The 40-run matrix predates the subsequent security fixes. The updated runtime passed 113 unit tests, the local browser suites and five targeted NAT scenarios (forwarding, desktop gateway, host relay, UDP-blocked TCP and a host-relayed call surviving all gates going down); the full 40-run matrix has not been repeated for this revision. See [Not yet verified](#not-yet-verified) below.
 
 :::
 
@@ -73,13 +73,14 @@ Earlier research that only tried direct routes proved its own boundary: two full
 
 ## Other evidence
 
-### Unit tests: 97 of 97
+### Unit tests: 113 of 113
 
 - STUN codec with the RFC 5769 test vectors, plus fuzzing.
-- TURN server: 29 cases.
+- TURN server: integrity, framing, quotas, room bandwidth, IPv6 destination policy and TCP deadlines.
 - Port mapper: 30 cases against simulated PCP, NAT-PMP and UPnP routers.
 - Gate: routing, isolation, floods, tokens, capacity, STUN, keepalive and proxy trust.
-- Gateway: room-scoped and revocable credentials, loopback refused.
+- Gateway: bounded room-scoped credentials, revocation retention, renderer isolation and loopback refusal.
+- Protocol regressions: gate audiences, STUN pinning, discovery churn, both-endpoint forwarding consent and cancellation, key rotation and copied aliases.
 
 ### Independent TURN conformance
 

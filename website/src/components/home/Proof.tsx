@@ -5,7 +5,7 @@ import styles from './Proof.module.css';
 
 const STATS = [
   {value: '40/40', label: 'lab runs passed', note: '11 network scenarios × 3 trials, plus 7 cross-engine runs'},
-  {value: '97/97', label: 'unit tests', note: 'STUN codec, TURN server, port mapper, gate and gateway'},
+  {value: '113/113', label: 'unit tests', note: 'STUN codec, TURN server, port mapper, gate and gateway'},
   {value: '800/800', label: 'TURN messages, UDP and TCP', note: "coturn's turnutils_uclient against Freehop's TURN: 0 lost"},
   {value: '3', label: 'browser engines', note: 'Chromium 151, Firefox 153 and WebKit 26.5'},
 ];

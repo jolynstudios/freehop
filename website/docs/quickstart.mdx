@@ -50,13 +50,18 @@ import { createAuthority } from 'freehop/authority';
 const authority = createAuthority({
   app: 'my-app',                                   // namespaces room keys
   gates: ['wss://gate.example.com/freehop'],       // one or more gates
-  gateTokenSecret: process.env.FREEHOP_GATE_TOKEN_SECRET // optional: same secret as your gate
+  gateTokenSecrets: {
+    'wss://gate.example.com/freehop': process.env.FREEHOP_GATE_TOKEN_SECRET
+  },
+  stun: ['stun:gate.example.com:3478']              // approved by your application
 });
 
 await authority.openRoom('room-42');                       // creates the room secret
 const ticket = await authority.ticket('room-42', 'user-7'); // only for members you admitted
 // Send `ticket` to user-7 over your own authenticated channel (your API or websocket).
 ```
+
+Use the same private gate signing key in the backend and gate environments. The authority sends each token only to its intended gate; clients use the approved `stun` list and ignore gate-supplied STUN hints.
 
 A ticket carries the room secret, so it is as sensitive as room membership itself. Deliver it only to that member. [Authority and tickets](./sdk/authority.mdx) covers kicks and the ticket format.
 
@@ -67,8 +72,9 @@ A gate is a small WebSocket service that passes sealed envelopes. It never carri
 ```bash
 FREEHOP_GATE_PORT=8787 \
 FREEHOP_GATE_PUBLIC_HOST=gate.example.com \
-FREEHOP_GATE_STUN=0.0.0.0:3478,[::]:3478 \
+FREEHOP_GATE_STUN='0.0.0.0:3478,[::]:3478' \
 FREEHOP_GATE_TOKEN_SECRET=… \
+FREEHOP_GATE_TOKEN_AUDIENCE=wss://gate.example.com/freehop \
 FREEHOP_GATE_TRUST_PROXY=1 \
 node bin/freehop-gate.mjs
 ```

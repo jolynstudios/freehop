@@ -13,7 +13,7 @@
 ![License: Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-303055)
 ![Docs: CC BY 4.0](https://img.shields.io/badge/docs-CC%20BY%204.0-303055)
 ![Lab qualification: 40/40](https://img.shields.io/badge/lab%20qualification-40%2F40-096e72)
-![Unit tests: 97/97](https://img.shields.io/badge/unit%20tests-97%2F97-096e72)
+![Unit tests: 113/113](https://img.shields.io/badge/unit%20tests-113%2F113-096e72)
 ![Status: alpha](https://img.shields.io/badge/status-alpha-ef3b2c)
 
 </div>
@@ -88,8 +88,8 @@ Every run asserts the path taken and that audio *and* video actually arrive.
 | Two strict NATs and nobody else | ✅ 3/3 | `unreachable` (correctly reported) |
 | A network that can only reach the gate | ✅ 3/3 | `unreachable` (no route exists without your server) |
 
-**40/40 lab runs passed** in the original qualification. The security changes documented in [SECURITY-AUDIT.md](SECURITY-AUDIT.md) were subsequently verified with 97 unit tests, browser suites and a targeted hard-NAT forwarding run; the full 40-run matrix has not been repeated for this revision. Other checks:
-- **97/97 unit tests**, including the RFC 5769 STUN vectors.
+**40/40 lab runs passed** in the original qualification. The security changes documented in [SECURITY-AUDIT.md](SECURITY-AUDIT.md) were subsequently verified with 113 unit tests, browser suites and five targeted NAT scenarios (forwarding, desktop gateway, host relay, UDP-blocked TCP and a host-relayed call surviving all gates going down); the full 40-run matrix has not been repeated for this revision. Other checks:
+- **113/113 unit tests**, including the RFC 5769 STUN vectors.
 - **coturn's own test client** against Freehop's TURN server: 800/800 messages over UDP and 800/800 over TCP, 0 lost.
 - **Browser suites:** multi-gate with every gate shut down mid-call, kick/rekey, a public WebTorrent tracker as the only gate, and the SDK example app.
 
@@ -117,12 +117,17 @@ npm install github:jolynstudios/freehop    # npm registry release follows with 1
 **Backend:** decide who is in a room.
 ```js
 import { createAuthority } from 'freehop/authority';
-const authority = createAuthority({ app: 'my-app', gates: ['wss://example.com/freehop'] });
+const authority = createAuthority({
+  app: 'my-app',
+  gates: ['wss://example.com/freehop'],
+  gateTokenSecrets: { 'wss://example.com/freehop': process.env.FREEHOP_GATE_TOKEN_SECRET },
+  stun: ['stun:example.com:3478']
+});
 await authority.openRoom('room-42');
 const ticket = await authority.ticket('room-42', userId);   // send over your own channel
 ```
 
-**Client:** join and play.
+**Client:** join the call.
 ```js
 import { connect } from 'freehop';
 const session = await connect(ticket, { media: { audio: true } });
@@ -130,14 +135,16 @@ session.on('track', ({ peer, track }) => session.attach(track, audioElementFor(p
 session.on('path', ({ peer, kind }) => console.log(peer, 'is', kind));  // direct | gateway | relay | bridged | unreachable
 ```
 
-**Gate:** the only thing you host.
+**Gate:** the signalling service. Set `FREEHOP_GATE_TOKEN_SECRET` to the same private signing key in the backend and gate environments, and put the gate behind your TLS proxy.
 ```bash
 FREEHOP_GATE_PORT=8787 FREEHOP_GATE_PUBLIC_HOST=example.com \
-FREEHOP_GATE_STUN=0.0.0.0:3478,[::]:3478 npx freehop-gate
+FREEHOP_GATE_STUN='0.0.0.0:3478,[::]:3478' \
+FREEHOP_GATE_TOKEN_SECRET="$FREEHOP_GATE_TOKEN_SECRET" \
+FREEHOP_GATE_TOKEN_AUDIENCE=wss://example.com/freehop npx freehop-gate
 ```
 
 Desktop apps (Electron) and session hosts get one call each. See [SDK.md](SDK.md). For a
-complete runnable consumer, run `npm run example` and open it in two windows.
+complete runnable consumer, run `npm run example` and open it in two windows. Existing integrations should follow the [security upgrade notes](SECURITY-AUDIT.md#follow-up-glm-and-grok-report-reconciliation-2-october-2026): gateway credentials now come from a privileged broker, tokens name their gate, and STUN servers come from application configuration. Use `authority.kick()` for membership revocation; `disconnectPeer()` is local removal only.
 
 ## How Freehop compares
 

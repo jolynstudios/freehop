@@ -52,6 +52,9 @@ Add `FREEHOP_GATE_TOKEN_AUDIENCE=wss://gate.example.com/freehop` to the environm
 Keep the token secret out of the unit file: the unit reads it from `/etc/freehop/gate.env`, and your backend needs the same value.
 
 ```ini title="/etc/systemd/system/freehop-gate.service"
+# SPDX-License-Identifier: Apache-2.0
+# Freehop gate: signalling-only rendezvous. It never carries media; its traffic is a few
+# KB per call setup. Runs unprivileged, loopback-only behind Caddy, plus a public STUN port.
 [Unit]
 Description=Freehop gate (signalling only)
 After=network-online.target
@@ -67,6 +70,7 @@ Environment=FREEHOP_GATE_PATH=/freehop
 Environment=FREEHOP_GATE_PUBLIC_HOST=gate.example.com
 Environment=FREEHOP_GATE_STUN=0.0.0.0:3478,[::]:3478
 Environment=FREEHOP_GATE_TRUST_PROXY=1
+Environment=FREEHOP_GATE_TOKEN_AUDIENCE=wss://gate.example.com/freehop
 EnvironmentFile=-/etc/freehop/gate.env
 ExecStart=/usr/bin/node /opt/freehop/bin/freehop-gate.mjs
 Restart=on-failure
@@ -75,6 +79,19 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+UMask=0077
+# V8 uses JIT executable memory; do not enable MemoryDenyWriteExecute here.
 MemoryMax=256M
 LimitNOFILE=8192
 

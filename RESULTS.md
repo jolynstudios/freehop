@@ -51,16 +51,16 @@ behind its own kernel-NAT router profile, with fake camera and microphone. Every
 party is needed. Gate traffic is the gate's total for the whole run, including retries of pairs
 that stay unreachable. It is signalling only.
 
-The 40-run matrix above is historical qualification before the security changes in [SECURITY-AUDIT.md](SECURITY-AUDIT.md). The updated runtime passed the 97-test unit suite, local browser suites and a targeted `hard-pair-bridge` kernel-NAT run. The full matrix has not been repeated for this revision.
+The 40-run matrix above is historical qualification before the security changes in [SECURITY-AUDIT.md](SECURITY-AUDIT.md). The updated runtime passed the 113-test unit suite, local browser suites and five targeted kernel-NAT scenarios: `hard-pair-bridge`, `hard-pair-gateway`, `hard-pair-host-node`, `udpblock-gateway` and `host-node-gates-down`. The full matrix has not been repeated for this revision.
 
 ## Other evidence
-- **Unit tests: 97/97.**
+- **Unit tests: 113/113.**
   - STUN codec with RFC 5769 vectors and fuzzing;
-  - TURN server, 30 cases;
+  - TURN server;
   - port mapper, 30 cases with fake PCP/NAT-PMP/UPnP routers;
   - gate: routing, isolation, floods, tokens, capacity, STUN, keepalive, trust-proxy;
   - gateway: room-scoped and revocable credentials, loopback refused, old-epoch alias allocations revoked;
-  - 13 protocol security regressions (tickets, authority races, key epochs, forwarding, hostile gates and Electron IPC).
+  - Protocol security regressions (tickets, authority races, key epochs, forwarding, hostile gates and Electron IPC).
 - **Independent TURN conformance:** coturn's `turnutils_uclient` against Freehop's TURN
   server got UDP 800/800 and TCP 800/800 messages with 0 lost.
   - It runs in Send/Data mode because coturn's client uses obsolete RFC 5766 channel numbers.

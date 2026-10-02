@@ -13,7 +13,7 @@ https://jolynstudios.github.io/freehop/. It is a [Docusaurus 3](https://docusaur
 
 ```sh
 cd website
-npm install
+npm ci --ignore-scripts
 npm start          # http://localhost:3000/freehop/
 ```
 
@@ -40,9 +40,10 @@ The build is strict: `onBrokenLinks`, `onBrokenAnchors` and `onBrokenMarkdownLin
 ## Deploy
 
 The site is static. Deploy the contents of `build/` to GitHub Pages for the
-`jolynstudios/freehop` repository, for example with a GitHub Actions workflow that runs
-`npm ci && npm run build` in `website/` and publishes `website/build` with
-`actions/upload-pages-artifact` and `actions/deploy-pages`. The site expects to be served at
+`jolynstudios/freehop` repository. The committed [Pages workflow](../.github/workflows/pages.yml) runs
+`npm ci --ignore-scripts`, `npm audit --audit-level=moderate` and `npm run build` in `website/`.
+The build has read-only permissions; only the separate deployment job gets Pages/OIDC write
+permissions. Actions are pinned to commit SHAs. The site expects to be served at
 `/freehop/` (`baseUrl` in `docusaurus.config.ts`). `static/.nojekyll` keeps GitHub Pages from
 ignoring files that start with an underscore. Whatever hosts the site must serve the `.mjs`
 files in `lib/` with a JavaScript MIME type: browsers refuse module scripts otherwise.
@@ -83,6 +84,15 @@ Illustrations draw around their own origin and are placed with `x`, `y`, `rotate
 `scale`, so scenes are plain SVG composition. Every animation stops for visitors who prefer
 reduced motion: CSS animations through a media query, and SVG motion (`Mover`) only renders
 after hydration when `useMotionAllowed()` allows it.
+
+## Keeping documentation in sync
+
+After SDK changes, update the root `SDK.md`, `PROTOCOL.md`, `SECURITY-AUDIT.md` and relevant
+`docs/sdk/` and `docs/concepts/` pages. `docs/protocol.md` is a maintained website version,
+not a generated copy. Keep quickstart snippets consistent with admission and STUN settings.
+When verification changes, update root `README.md` and `RESULTS.md`, `docs/results.mdx`,
+`docs/intro.mdx` and `src/components/home/Proof.tsx`. The current suite has 113 passing tests;
+the historical 40-run NAT matrix must remain distinguished from targeted requalification.
 
 ## Writing rules
 

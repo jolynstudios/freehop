@@ -34,7 +34,7 @@ room. Deliver it only to that member, over the application's own authenticated c
 
 ## 2. Gate: run the signalling service (`bin/freehop-gate.mjs`)
 ```sh
-FREEHOP_GATE_PORT=8787 FREEHOP_GATE_PUBLIC_HOST=example.com FREEHOP_GATE_STUN=0.0.0.0:3478,[::]:3478 \
+FREEHOP_GATE_PORT=8787 FREEHOP_GATE_PUBLIC_HOST=example.com FREEHOP_GATE_STUN='0.0.0.0:3478,[::]:3478' \
 FREEHOP_GATE_TOKEN_SECRET=… FREEHOP_GATE_TOKEN_AUDIENCE=wss://example.com/freehop FREEHOP_GATE_TRUST_PROXY=1 node bin/freehop-gate.mjs
 ```
 Put it behind your TLS proxy (`deploy/Caddyfile.snippet`, `deploy/freehop-gate.service`). It
