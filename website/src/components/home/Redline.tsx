@@ -54,15 +54,15 @@ export default function Redline() {
           <Match />
         </div>
         <div className={styles.copy}>
-          <Eyebrow>First use case</Eyebrow>
-          <Title id="redline">First stop: Redline Wars.</Title>
+          <Eyebrow>Example consumer</Eyebrow>
+          <Title id="redline">One app. The same SDK.</Title>
           <p className={styles.lede}>
-            Redline Wars is a real-time strategy game for the browser and the desktop. Freehop is being integrated there as its
-            first production consumer and test environment, through the public SDK only.
+            Redline Wars is a real-time strategy game for the browser and the desktop. It plans to use
+            Freehop through the public SDK, just like any other app. Freehop is an independent project.
           </p>
           <p className={styles.body}>
             Every match already has a host node: the machine that runs it. That is exactly where Freehop's relay rung lives, so
-            two players behind hard NATs can still talk without the game's own servers carrying their voices.
+            two participants behind hard NATs can still talk without the game's own servers carrying their voices.
           </p>
           <p className={styles.status}>
             <span className={styles.dot} aria-hidden="true" />

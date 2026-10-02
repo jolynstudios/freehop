@@ -26,11 +26,13 @@ When a pair is `unreachable`, Freehop keeps retrying with ICE restarts after 30,
 
 ### Small rooms
 
-Rooms are a full mesh designed for 2 to 8 participants. Every participant sends its media to every other participant, so upstream grows with the room: at five participants with video, each one sends about 4 × 330 kbit/s.
+Rooms are a full mesh with an initial target of 2 to 8 participants. Eight came from the original product target, not a benchmark establishing the largest reliable room. Every participant sends its media to every other participant, so upstream grows with the room: at five participants with video, each one sends about 4 × 332 kbit/s before overhead.
 
 `limits.maxPeers` defaults to 8 **remote peers per client**, so the client limit alone allows a nine-person mesh. It is a local resource limit, not room admission control: excess peers are ignored without a "room full" event, and larger rooms can form an incomplete mesh. Enforce your product's room-size limit in the backend before issuing tickets; `createAuthority()` does not enforce it for you. The browser-only live demo has no backend and recommends rooms of up to 8 people.
 
 More people do not increase capacity as they would in a file-sharing swarm. The trackers introduce peers; they never carry media. A host node provides a TURN gateway for pairs that need it, preserving their encrypted traffic. It does not turn the mesh into an SFU where each participant uploads one stream for redistribution. Larger voice-only rooms need separate load testing before changing the limit.
+
+There are no capacity benchmarks for 32, 64 or 128 participants yet. Raising `maxPeers` also requires checking the gate’s membership limit and the client’s discovery bounds; it does not by itself establish support for a larger room. Room population and the number of simultaneous camera streams are separate capacity decisions.
 
 ### Trust and privacy
 

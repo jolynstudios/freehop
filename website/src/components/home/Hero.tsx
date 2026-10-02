@@ -82,9 +82,8 @@ export default function Hero() {
         </div>
         <div className={styles.bottom}>
           <p className={styles.lede}>
-            Freehop connects 2 to 8 people with voice, video and data in browsers and desktop apps. The media
-            travels between the people in the call. Your servers only run <strong>gates</strong>: blind mailboxes
-            that pass sealed envelopes, a few dozen kilobytes per call.
+            Add voice, video and data to your browser or desktop app. Freehop sends the call between the people
+            in it. Your servers only help them find each other, through <strong>gates</strong> that pass encrypted introductions.
           </p>
           <div className={styles.ctas}>
             <Link className={styles.primary} to="/demo">
@@ -96,6 +95,7 @@ export default function Hero() {
             <Link className={styles.tertiary} href="https://github.com/jolynstudios/freehop">
               GitHub
             </Link>
+            <Link className={styles.tertiary} to="#freehop-in-20-seconds">Freehop in 20 seconds</Link>
           </div>
           <p className={styles.facts}>
             <span>Apache-2.0</span>

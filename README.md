@@ -95,18 +95,18 @@ Every run asserts the path taken and that audio *and* video actually arrive.
 
 Full details are in [RESULTS.md](RESULTS.md).
 
-## First use case: Redline Wars
+## Example consumer: Redline Wars
 
 [**Redline Wars**](https://redlinewars.online) is a real-time strategy game that runs in the
 browser and as a desktop app ([source](https://github.com/jolynstudios/redlinewars)). It is
-Freehop's first production consumer and test environment. Freehop is being integrated there
+one planned consumer of Freehop. The game is integrating the independent SDK
 **through the public SDK only**, exactly like any other app would:
 
 - the match host acts as the session's gateway;
-- desktop players open their own front door through their router;
-- browser players simply join.
+- desktop participants open their own front door through their router;
+- browser participants simply join.
 
-Anything the game needs becomes an SDK feature.
+Freehop is an independent project; any app can use the same public SDK.
 
 ## Quickstart
 
@@ -163,7 +163,7 @@ signalling and encryption, with sources.
 
 ## Honest limits
 
-- **Room size needs admission control.** Recommended rooms are 2 to 8 people. The SDK's
+- **Room size needs admission control.** The initial target is rooms of 2 to 8 people; eight was chosen for that target, not established by a capacity benchmark. The SDK's
   `limits.maxPeers` defaults to 8 remote peers per client; it is not a room-size cap.
   Your backend must limit membership before issuing tickets. Excess peers are silently
   ignored, which can leave a larger room only partly connected.

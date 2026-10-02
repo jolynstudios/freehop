@@ -1,6 +1,7 @@
 import Layout from '@theme/Layout';
 import Head from '@docusaurus/Head';
 import Hero from '@site/src/components/home/Hero';
+import Explainer from '@site/src/components/home/Explainer';
 import Problem from '@site/src/components/home/Problem';
 import Ladder from '@site/src/components/home/Ladder';
 import Proof from '@site/src/components/home/Proof';
@@ -20,6 +21,7 @@ export default function Home() {
       </Head>
       <main>
         <Hero />
+        <Explainer />
         <Problem />
         <Ladder />
         <CostSection />

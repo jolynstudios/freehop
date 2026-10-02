@@ -9,12 +9,12 @@ export default function Demo() {
   return (
     <Layout
       title="Live call"
-      description="A real Freehop call in your browser. Two public WebTorrent trackers act as gates; the media goes straight between the people in the call.">
+      description="A real Freehop call in your browser. Two public WebTorrent trackers act as gates; the media travels between machines in the call.">
       <main>
         <PageHeader eyebrow="Live demo" title="A real call. No server of ours." art={<CallArt />}>
           <p>
             This page runs Freehop's own browser client. Two public WebTorrent trackers act as the gates and public STUN servers help
-            each browser find its address. The audio and video go straight between you and the people you invite.
+            each browser find its address. The audio and video travel between machines in the call. The live steps below explain how they connect.
           </p>
         </PageHeader>
         <div className={styles.container}>
@@ -31,7 +31,7 @@ export default function Demo() {
               <ul>
                 <li>The room code sits in the link after the # sign. Browsers never send that part to a web server.</li>
                 <li>The code is the room secret: anyone with the link can join, so share it only with people you want in the call.</li>
-                <li>Keep rooms to 8 people for this demo. It has no room-size admission control; larger rooms can leave some people disconnected. Each pair shows the path it took: direct, gateway, relay, bridged or unreachable.</li>
+                <li>Use small rooms (2 to 8 people) for this demo. Eight is the initial target, not a benchmarked capacity limit. It has no room-size admission control; larger rooms can leave some people disconnected. Each pair shows the path it took: direct, gateway, relay, bridged or unreachable.</li>
                 <li>Without desktop gateways or a host node in this room, two browsers behind strict NATs or UDP-blocking networks may stay unreachable. That is the honest boundary of a browser-only call.</li>
               </ul>
             </section>

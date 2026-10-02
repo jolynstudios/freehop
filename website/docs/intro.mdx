@@ -11,7 +11,7 @@ import PathBadge from '@site/src/components/PathBadge';
 
 <IntroScene caption="Homes are the people in the call, the globe is the internet, and the mailbox is a gate. Media hops from home to home." />
 
-Freehop connects 2 to 8 people with audio, video and data in browsers and desktop apps. Your servers never carry or pay for the media: they only run **gates**, blind mailboxes that pass sealed signalling envelopes between the people in a call.
+Freehop adds peer-to-peer audio, video and data to browser and desktop apps. Its initial target is small rooms of 2 to 8 people; that is a starting target, not a measured hardware limit. Your servers never carry or pay for the media: they only run **gates**, blind mailboxes that pass sealed signalling envelopes between the people in a call.
 
 :::caution[Alpha, lab-qualified]
 
@@ -72,7 +72,7 @@ The lab profile column names the Linux kernel NAT profile that emulates each net
   <Stat value="800/800" label="TURN messages, UDP and TCP" note="coturn's turnutils_uclient against Freehop's TURN server, 0 lost" />
 </StatGrid>
 
-The browser client has zero runtime dependencies. The gate uses `ws`. The gateway uses only Node.js built-ins. Freehop's first production consumer and test environment is [Redline Wars](./redline-wars.mdx), a browser and desktop real-time strategy game, which is integrating it through the public SDK.
+The browser client has zero runtime dependencies. The gate uses `ws`. The gateway uses only Node.js built-ins. Freehop is an independent SDK. [Redline Wars](./redline-wars.mdx), a browser and desktop real-time strategy game, is one planned consumer of its public API.
 
 ## Where to go next
 

@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import Link from '@docusaurus/Link';
 import PathBadge, {type PathKind} from '../PathBadge';
+import ConnectionStory, {pathReason, type ConnectionEvent} from './ConnectionStory';
 import s from './LiveCall.module.css';
 
 // The real Freehop browser client, copied from ../src/client into static/lib at build time.
@@ -16,7 +17,7 @@ type FreehopRoom = Emitter & {
   leave(): Promise<void>;
   stats(): Promise<{
     gates: {url: string; state: string; bytesIn: number; bytesOut: number}[];
-    links: {peer: string; connected: boolean; path: {kind: string; via?: string | null}; media: {inbound: Record<string, {packets: number; bytes: number; frames: number}>}}[];
+    links: {peer: string; connected: boolean; phase: number; path: {kind: PathKind; via?: string | null; protocol?: string}; media: {inbound: Record<string, {packets: number; bytes: number; frames: number}>}}[];
   }>;
 };
 type ClientModule = {join(options: Record<string, unknown>): Promise<FreehopRoom>};
@@ -26,7 +27,7 @@ const STUN = ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'];
 const APP = 'freehop-demo';
 const CODE = /^[A-Za-z0-9_-]{16,64}$/;
 
-type Peer = {id: string; path: PathKind; via: string | null; audio: number; video: number};
+type Peer = {id: string; path: PathKind; via: string | null; audio: number; video: number; connected: boolean; stage?: number; protocol?: string};
 type Phase = 'idle' | 'joining' | 'live' | 'left' | 'error';
 
 function newCode() {
@@ -66,6 +67,9 @@ function cameraProblem(err: Error & {name?: string}) {
 }
 
 const GATE_STATE: Record<string, string> = {joined: 'connected', connecting: 'connecting', reconnecting: 'reconnecting', error: 'unreachable', idle: 'not connected'};
+// Tracker stats expose a plain wss URL; configuration and events may use bt+wss.
+const trackerKey = (url: string) => url.startsWith('bt+') ? url : `bt+${url}`;
+const trackerName = (url: string) => trackerKey(url).replace('bt+wss://', '');
 
 function MediaTile({stream, label, muted, mirrored, children}: {stream: MediaStream | null; label: string; muted?: boolean; mirrored?: boolean; children?: ReactNode}) {
   const video = useRef<HTMLVideoElement>(null);
@@ -152,6 +156,15 @@ export default function LiveCall() {
   const [lonely, setLonely] = useState(false);
   const roomRef = useRef<FreehopRoom | null>(null);
   const mounted = useRef(true);
+  const [events, setEvents] = useState<ConnectionEvent[]>([]);
+  const startedAt = useRef(0);
+  const lastEvents = useRef(new Map<string, string>());
+  const record = useCallback((key: string, text: string) => {
+    if (lastEvents.current.get(key) === text) return;
+    lastEvents.current.set(key, text);
+    if (lastEvents.current.size > 64) lastEvents.current.delete(lastEvents.current.keys().next().value!);
+    setEvents(previous => [...previous, {key, text, seconds: Math.max(0, Math.round((Date.now() - startedAt.current) / 1000))}].slice(-12));
+  }, []);
 
   // Room code lives in the URL fragment, which never reaches any server.
   useEffect(() => {
@@ -177,6 +190,11 @@ export default function LiveCall() {
       setError(null);
       setNotice(null);
       setPhase('joining');
+      startedAt.current = Date.now();
+      lastEvents.current.clear();
+      setEvents([]);
+      setTraffic({signal: 0, media: 0});
+      record('join', 'Join requested. Starting the microphone, then contacting both configured WebTorrent trackers.');
       setGates(Object.fromEntries(TRACKERS.map(t => [t, 'connecting'])));
       try {
         const mod: ClientModule = await import(/* webpackIgnore: true */ url);
@@ -189,9 +207,16 @@ export default function LiveCall() {
         setRoom(r);
         setMic(true);
         setCam(false);
-        r.on('gate', ({url: gate, state}) => setGates(g => ({...g, [gate]: state})));
-        r.on('peer', ({id}) => setPeers(p => ({...p, [id]: p[id] ?? {id, path: 'connecting', via: null, audio: 0, video: 0}})));
+        r.on('gate', ({url: gate, state}) => {
+          setGates(g => ({...g, [trackerKey(gate)]: state}));
+          record(`gate:${trackerKey(gate)}`, `${trackerName(gate)}: ${GATE_STATE[state] ?? state}.`);
+        });
+        r.on('peer', ({id}) => {
+          setPeers(p => ({...p, [id]: p[id] ?? {id, path: 'connecting', via: null, audio: 0, video: 0, connected: false}}));
+          record(`peer:${id}`, `Discovered person ${id.slice(0, 6)} with this room’s secret.`);
+        });
         r.on('peer-left', ({id}) => {
+          record(`peer:${id}`, `Person ${id.slice(0, 6)} left.`);
           setPeers(p => {
             const next = {...p};
             delete next[id];
@@ -203,9 +228,10 @@ export default function LiveCall() {
             return next;
           });
         });
-        r.on('path', ({peer, kind, via}) =>
-          setPeers(p => ({...p, [peer]: {...(p[peer] ?? {id: peer, audio: 0, video: 0}), path: kind as PathKind, via: via ?? null}})),
-        );
+        r.on('path', ({peer, kind, via, phase: stage}) => {
+          setPeers(p => ({...p, [peer]: {...(p[peer] ?? {id: peer, audio: 0, video: 0, connected: false}), path: kind as PathKind, via: via ?? null, stage}}));
+          record(`path:${peer}`, `Person ${peer.slice(0, 6)}: ${pathReason(kind, stage, via)}`);
+        });
         r.on('track', ({peer, track}) => {
           setStreams(st => {
             const stream = new MediaStream([...(st[peer]?.getTracks() ?? []).filter(t => t.kind !== track.kind || t.readyState === 'live'), track]);
@@ -242,7 +268,7 @@ export default function LiveCall() {
         );
       }
     },
-    [code, url],
+    [code, url, record],
   );
 
   // Live counters: tracker (signalling) bytes versus media bytes received, plus per-peer packets.
@@ -263,9 +289,12 @@ export default function LiveCall() {
           counts[link.peer] = {audio: inbound.audio?.packets ?? 0, video: inbound.video?.frames ?? 0};
         }
         setTraffic({signal, media});
+        setGates(Object.fromEntries(st.gates.map(g => [trackerKey(g.url), g.state])));
+        for (const gate of st.gates) record(`gate:${trackerKey(gate.url)}`, `${trackerName(gate.url)}: ${GATE_STATE[gate.state] ?? gate.state}.`);
+        for (const link of st.links) record(`path:${link.peer}`, `Person ${link.peer.slice(0, 6)}: ${pathReason(link.path.kind, link.phase, link.path.via)}`);
         setPeers(p => {
           const next = {...p};
-          for (const [id, c] of Object.entries(counts)) if (next[id]) next[id] = {...next[id], ...c};
+          for (const link of st.links) next[link.peer] = {...next[link.peer], id: link.peer, ...counts[link.peer], path: link.path.kind, via: link.path.via ?? null, connected: link.connected || link.path.kind === 'bridged', stage: link.phase, protocol: link.path.protocol};
           return next;
         });
         setLonely(st.links.length === 0 && Date.now() - started > 30000);
@@ -279,7 +308,7 @@ export default function LiveCall() {
       live = false;
       window.clearInterval(timer);
     };
-  }, [room]);
+  }, [room, record]);
 
   // A debugging handle for automated checks of the demo itself.
   useEffect(() => {
@@ -348,6 +377,9 @@ export default function LiveCall() {
   const peerList = Object.values(peers);
   const trackerStates = TRACKERS.map(t => ({url: t, short: t.replace('bt+wss://', ''), state: gates[t] ?? 'idle'}));
   const anyTracker = trackerStates.some(t => t.state === 'joined');
+  const connectionStory = <ConnectionStory active={phase === 'joining' || phase === 'live'}
+    joined={trackerStates.filter(t => t.state === 'joined').length} total={TRACKERS.length}
+    peers={peerList} media={traffic.media} events={events} />;
 
   return (
     <div className={s.call}>
@@ -377,8 +409,9 @@ export default function LiveCall() {
         </ul>
         <p className={s.trackersNote}>
           These are this demo&apos;s gates: two free public WebTorrent trackers, used as mailboxes so the demo needs no server of
-          ours. They pass each browser&apos;s sealed hello to the other side and cannot read it. Audio and video never go through
-          them. <Link to="/docs/concepts/gates">How gates work</Link>
+          ours. We chose them for this server-free demo; your app can use its own gates too. Both run together, rather than
+          switching from one to the other. They pass encrypted introductions, never audio or video.{' '}
+          <Link to="/docs/concepts/gates">How gates work</Link>
         </p>
       </section>
 
@@ -412,6 +445,8 @@ export default function LiveCall() {
         </p>
       )}
 
+      {phase !== 'live' && phase !== 'joining' && connectionStory}
+
       {(phase === 'joining' || phase === 'live') && (
         <>
           <div className={s.controls}>
@@ -438,9 +473,11 @@ export default function LiveCall() {
             </div>
             <div className={s.meter}>
               <span className={s.meterLabel}>People connected</span>
-              <span className={s.meterValue}>{peerList.length}</span>
+              <span className={s.meterValue}>{peerList.filter(p => p.connected).length}</span>
             </div>
           </div>
+
+          {connectionStory}
 
           <div className={s.grid}>
             {peerList.map(peer => (
