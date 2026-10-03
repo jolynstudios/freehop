@@ -18,10 +18,11 @@ const random20 = () => [...globalThis.crypto.getRandomValues(new Uint8Array(20))
 const hex = bytes => [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
 
 export class TrackerClient extends Emitter {
-  constructor(url, { room, peer, hello, WebSocketImpl = globalThis.WebSocket, announceMs = 30000, offers = 6,
+  constructor(url, { room, peer, hello, needsIntroduction = () => false, bootstrapMs = [8000, 24000],
+    WebSocketImpl = globalThis.WebSocket, announceMs = 30000, offers = 6,
     backoffMs = [1000, 2000, 5000, 10000, 30000, 60000] } = {}) {
     super();
-    Object.assign(this, { url, room, peer, hello, WebSocketImpl, announceMs, offers, backoffMs });
+    Object.assign(this, { url, room, peer, hello, needsIntroduction, bootstrapMs, WebSocketImpl, announceMs, offers, backoffMs });
     this.infoHash = hex(fromBase64Url(room)).slice(0, 20);
     this.trackerPeerId = random20();
     this.trackerIds = new Map();   // peerlane id -> tracker peer_id (binary string)
@@ -41,6 +42,11 @@ export class TrackerClient extends Emitter {
       this.announce();
       clearInterval(this.timer);
       this.timer = setInterval(() => this.announce(), this.announceMs);
+      // Trackers commonly request a 120 s interval. A missed first offer would leave a
+      // new meeting empty that long, so make two bounded introduction retries.
+      this.bootstrapTimers = this.bootstrapMs.map(ms => setTimeout(() => {
+        if (this.state === 'joined' && this.needsIntroduction()) this.announce();
+      }, ms));
     };
     ws.onmessage = event => {
       if (ws !== this.ws || typeof event.data !== 'string' || event.data.length > 200000) return;
@@ -51,6 +57,8 @@ export class TrackerClient extends Emitter {
     ws.onclose = () => {
       if (ws !== this.ws) return;
       this.ws = null; clearInterval(this.timer);
+      for (const timer of this.bootstrapTimers ?? []) clearTimeout(timer);
+      this.bootstrapTimers = [];
       const was = this.state; this.state = 'idle';
       if (was === 'joined') this.emit('left', { gate: this });
       this.#retry();
@@ -107,6 +115,8 @@ export class TrackerClient extends Emitter {
   }
   close() {
     this.closed = true; clearInterval(this.timer); clearTimeout(this.retryTimer);
+    for (const timer of this.bootstrapTimers ?? []) clearTimeout(timer);
+    this.bootstrapTimers = [];
     const ws = this.ws; this.ws = null; this.state = 'closed';
     if (ws) { try { if (ws.readyState === 1) ws.send(JSON.stringify({ action: 'announce', info_hash: this.infoHash, peer_id: this.trackerPeerId, event: 'stopped', numwant: 0, uploaded: 0, downloaded: 0, left: 1 })); ws.close(1000); } catch {} }
   }

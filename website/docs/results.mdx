@@ -11,7 +11,7 @@ Freehop was qualified on 2 October 2026 in an isolated network lab: real browser
 
 <StatGrid>
   <Stat value="40/40" label="lab runs passed, 0 failed" note="11 scenarios × 3 Chromium trials, plus 7 cross-engine runs" />
-  <Stat value="146/146" label="unit tests" note="STUN, TURN, port mapper, gate and gateway" />
+  <Stat value="151/151" label="unit tests" note="STUN, TURN, port mapper, gate and gateway" />
   <Stat value="800/800" label="TURN messages over UDP" note="coturn's turnutils_uclient, 0 lost" />
   <Stat value="800/800" label="TURN messages over TCP" note="coturn's turnutils_uclient, 0 lost" />
 </StatGrid>
@@ -103,7 +103,7 @@ The original qualification included every suite below. After the security fixes,
 
 ### Security review
 
-The earlier qualification recorded 11 findings. The subsequent source audit and security regressions cover key epochs, alias revocation, tickets, authority races, forwarding authorization, gate input limits, UDP response budgets and Electron IPC. See the [security model](./concepts/security.mdx) and the repository's `SECURITY-AUDIT.md` for the current findings and trust limits.
+The earlier qualification recorded 11 findings. The subsequent source review and security regressions cover key epochs, alias revocation, tickets, authority races, forwarding authorization, gate input limits, UDP response budgets and Electron IPC. See the [security model](./concepts/security.mdx) for the current trust limits.
 
 ## Not yet verified
 

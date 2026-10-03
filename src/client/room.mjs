@@ -135,6 +135,7 @@ export class Room extends Emitter {
       // "bt+wss://tracker/..." uses a public WebTorrent tracker as a gate (magnet-style).
       const gate = url.startsWith('bt+')
         ? new TrackerClient(url.slice(3), { room: this.tag, peer: this.id, WebSocketImpl: this.WebSocket,
+            needsIntroduction: () => this.known.size === 0,
             hello: () => seal(epoch, this.id, '*', { kind: 'hello', n: ++this.sendCounter }) })
         // Auth is read at every (re)connect, so refreshed tokens (session.refresh) apply without a rotation.
         : new GateClient(url, { room: this.tag, peer: this.id, auth: gateUrl => { const a = this.options.auth; return a && typeof a === 'object' ? a[gateUrl] : a; }, WebSocketImpl: this.WebSocket });

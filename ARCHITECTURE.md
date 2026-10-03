@@ -124,7 +124,7 @@ sequenceDiagram
   D->>P: caps (sealed): turn:203.0.113.7:3478, user "<exp>:<room>:<peer>", HMAC credential
   P->>R: TURN Allocate (UDP, or TCP when UDP is blocked)
   R->>D: forwarded to the gateway (mapped port)
-  Note over D,P: media DTLS-SRTP end to end;<br/>the gateway relays ciphertext
+  Note over D,P: Media stays encrypted end to end while the gateway relays ciphertext
 ```
 
 - **Reachability.** The gateway uses a public address directly, or a router mapping. A mapping

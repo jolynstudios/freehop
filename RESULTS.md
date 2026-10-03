@@ -50,10 +50,10 @@ behind its own kernel-NAT router profile, with fake camera and microphone. Every
 party is needed. Gate traffic is the gate's total for the whole run, including retries of pairs
 that stay unreachable. It is signalling only.
 
-The 40-run matrix above was re-run on 2 October 2026 on the current revision, after the security fixes in [SECURITY-AUDIT.md](SECURITY-AUDIT.md): gateways and host nodes now relay only between allocations on themselves, and every gateway and host-node scenario still passed. The same run repeated the coturn conformance check (UDP 800/800 and TCP 800/800, 0 lost).
+The 40-run matrix above was re-run on 2 October 2026 on the current revision, after security hardening: gateways and host nodes now relay only between allocations on themselves, and every gateway and host-node scenario still passed. The same run repeated the coturn conformance check (UDP 800/800 and TCP 800/800, 0 lost).
 
 ## Other evidence
-- **Unit tests: 146/146.**
+- **Unit tests: 151/151.**
   - STUN codec with RFC 5769 vectors and fuzzing;
   - TURN server;
   - port mapper, 30 cases with fake PCP/NAT-PMP/UPnP routers;
@@ -76,7 +76,7 @@ The 40-run matrix above was re-run on 2 October 2026 on the current revision, af
   - **a public WebTorrent tracker as the only gate** (`wss://tracker.openwebtorrent.com`: no
     server of our own);
   - the SDK example app driven through its own UI and API, including a kick rotation.
-- **Earlier review:** the prior qualification recorded 11 security/correctness findings. The current source audit and regression evidence are documented in [SECURITY-AUDIT.md](SECURITY-AUDIT.md).
+- **Earlier review:** the prior qualification recorded 11 security/correctness findings. The current trust boundaries are described in [PROTOCOL.md](PROTOCOL.md), with regressions in `test/security.test.mjs` and the review test suites.
 
 ## Not yet verified (next phases)
 1. **Physical networks:**
