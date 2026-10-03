@@ -50,7 +50,8 @@ These checks use fake capture devices and public trackers with normal Chromium a
 
 The site is static. Deploy the contents of `build/` to GitHub Pages for the
 `jolynstudios/freehop` repository. The committed [Pages workflow](../.github/workflows/pages.yml) runs
-`npm ci --ignore-scripts`, `npm audit --audit-level=moderate` and `npm run build` in `website/`.
+`npm ci --ignore-scripts`, the [audit gate](scripts/audit-gate.mjs) and `npm run build` in `website/`.
+The audit gate allows only two currently unpatched advisories in build-only dependencies; any new finding fails the build.
 The build has read-only permissions; only the separate deployment job gets Pages/OIDC write
 permissions. Actions are pinned to commit SHAs. The site expects to be served at
 `/freehop/` (`baseUrl` in `docusaurus.config.ts`). `static/.nojekyll` keeps GitHub Pages from
