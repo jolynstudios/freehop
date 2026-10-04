@@ -7,6 +7,7 @@ type Emitter = {on(type: string, fn: (detail: any) => void): () => void};
 type Quality = {peer: string; direction: 'send' | 'receive'; level: string; reason: string};
 type Room = Emitter & {
   id: string;
+  localStream?: MediaStream;
   send(data: unknown, options?: {to?: string}): Promise<number>;
   setMicrophone(on: boolean): Promise<void>;
   setCamera(on: boolean): Promise<void>;
@@ -15,7 +16,7 @@ type Room = Emitter & {
 };
 type ClientModule = {join(options: Record<string, unknown>): Promise<Room>};
 type RemotePlayer = Position & {id: string};
-type MediaPeer = {id: string; stream: MediaStream};
+type MediaPeer = {id: string; stream: MediaStream; local?: boolean};
 
 const TRACKERS = ['bt+wss://tracker.openwebtorrent.com', 'bt+wss://tracker.webtorrent.dev'];
 const STUN = ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'];
@@ -53,7 +54,7 @@ function MediaTile({peer}: {peer: MediaPeer}) {
   const [, refresh] = useState(0);
   useEffect(() => {
     if (video.current) { video.current.srcObject = peer.stream; void video.current.play().catch(() => {}); }
-    if (audio.current) {
+    if (audio.current && !peer.local) {
       audio.current.srcObject = peer.stream;
       void audio.current.play().then(() => setSoundBlocked(false)).catch(() => setSoundBlocked(true));
     }
@@ -65,14 +66,15 @@ function MediaTile({peer}: {peer: MediaPeer}) {
       if (audio.current) audio.current.srcObject = null;
       for (const track of tracks) { track.removeEventListener('mute', bump); track.removeEventListener('unmute', bump); track.removeEventListener('ended', bump); }
     };
-  }, [peer.stream]);
+  }, [peer.local, peer.stream]);
   const hasVideo = peer.stream.getVideoTracks().some(track => track.readyState === 'live' && !track.muted);
   const enableSound = () => { if (audio.current) void audio.current.play().then(() => setSoundBlocked(false)).catch(() => setSoundBlocked(true)); };
   return <div className={styles.mediaTile}>
     <video ref={video} autoPlay playsInline muted className={hasVideo ? '' : styles.hidden} />
-    {!hasVideo && <span className={styles.avatar}>{peer.id.slice(0, 1).toUpperCase()}</span>}
-    <span className={styles.peerLabel}>{peer.id.slice(0, 6)}</span>
-    <audio ref={audio} autoPlay />
+    {!hasVideo && <span className={styles.avatar}>{peer.local ? 'You' : peer.id.slice(0, 1).toUpperCase()}</span>}
+    <span className={styles.peerLabel}>{peer.local ? 'You' : peer.id.slice(0, 6)}</span>
+    <span className={styles.cameraStatus}>{hasVideo ? 'Video on' : 'Camera off'}</span>
+    {!peer.local && <audio ref={audio} autoPlay />}
     {soundBlocked && <button type="button" className={styles.enableSound} onClick={enableSound}>Enable sound</button>}
   </div>;
 }
@@ -87,6 +89,7 @@ export default function MazeGame() {
   const positionRef = useRef<Position>(STARTS[0]);
   const [players, setPlayers] = useState<Record<string, RemotePlayer>>({});
   const [media, setMedia] = useState<Record<string, MediaPeer>>({});
+  const [localMedia, setLocalMedia] = useState<MediaPeer | null>(null);
   const [quality, setQuality] = useState<Record<string, Quality>>({});
   const [mic, setMic] = useState(false);
   const [camera, setCamera] = useState(false);
@@ -120,9 +123,13 @@ export default function MazeGame() {
         media: {audio: false, video: false}, adaptiveVideo: true});
       if (!mounted.current) { await current.leave(); return; }
       roomRef.current = current; setRoom(current); setPhase('live');
+      setLocalMedia({id: current.id, local: true, stream: new MediaStream(current.localStream?.getTracks() ?? [])});
       const start = STARTS[Array.from(current.id).reduce((sum, char) => sum + char.charCodeAt(0), 0) % STARTS.length];
       broadcastPosition(start);
-      current.on('peer', ({id}) => { void current.send({type: 'maze-position', ...positionRef.current}, {to: id}).catch(() => {}); });
+      current.on('peer', ({id}) => {
+        setMedia(previous => previous[id] ? previous : {...previous, [id]: {id, stream: new MediaStream()}});
+        void current.send({type: 'maze-position', ...positionRef.current}, {to: id}).catch(() => {});
+      });
       current.on('message', ({from, data}) => {
         if (data?.type === 'maze-position' && validPosition(data)) setPlayers(previous => ({...previous, [from]: {id: from, x: data.x, y: data.y}}));
       });
@@ -164,7 +171,12 @@ export default function MazeGame() {
   };
   const toggleCamera = async () => {
     if (!room) return;
-    try { await room.setCamera(!camera); setCamera(!camera); setNotice(''); }
+    try {
+      await room.setCamera(!camera);
+      setCamera(!camera);
+      setLocalMedia({id: room.id, local: true, stream: new MediaStream(room.localStream?.getTracks() ?? [])});
+      setNotice('');
+    }
     catch (error) { setNotice(`Camera could not start: ${(error as Error).message}`); }
   };
   const toggleAdaptive = async () => {
@@ -179,7 +191,7 @@ export default function MazeGame() {
   };
   const leave = async () => {
     const current = roomRef.current; roomRef.current = null; setRoom(null); setPhase('idle'); setMic(false); setCamera(false);
-    setPlayers({}); setMedia({}); setQuality({}); await current?.leave();
+    setPlayers({}); setMedia({}); setLocalMedia(null); setQuality({}); await current?.leave();
   };
 
   const allPlayers = [{id: room?.id ?? 'you', ...position}, ...Object.values(players)];
@@ -221,8 +233,9 @@ export default function MazeGame() {
           {Object.values(quality).length ? Object.values(quality).map(item => <span key={`${item.peer}-${item.direction}`}>{item.peer.slice(0, 6)} · {item.direction} · {item.level.replace('-', ' ')}{item.reason !== 'monitoring' && item.reason !== 'recovery' ? ` · ${item.reason.replace('-', ' ')}` : ''}</span>) : <span>Waiting for a peer</span>}
         </div>
         <div className={styles.people}>
+          {localMedia && <MediaTile key={localMedia.id} peer={localMedia} />}
           {Object.values(media).map(peer => <MediaTile key={peer.id} peer={peer} />)}
-          {!Object.keys(media).length && <p className={styles.waiting}>Share the invite link to bring someone into the call.</p>}
+          {!Object.keys(media).length && <p className={styles.waiting}>Your camera preview is here. Share the invite link to bring someone into the call.</p>}
         </div>
         <div className={styles.callActions}><button type="button" className={styles.copy} onClick={() => void copyInvite()}>Copy invite</button><button type="button" className={styles.leave} onClick={() => void leave()}>Leave call</button></div>
         {!!notice && <p className={styles.notice} role="status">{notice}</p>}

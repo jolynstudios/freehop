@@ -196,6 +196,7 @@
 .mediaTile {
   position: relative;
   min-height: 6rem;
+  aspect-ratio: 16 / 10;
   overflow: hidden;
   border-radius: 0.55rem;
   background: #303055;
@@ -205,8 +206,9 @@
 
 .mediaTile video { width: 100%; height: 100%; position: absolute; inset: 0; object-fit: cover; }
 .mediaTile .hidden { display: none; }
-.avatar { color: #ffe600; font: 2rem var(--fh-display); }
+.avatar { color: #ffe600; font: 1.7rem var(--fh-display); }
 .peerLabel { position: absolute; bottom: 0.3rem; left: 0.35rem; padding: 0.1rem 0.25rem; border-radius: 0.2rem; background: rgb(48 48 85 / 80%); color: white; font: 0.62rem var(--fh-mono); }
+.cameraStatus { position: absolute; top: 0.3rem; right: 0.35rem; padding: 0.1rem 0.25rem; border-radius: 0.2rem; background: rgb(48 48 85 / 80%); color: white; font: 0.58rem var(--fh-mono); }
 .mediaTile audio { display: none; }
 .enableSound { position: absolute; z-index: 2; top: 0.35rem; right: 0.35rem; border: 1px solid white; border-radius: 0.3rem; padding: 0.25rem 0.4rem; background: #ffe600; color: #303055; font-size: 0.67rem; cursor: pointer; }
 .waiting { grid-column: span 2; margin: 0; padding: 0.8rem; border: 1px dashed #c9c9da; border-radius: 0.5rem; color: #62627a; font-size: 0.82rem; line-height: 1.45; }
