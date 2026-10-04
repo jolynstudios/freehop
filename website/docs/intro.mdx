@@ -13,9 +13,9 @@ import PathBadge from '@site/src/components/PathBadge';
 
 Freehop is a JavaScript SDK for adding peer-to-peer audio, video and data to browser and desktop apps—including games that want a voice overlay without becoming a meeting app. Keep your own UI, room flow and account system; Freehop supplies the connection and media controls. Its initial target is small rooms of 2 to 8 people; that is a starting target, not a measured hardware limit. **Gates never carry media.** If you run a session host or gateway on infrastructure you pay for, its media bandwidth and compute can still appear on your bill.
 
-:::caution[Alpha, lab-qualified]
+:::caution[Alpha, home-lab network tests only]
 
-Freehop is alpha software. The current revision, including its security fixes, passed 40 of 40 runs across three browser engines in an isolated network lab and 156 unit tests. It has not yet been verified on physical home routers, 4G/5G carrier networks, corporate networks or mobile browsers. See [Limits](./limits.mdx) before you depend on it.
+Freehop is alpha software. Its developer-built test setup, run in a home lab, passed 40 of 40 simulated-network runs across three browser engines and 156 unit tests. This was not an independent lab evaluation or a test on real internet connections. Freehop has not yet been verified on physical home routers, 4G/5G carrier networks, corporate networks or mobile browsers. See [Limits](./limits.mdx) before you depend on it.
 
 :::
 
@@ -51,7 +51,7 @@ A gate carries tens of kilobytes per call setup and almost nothing afterwards, b
 
 The documentation follows the same people through every page, so you can compare their paths:
 
-| Person | Network | Lab profile |
+| Person | Network | Simulated test profile |
 |---|---|---|
 | **Ana** | Home Wi-Fi behind an ordinary home router | `eim` |
 | **Ben** | A phone hotspot behind a carrier NAT that picks a new random port for every destination (a symmetric NAT) | `random` |
@@ -62,12 +62,12 @@ The documentation follows the same people through every page, so you can compare
 | **Ivy** | A network with IPv6, where IPv4 UDP is blocked | `v6` |
 | **Gus** | A guest network that only lets traffic through to the gate's host | `gateonly` |
 
-The lab profile column names the Linux kernel NAT profile that emulates each network in Freehop's [qualification lab](./results.mdx). Physical carrier networks, offices and guest networks are not yet part of that evidence.
+The test-profile column names the Linux kernel NAT profile used to simulate each network in Freehop's [home-lab network tests](./results.mdx). Physical carrier networks, offices and guest networks are not part of that evidence.
 
 ## Status
 
 <StatGrid>
-  <Stat value="40/40" label="historical lab runs passed" note="11 network scenarios × 3 trials, plus 7 cross-engine runs" />
+  <Stat value="40/40" label="home-lab network tests passed" note="11 simulated scenarios × 3 trials, plus 7 cross-engine runs" />
   <Stat value="156/156" label="unit tests" note="STUN, TURN, port mapper, gate, gateway" />
   <Stat value="800/800" label="TURN messages, UDP and TCP" note="coturn's turnutils_uclient against Freehop's TURN server, 0 lost" />
 </StatGrid>

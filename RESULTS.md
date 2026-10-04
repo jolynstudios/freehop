@@ -1,6 +1,6 @@
 # Freehop results, 2 October 2026
 
-**Outcome:** browser and desktop audio/video now connects peer-to-peer in every lab network
+**Outcome:** browser and desktop audio/video now connects peer-to-peer in every simulated network
 where *any* route exists inside the session. That includes the cases the earlier direct-only
 research proved impossible directly: two fully random symmetric NATs, and UDP-blocking
 networks. The operator runs only gates, which carry sealed signalling of tens of KB per call and
@@ -8,7 +8,11 @@ never media. When no direct route exists, media goes through machines that belon
 session: a desktop participant's own gateway, the session's host node, or another participant. A hard-NAT pair without a helper remains unreachable. A network that reaches only the gate remains unreachable even with session helpers. There, media is impossible without
 the operator carrying it, and Freehop reports `unreachable`.
 
-## Original lab qualification (before subsequent security fixes)
+## Original home-lab network test run (before subsequent security fixes)
+
+These tests were designed and run by Freehop's developer in a home lab. They use an isolated,
+disposable Linux environment with simulated NATs; this was not an independent testing lab and
+did not test real ISP, carrier, corporate or physical home-router networks.
 
 Real Chromium 151, Firefox 153 and WebKit 26.5 ran in separate Linux network namespaces, each
 behind its own kernel-NAT router profile, with fake camera and microphone. Every run asserts:
@@ -37,7 +41,7 @@ behind its own kernel-NAT router profile, with fake camera and microphone. Every
 | udpblock-pair-host-node (chromium) | 3/3 | a-b:relay@h | 65 KB |
 | gate-only (chromium) | 3/3 | a-b, a-c:unreachable (boundary), b-c:direct | 207 KB |
 
-**Total: 40/40 runs passed, 0 failed.** Profiles:
+**Total: 40/40 home-lab network test runs passed, 0 failed.** Profiles:
 - `eim`: home router;
 - `random`: symmetric, random ports;
 - `udpblock`: all UDP blocked;
@@ -50,24 +54,24 @@ behind its own kernel-NAT router profile, with fake camera and microphone. Every
 party is needed. Gate traffic is the gate's total for the whole run, including retries of pairs
 that stay unreachable. It is signalling only.
 
-The 40-run matrix above was re-run on 2 October 2026 on the current revision, after security hardening: gateways and host nodes now relay only between allocations on themselves, and every gateway and host-node scenario still passed. The same run repeated the coturn conformance check (UDP 800/800 and TCP 800/800, 0 lost).
+The 40-run matrix above was re-run in the same home-lab test environment on 2 October 2026 on the current revision, after security hardening: gateways and host nodes now relay only between allocations on themselves, and every gateway and host-node scenario still passed. The same run repeated the coturn conformance check (UDP 800/800 and TCP 800/800, 0 lost).
 
 ## Other evidence
-- **Unit tests: 151/151.**
+- **Unit tests: 156/156.**
   - STUN codec with RFC 5769 vectors and fuzzing;
   - TURN server;
   - port mapper, 30 cases with fake PCP/NAT-PMP/UPnP routers;
   - gate: routing, isolation, floods, tokens, capacity, STUN, keepalive, trust-proxy;
   - gateway: room-scoped and revocable credentials, loopback refused, old-epoch alias allocations revoked;
   - Protocol security regressions (tickets, authority races, key epochs, forwarding, hostile gates and Electron IPC).
-- **Independent TURN conformance (original qualification):** coturn's `turnutils_uclient` against Freehop's TURN
+- **TURN conformance test with coturn (run as part of the original home-lab test):** coturn's `turnutils_uclient` against Freehop's TURN
   server got UDP 800/800 and TCP 800/800 messages with 0 lost.
   - It runs in Send/Data mode because coturn's client uses obsolete RFC 5766 channel numbers.
   - ChannelData is covered by the browser tests.
-- **TURN browser interop (macOS, original qualification):** 20 pass, 0 fail, 6 blocked. All six blocked cases are
+- **TURN browser interop (macOS, original test run):** 20 pass, 0 fail, 6 blocked. All six blocked cases are
   WebKit over TCP, caused by a TURN-URL bug in Playwright's WebKit build (bug 320931). The
   client degrades to UDP TURN for that engine.
-- **Local browser suites (macOS):** the original qualification included all suites below. After security fixes, the three-engine TLS mesh, multi-gate outage, kick/rekey and SDK reference app were rerun; public tracker connectivity was also exercised in live demo checks.
+- **Local browser suites (macOS):** the original test run included all suites below. After security fixes, the three-engine TLS mesh, multi-gate outage, kick/rekey and SDK reference app were rerun; public tracker connectivity was also exercised in live demo checks.
   - 3×Chromium mesh;
   - Chromium + Firefox + WebKit mesh over TLS;
   - multi-gate: peers on disjoint gates introduced through the mesh, then **all gates shut
@@ -76,7 +80,7 @@ The 40-run matrix above was re-run on 2 October 2026 on the current revision, af
   - **a public WebTorrent tracker as the only gate** (`wss://tracker.openwebtorrent.com`: no
     server of our own);
   - the SDK example app driven through its own UI and API, including a kick rotation.
-- **Earlier review:** the prior qualification recorded 11 security/correctness findings. The current trust boundaries are described in [PROTOCOL.md](PROTOCOL.md), with regressions in `test/security.test.mjs` and the review test suites.
+- **Earlier review:** the prior source and test review recorded 11 security/correctness findings. The current trust boundaries are described in [PROTOCOL.md](PROTOCOL.md), with regressions in `test/security.test.mjs` and the review test suites.
 
 ## Not yet verified (next phases)
 1. **Physical networks:**

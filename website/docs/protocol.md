@@ -12,7 +12,7 @@ This specification is normative for the wire formats and behaviour of Freehop ve
 
 Freehop connects small groups with audio, video and data. `maxPeers` defaults to eight other participants; larger supported sizes require benchmarks. Its operator invariant: **no server that the application operator runs ever carries media.** Media goes peer-to-peer. When no direct route exists, it goes through a machine that belongs to the same session: a participant, a participant's own gateway or the session's host node. Volunteers may be added by configuration. The operator's servers ("gates") only introduce peers.
 
-The [SDK reference](./sdk/authority.mdx) covers usage, and the [qualification results](./results.mdx) cover measured behaviour.
+The [SDK reference](./sdk/authority.mdx) covers usage, and the [network test results](./results.mdx) cover measured behaviour.
 
 **A note on names.** Freehop's codename is Peerlane. Several wire identifiers carry that name: the HKDF salt prefix `peerlane/v1/`, the envelope AAD prefix `peerlane/v1|`, the data channel label `peerlane`, the TURN realm `peerlane` and the tracker payload prefix `pl1:`. They are part of the protocol and are given here exactly as implementations must use them.
 
@@ -25,7 +25,7 @@ The [SDK reference](./sdk/authority.mdx) covers usage, and the [qualification re
 | **Gateway** | A peer's own machine (desktop app main process) or the session's host node; a TURN server plus router port mapping | Relayed packets of the session's peers, DTLS-SRTP encrypted end to end | Anything for peers outside its session (credentials are per room and per peer) |
 | **Gateway member** | The session's host node (a participant's desktop app, or a community server hosting the session) | Joins the room through gates without media and offers its gateway | Media of its own |
 
-Cost rule: a byte of media only crosses machines that belong to the call. These are the two endpoints, another participant, or the session's own host. The operator's gate traffic is bounded by construction (§4.6) and measured in every lab run.
+Cost rule: a byte of media only crosses machines that belong to the call. These are the two endpoints, another participant, or the session's own host. The operator's gate traffic is bounded by construction (§4.6) and measured in every home-lab network test run.
 
 ## 2. Identifiers and keys
 
@@ -73,7 +73,7 @@ A gate is either open or token-gated. A token is `base64url(JSON claims) "." bas
 
 ### 4.3 Multiple gates and tracker gates
 
-Clients connect to every gate in their list and announce on each. Peers that share no gate still meet through the mesh (§6, introduction). Established calls do not depend on any gate; lab evidence shows all gates shut down while media continues.
+Clients connect to every gate in their list and announce on each. Peers that share no gate still meet through the mesh (§6, introduction). Established calls do not depend on any gate; home-lab browser tests show all gates shut down while media continues.
 
 A gate URL `bt+wss://…` names a public WebTorrent tracker used as a gate.
 
@@ -130,7 +130,7 @@ Negotiation follows W3C *perfect negotiation*. The peer with the lexicographical
 | 2 BRIDGED | unchanged | media forwarded by a connected participant (§9) | the direct or session route later succeeds |
 | unreachable | unchanged | none (no bridge candidate) | ICE restart retries with exponential backoff (30 s … 300 s) |
 
-- Escalation adds gateways with `setConfiguration`. Only the impolite side restarts ICE. The polite side applies the same servers and takes over after `restartFallbackMs` (2.5 s) if no restart offer arrived. Simultaneous restarts collide, and a rolled-back restart offer was observed to leave Chromium senders silent (lab finding, §12).
+- Escalation adds gateways with `setConfiguration`. Only the impolite side restarts ICE. The polite side applies the same servers and takes over after `restartFallbackMs` (2.5 s) if no restart offer arrived. Simultaneous restarts collide, and a rolled-back restart offer was observed to leave Chromium senders silent in home-lab browser tests (§12).
 - Descriptions carry `phase` and `gateways` (the ids of extra gateways in use). The receiver adds those servers **before** answering, so both sides gather against the same relays.
 - Candidates for an unknown ICE generation are buffered until the matching description arrives: at most 128, oldest evicted first.
 - Descriptions apply in envelope-counter order. An older one never overtakes a newer one, whatever route each took.
@@ -214,6 +214,6 @@ The [SDK](./sdk/authority.mdx) describes how applications consume the protocol:
 
 - A network that permits traffic only to the gate host cannot carry media without the gate operator carrying it. Freehop reports `unreachable`. A gate operator who *chooses* to also run a gateway (community gates) can serve such users; the application operator's own gates do not.
 - Two browser-only participants that are both behind hard NATs or UDP-blocking networks, with no IPv6, no gateway in the session and no third participant, cannot connect. A session host node reachable by both endpoints can provide a TURN relay path.
-- Chromium, lab finding: simultaneous ICE restarts (glare) intermittently left the polite side's RTP senders silent after its restart offer was rolled back. Freehop avoids simultaneous restarts (§7).
+- Chromium, home-lab browser finding: simultaneous ICE restarts (glare) intermittently left the polite side's RTP senders silent after its restart offer was rolled back. Freehop avoids simultaneous restarts (§7).
 - Playwright 1.62's WebKit build rejects `?transport=` in TURN URLs (WebKit bug 320931). The client detects this and degrades to UDP-only TURN URLs for that engine.
 - Desktop apps can alternatively pin WebRTC's UDP port range (`webContents.setWebRTCUDPPortRange`, Electron 28 and newer) and map it directly. Freehop's gateway approach needs no Chromium cooperation.

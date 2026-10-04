@@ -10,7 +10,7 @@ import CostCalculator from '@site/src/components/demos/CostCalculator';
 import styles from './pages.module.css';
 
 const DEMOS = [
-  {id: 'path-finder', title: 'Path finder', text: 'Pick two networks and who else is in the call. See which rung of the ladder connects them, why, and what the lab measured.', Demo: PathFinder},
+  {id: 'path-finder', title: 'Path finder', text: 'Pick two networks and who else is in the call. See which rung of the ladder connects them, why, and what the home-lab tests measured.', Demo: PathFinder},
   {id: 'escalation', title: 'Escalation timeline', text: "Step through the client's timers: when it tries the next rung, which servers it adds, and what happens when nothing works.", Demo: EscalationTimeline},
   {id: 'gate', title: 'What the gate sees', text: "Seal a message with Freehop's own crypto, look at the exact frame a gate receives, then tamper with it.", Demo: GateSees},
   {id: 'cost', title: 'Relay bill estimate', text: 'Compare a month of classic TURN relaying with the sealed signalling your gates carry. Every assumption is editable.', Demo: CostCalculator},

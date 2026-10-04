@@ -8,19 +8,19 @@ import { UnreachableScene } from '@site/src/components/scenes';
 
 <UnreachableScene caption="A house with a wall around it, where only the mail slot opens. Envelopes get through. Media cannot." />
 
-Freehop is alpha software, qualified in a lab. This page lists what it cannot do by design, the browser quirks it works around, and what has not been verified yet. Read it before you depend on Freehop.
+Freehop is alpha software. Its network tests ran in a developer-built home-lab setup with simulated NATs; they are not independent or real-world network testing. This page lists what it cannot do by design, the browser quirks it works around, and what has not been verified yet. Read it before you depend on Freehop.
 
 ## Limits by design
 
 ### Networks that only reach the gate
 
-Gus is on a guest network that lets traffic through to the gate's host and to nothing else. Envelopes reach the gate, so Gus can be introduced, but there is no machine in the session his media could travel to. Carrying it through the gate would mean the operator carries media, which is exactly what Freehop rules out. Freehop reports such pairs as `unreachable` (lab scenario `gate-only`).
+Gus is on a guest network that lets traffic through to the gate's host and to nothing else. Envelopes reach the gate, so Gus can be introduced, but there is no machine in the session his media could travel to. Carrying it through the gate would mean the operator carries media, which is exactly what Freehop rules out. Freehop reports such pairs as `unreachable` (home-lab test scenario `gate-only`).
 
 A gate operator who *chooses* to also run a gateway, for example a community gate, can serve such users. Your own gates do not.
 
 ### Two hard networks and nobody else
 
-Two browser-only participants who are both behind hard NATs or UDP-blocking networks, with no IPv6, no gateway in the session and no third participant, cannot connect (lab scenario `hard-pair`). Any one of these changes that: a desktop participant with a reachable gateway, a [host node](./concepts/host-nodes.mdx), or a third participant who reaches both and can [forward](./concepts/forwarding.mdx).
+Two browser-only participants who are both behind hard NATs or UDP-blocking networks, with no IPv6, no gateway in the session and no third participant, cannot connect (home-lab test scenario `hard-pair`). Any one of these changes that: a desktop participant with a reachable gateway, a [host node](./concepts/host-nodes.mdx), or a third participant who reaches both and can [forward](./concepts/forwarding.mdx).
 
 When a pair is `unreachable`, Freehop keeps retrying with ICE restarts after 30, 60, 120 and 240 seconds, then every 300 seconds, at almost no cost to the gate. Show your users an honest message, such as "voice unavailable on this network", rather than silence.
 
@@ -56,7 +56,7 @@ Gateway availability is assessed at startup. Automatic recovery after a router m
 
 ## Browser quirks Freehop works around
 
-- **Chromium and simultaneous ICE restarts.** In the lab, simultaneous restarts (glare) intermittently left the polite side's senders silent after its restart offer was rolled back. Freehop lets only one side restart.
+- **Chromium and simultaneous ICE restarts.** In home-lab browser tests, simultaneous restarts (glare) intermittently left the polite side's senders silent after its restart offer was rolled back. Freehop lets only one side restart.
 - **WebKit and TURN URLs.** Playwright 1.62's WebKit build rejects `?transport=` in TURN URLs (WebKit bug 320931). The client detects this and falls back to UDP-only TURN URLs for that engine.
 
 ## Not yet verified
@@ -68,7 +68,7 @@ These are the next phases of verification. Until they are done, treat Freehop's 
 3. **iOS Safari and Android browsers.** Only desktop engines were tested.
 4. **Media quality under real load,** including how much upload a forwarding participant on home broadband can spare.
 
-The [qualification results](./results.mdx) list exactly what *has* been verified.
+The [network test results](./results.mdx) list exactly what *has* been verified.
 
 ## Next
 

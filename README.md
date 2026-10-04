@@ -12,7 +12,7 @@
 
 ![License: Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-303055)
 ![Docs: CC BY 4.0](https://img.shields.io/badge/docs-CC%20BY%204.0-303055)
-![Original lab matrix: 40/40](https://img.shields.io/badge/original%20lab%20matrix-40%2F40-096e72)
+![Home-built network test matrix: 40/40](https://img.shields.io/badge/home%E2%80%91built%20network%20tests-40%2F40-096e72)
 ![Unit tests: 156/156](https://img.shields.io/badge/unit%20tests-156%2F156-096e72)
 ![Status: alpha](https://img.shields.io/badge/status-alpha-ef3b2c)
 
@@ -35,7 +35,7 @@ works, Freehop reports `unreachable` instead of sending media through an operato
 
 | | |
 |---|---|
-| 💸 **No media through your gate** | Gates carry sealed signalling only. In every lab run, gate traffic for an entire scenario stayed between 30 and 210 KB. A session gateway you run can still carry media on your bill. |
+| 💸 **No media through your gate** | Gates carry sealed signalling only. In every home-lab network test, gate traffic for an entire scenario stayed between 30 and 210 KB. A session gateway you run can still carry media on your bill. |
 | 🧱 **Connects the "impossible" pairs** | Two strict (symmetric) NATs, or a network that blocks UDP, can't connect directly. Freehop routes them through a session member's gateway or the session host, still with no operator relay. |
 | 🛰️ **No single point of failure** | Run one gate or many, operated by you, your community, or public WebTorrent trackers. Peers on different gates still find each other. **Calls keep running when every gate is down.** |
 | 🔐 **Private by construction** | Signalling is sealed (HKDF + AES-256-GCM), so gates can't read or forge envelopes. Direct and gateway paths preserve end-to-end DTLS-SRTP; a forwarding participant decodes and re-encodes media. |
@@ -66,9 +66,11 @@ flowchart LR
 
 ## Proof, not promises
 
-The original qualification ran in an isolated Linux lab with real **Chromium 151, Firefox 153 and WebKit 26.5**.
-Each browser sits behind its own kernel NAT router profile, with fake camera and microphone.
-Every run asserts the path taken and that audio *and* video actually arrive.
+These results come from Freehop's own home-built, isolated Linux network test environment—not
+an independent testing laboratory or tests on live ISP, mobile or corporate networks. Real
+**Chromium 151, Firefox 153 and WebKit 26.5** ran behind Linux kernel NAT profiles, with fake
+cameras and microphones. Every run asserts the path taken and that audio *and* video actually
+arrive.
 
 | Network situation | Result | Route Freehop chose |
 |---|---|---|
@@ -84,7 +86,9 @@ Every run asserts the path taken and that audio *and* video actually arrive.
 | Two strict NATs and nobody else | ✅ 3/3 | `unreachable` (correctly reported) |
 | A network that can only reach the gate | ✅ 3/3 | `unreachable` (no route exists without your server) |
 
-**40/40 lab runs passed** on the current revision, re-run on 2 October 2026 after security hardening, including gateways that relay only inside their session. Other checks:
+**40/40 home-lab network test runs passed** on the current revision, re-run on 2 October 2026
+after security hardening, including gateways that relay only inside their session. These are
+repeatable simulated-network results, not field reliability evidence. Other checks:
 - **156/156 unit tests**, including the RFC 5769 STUN vectors and the security regressions.
 - **coturn's own test client** against Freehop's TURN server: 800/800 messages over UDP and 800/800 over TCP, 0 lost.
 - **Browser suites:** multi-gate with every gate shut down mid-call, kick/rekey, a public WebTorrent tracker as the only gate, and the SDK example app.
@@ -179,7 +183,7 @@ adds signalling and encryption, with sources.
 - **Hard NATs need someone with a reachable route.** Two browser-only users, both behind
   strict NATs or UDP-blocking networks, with no IPv6 and nobody else in the session, cannot
   connect.
-- **Lab-qualified, not field-proven yet.** Real ISPs, 4G/5G carrier NAT, corporate networks
+- **Home-lab tested, not field-proven.** Real ISPs, 4G/5G carrier NAT, corporate networks
   and mobile browsers are being tested next. Status: **alpha**.
 - **Forwarded media is re-encoded.** When a participant forwards the call, it re-encodes the
   media. That participant is in the call anyway.
@@ -194,12 +198,12 @@ adds signalling and encryption, with sources.
 | `src/relay/` | TURN gateway, PCP / NAT-PMP / UPnP port mapper, host-node member |
 | `src/electron/` | Desktop helper (main + preload) |
 | `examples/minimal/` | A complete reference app |
-| `lab/` | Disposable Linux NAT lab that reproduces every result |
+| `lab/` | Reproducible Linux NAT test harness, run in a home lab |
 | `website/` | The documentation site (Docusaurus) |
 
 ## Get involved
 
-- ⭐ **Star the repo** to follow progress toward the field-tested 1.0.
+- ⭐ **Star the repo** to follow progress toward real-network testing and a 1.0 release.
 - 🎮 **Try the [live demo](https://jolynstudios.github.io/freehop/demo)**: a real call between two
   browser tabs, introduced through public trackers with no server of ours.
 - 🛠️ **Building a game or app on Freehop?** [Open an issue](https://github.com/jolynstudios/freehop/issues)

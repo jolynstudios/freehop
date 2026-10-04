@@ -4,7 +4,7 @@ import Section, {Chevron, Eyebrow, Title} from './Section';
 import styles from './Proof.module.css';
 
 const STATS = [
-  {value: '40/40', label: 'historical lab runs passed', note: '11 network scenarios × 3 trials, plus 7 cross-engine runs'},
+  {value: '40/40', label: 'home-lab network tests passed', note: '11 simulated scenarios × 3 trials, plus 7 cross-engine runs'},
   {value: '156/156', label: 'unit tests', note: 'STUN codec, TURN server, port mapper, gate and gateway'},
   {value: '800/800', label: 'TURN messages, UDP and TCP', note: "coturn's turnutils_uclient against Freehop's TURN: 0 lost"},
   {value: '3', label: 'browser engines', note: 'Chromium 151, Firefox 153 and WebKit 26.5'},
@@ -39,11 +39,12 @@ export default function Proof() {
       <div className={styles.head}>
         <div>
           <Eyebrow>Evidence</Eyebrow>
-          <Title id="proof">Lab-qualified. Not yet street-tested.</Title>
+          <Title id="proof">Home-lab tested. Not field-tested.</Title>
         </div>
         <p className={styles.lede}>
-          Real browsers ran behind real kernel NATs in an isolated Linux lab. Every run checked the path both sides reported, that
-          audio packets and decoded video frames actually arrived, and that the gate only carried signalling.
+          These developer-run tests used real browsers behind simulated Linux kernel NATs in a home-built, isolated
+          environment—not an independent testing lab or real ISP networks. Every run checked the reported path, media
+          delivery and that the gate only carried signalling.
         </p>
       </div>
 

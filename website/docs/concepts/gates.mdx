@@ -46,7 +46,7 @@ Most gate traffic is connection setup. Keepalives, newcomer discovery and recove
 
 - About **15 to 35 KB per pair of peers** at call setup.
 - **Roughly zero afterwards.** Every link carries a pre-negotiated data channel, and once it is open the peers send each other's envelopes over it instead of through the gate.
-- In the [qualification lab](../results.mdx) the gate's total for a whole scenario run was **30 to 210 KB**, including the retries of pairs that never connected.
+- In the [home-lab network tests](../results.mdx) the gate's total for a whole simulated scenario was **30 to 210 KB**, including retries of pairs that never connected.
 
 The gate enforces this by construction. Its byte budgets make media tunnelling impractical: a single five-peer join needs about 100 KB, while media needs megabytes per minute.
 
@@ -67,7 +67,7 @@ The gate enforces this by construction. Its byte budgets make media tunnelling i
 A ticket can list up to eight gates. Clients connect to every one of them and announce the room on each, and gates are interchangeable: any one of them may disappear.
 
 - **Peers on different gates still meet.** Say Ana only reaches `gate-1`, Ben only reaches `gate-2`, and Cleo reaches both. Cleo connects to both of them and reports her links in her sealed capabilities. Ana's envelopes for Ben then travel through Cleo's data channel, forwarded once, until Ana and Ben have their own link.
-- **Calls survive a total gate outage.** An established call does not depend on any gate. In the lab, peers kept exchanging media (about 600 audio packets per peer in 6 seconds) after every gate was shut down.
+- **Calls survive a total gate outage.** An established call does not depend on any gate. In home-lab browser tests, peers kept exchanging media (about 600 audio packets per peer in 6 seconds) after every gate was shut down.
 - **A public WebTorrent tracker works as a gate.** A gate URL of the form `bt+wss://tracker.openwebtorrent.com` makes the client use that tracker as its mailbox. The swarm's `info_hash` is the first 20 ASCII characters of the hex-encoded, decoded room tag (80 bits of tag material), and the envelopes ride in the offer and answer fields that trackers already relay. Like a Freehop gate, a tracker sees connection metadata but cannot decrypt envelopes. The [live call](/demo) on this site uses public trackers as its only gates. [Torrent trackers as gates](./trackers.mdx) explains how it works and when to use it.
 
 ## Admission: open or token-gated

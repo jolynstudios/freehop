@@ -102,12 +102,14 @@ After SDK changes, update the root `SDK.md`, `ARCHITECTURE.md`, `PROTOCOL.md` an
 not a generated copy. Keep quickstart snippets consistent with admission and STUN settings. Label the runtime of every example (browser, backend, gate, Electron main or session host), and distinguish complete runnable examples from application-specific snippets. Privacy claims must acknowledge connection metadata and the shared-key trust between room members.
 When verification changes, update root `README.md` and `RESULTS.md`, `docs/results.mdx`,
 `docs/intro.mdx` and `src/components/home/Proof.tsx`. The current suite has 156 passing tests;
-the historical 40-run NAT matrix must remain distinguished from targeted requalification.
+describe the 40-run NAT matrix as developer-run, home-lab testing with simulated networks, and
+keep it distinct from targeted re-tests or real-network evidence.
 
 ## Writing rules
 
-- Facts only, from `SDK.md`, `PROTOCOL.md`, `RESULTS.md` and the code. Freehop is alpha and
-  lab-qualified; say what is not verified yet.
+- Facts only, from `SDK.md`, `PROTOCOL.md`, `RESULTS.md` and the code. Freehop is alpha. Describe
+  the 40-run matrix as home-built, simulated-network testing run in a home lab—not independent
+  lab qualification or field testing—and say what is not verified yet.
 - Say "Freehop" in prose. "Peerlane" is the codename and appears only where wire identifiers
   carry it (`peerlane/v1/` salt, `peerlane/v1|` AAD prefix, TURN realm, data channel label).
 - Copyright line: "© 2026 Jolyn Studios". Code is Apache-2.0; documentation and the protocol

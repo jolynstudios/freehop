@@ -100,7 +100,7 @@ export default function Hero() {
             <span>Apache-2.0</span>
             <span>Browser + Electron</span>
             <span>Alpha</span>
-            <Link to="/docs/results">Original lab matrix: 40/40 passed</Link>
+            <Link to="/docs/results">Home-lab network tests: 40/40 passed</Link>
           </p>
           <p className={styles.snippet}><code>{'const call = await connect(ticket, { media: { audio: true } });'}</code></p>
         </div>

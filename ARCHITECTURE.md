@@ -194,7 +194,7 @@ sequenceDiagram
 - **Browser suites** (`test/browser/`): real Chromium, Firefox and WebKit through Playwright.
   They cover the mesh, cross-engine runs over TLS, multi-gate with a gate outage, kick/rekey,
   the public tracker, and the SDK example.
-- **NAT lab** (`lab/`): a disposable privileged Linux container with network namespaces. Each
+- **Home-lab NAT test harness** (`lab/`): a disposable privileged Linux container with network namespaces. Each
   peer gets a router and client namespace with a NAT profile; miniupnpd plays the home router.
   Browsers run inside the namespaces with fake capture devices. `lab/qualify.sh` runs every
   scenario three times plus cross-engine runs and coturn conformance. `lab/summarize.mjs`

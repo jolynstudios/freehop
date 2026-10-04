@@ -12,7 +12,7 @@ const FACTS = [
   {
     value: '15–35 KB',
     label: 'per pair of people, once per call',
-    note: 'Sealed signalling through your gate while a call sets up, measured in the lab. Then only small keepalives.',
+    note: 'Sealed signalling through your gate while a call sets up, measured in home-lab network tests. Then only small keepalives.',
   },
   {
     value: '1 gate',

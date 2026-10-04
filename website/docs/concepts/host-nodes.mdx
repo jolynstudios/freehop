@@ -12,14 +12,14 @@ Many sessions already have a machine that hosts them: an app server that runs th
 
 ## An example
 
-Ben and Kai are both on phone hotspots behind carrier NATs that pick a new random port for every destination. On their own they cannot connect: the lab scenario `hard-pair` shows exactly that. Now they join a session that runs on a community server with a public address, and the server calls `hostSession()` for its room:
+Ben and Kai are both on phone hotspots behind carrier NATs that pick a new random port for every destination. On their own they cannot connect: the home-lab test scenario `hard-pair` shows exactly that. Now they join a session that runs on a community server with a public address, and the server calls `hostSession()` for its room:
 
 1. The server joins the room through the gates with an id that starts with `gw_`.
 2. Ben and Kai each greet it with a sealed envelope. Only then does it send each of them its gateway address and a credential minted for that person.
 3. Ben and Kai first try each other directly. After 5 seconds (plus one grace period while checks are getting answers) their pair moves to the session phase and adds the host node's gateway.
 4. Both allocate a relay on the host node, and their media meets there. The path is reported as `relay` via the host node.
 
-In the lab this is scenario `hard-pair-host-node`: three passes out of three with Chromium, plus a cross-engine pass with Firefox and WebKit as the two participants, at 62 to 73 KB of gate traffic per run. The same works for two participants in different offices that block UDP (`udpblock-pair-host-node`), who reach the host node with TURN over TCP.
+In the home-lab network tests this was scenario `hard-pair-host-node`: three passes out of three with Chromium, plus a cross-engine pass with Firefox and WebKit as the two participants, at 62 to 73 KB of gate traffic per run. The same route worked in simulated profiles for two participants on different UDP-blocking office networks (`udpblock-pair-host-node`), who reached the host node with TURN over TCP.
 
 ## What a gateway member does, and does not do
 

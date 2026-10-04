@@ -14,7 +14,7 @@ A gateway is a small TURN server that runs on a desktop participant's own machin
 
 Take Ben, on a phone hotspot behind a carrier NAT that picks a new random port for every destination, and Dani, who uses the desktop app at home. Ben's NAT makes his address unpredictable, and Dani's home router drops packets it was not expecting. A direct route between them usually fails.
 
-Dani's router can do something about that: it supports UPnP. So Dani's app asks the router to forward a port to her machine, and runs a TURN server behind it. Now Ben has an address that accepts his packets. His browser connects to Dani's gateway, the gateway hands the packets to Dani, and the path is reported as `gateway`. In the lab this is scenario `two-peer-desktop-host`, three passes out of three, with 37 to 66 KB of gate traffic per run.
+Dani's router can do something about that: it supports UPnP. So Dani's app asks the router to forward a port to her machine, and runs a TURN server behind it. Now Ben has an address that accepts his packets. His browser connects to Dani's gateway, the gateway hands the packets to Dani, and the path is reported as `gateway`. In the home-lab network tests this was scenario `two-peer-desktop-host`, three passes out of three, with 37 to 66 KB of gate traffic per run.
 
 The same front door works for Omar, whose office blocks all UDP: his browser reaches Dani's gateway with TURN over TCP (scenario `udpblock-gateway`).
 
@@ -30,7 +30,7 @@ A machine with a public address skips the mapping step. If the router reports a 
 
 :::note[Not every router can do this]
 
-Routers without PCP, NAT-PMP or UPnP cannot map a port, and participants behind carrier-grade NAT have no public address to map. Their desktop app then joins as an ordinary peer, and the other steps of the [ladder](./paths.mdx) (host node, forwarding) remain available. Port mapping has been qualified against miniupnpd in the lab and against simulated routers in unit tests; physical routers are not yet verified.
+Routers without PCP, NAT-PMP or UPnP cannot map a port, and participants behind carrier-grade NAT have no public address to map. Their desktop app then joins as an ordinary peer, and the other steps of the [ladder](./paths.mdx) (host node, forwarding) remain available. Port mapping passed the home-lab test against miniupnpd and unit tests against simulated routers; physical routers are not yet verified.
 
 :::
 
@@ -63,7 +63,7 @@ Media stays DTLS-SRTP encrypted end to end, so the gateway relays ciphertext it 
 
 ## A front door for the whole session
 
-A gateway can also help two other people. Ben and Kai are both behind random-port NATs, so they cannot reach each other, but both can reach Dani's gateway. When their own pair runs out of options, the [session phase](./paths.mdx) adds Dani's gateway to their ICE servers. Each of them allocates a relay on it, and the gateway delivers traffic between its own allocations internally, without depending on the router's hairpinning. Their path is reported as `relay` via Dani (lab scenario `hard-pair-gateway`).
+A gateway can also help two other people. Ben and Kai are both behind random-port NATs, so they cannot reach each other, but both can reach Dani's gateway. When their own pair runs out of options, the [session phase](./paths.mdx) adds Dani's gateway to their ICE servers. Each of them allocates a relay on it, and the gateway delivers traffic between its own allocations internally, without depending on the router's hairpinning. Their path is reported as `relay` via Dani (home-lab test scenario `hard-pair-gateway`).
 
 That traffic uses Dani's upload. It stays inside the session, and the quotas above bound it.
 

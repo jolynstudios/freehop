@@ -27,7 +27,7 @@ const COLUMNS = [
     title: 'Project',
     links: [
       {label: 'Source on GitHub', href: 'https://github.com/jolynstudios/freehop'},
-      {label: 'Qualification results', to: '/docs/results'},
+      {label: 'Network test results', to: '/docs/results'},
       {label: 'Use case: Redline Wars', to: '/docs/redline-wars'},
       {label: 'Limits', to: '/docs/limits'},
       {label: 'License and disclaimer', to: '/docs/license'},

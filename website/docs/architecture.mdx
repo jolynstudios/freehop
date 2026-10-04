@@ -45,7 +45,7 @@ On the left, everything your servers ever handle: sealed envelopes that introduc
 | SDK | `src/sdk/` | Backend, browser, host | The modules above | `createAuthority()`, `connect()`, `hostSession()`, tickets |
 | Electron helper | `src/electron/` | Electron | The gateway | Gateway in the main process, origin-restricted preload |
 
-Around the library: `bin/freehop-gate.mjs` and `deploy/` (the gate service), `examples/minimal/` (a complete reference consumer), `lab/` (the disposable Linux NAT lab) and `test/` (unit tests and real-browser tests). The browser client has no runtime dependencies.
+Around the library: `bin/freehop-gate.mjs` and `deploy/` (the gate service), `examples/minimal/` (a complete reference consumer), `lab/` (the home-lab Linux NAT test harness) and `test/` (unit tests and real-browser tests). The browser client has no runtime dependencies.
 
 ## One call, step by step
 
@@ -71,4 +71,4 @@ Ana and Ben join `room-42`. Ana is on a home router; Ben is on a phone hotspot.
 
 ## Next
 
-The [protocol specification](./protocol.md) defines every message and timer, and the [qualification results](./results.mdx) show how it behaved in the lab.
+The [protocol specification](./protocol.md) defines every message and timer, and the [network test results](./results.mdx) show how it behaved in simulated networks in a home lab.

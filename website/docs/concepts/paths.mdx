@@ -38,7 +38,7 @@ Freehop follows the W3C *perfect negotiation* pattern. Each pair escalates throu
 
 A few rules keep the escalation stable:
 
-- **One side restarts.** The peer with the lexicographically greater id is *polite*. Only the other (impolite) side restarts ICE. The polite side applies the same servers and takes over after 2.5 s if no restart offer arrived. Simultaneous restarts collide: in the lab, a rolled-back restart offer was observed to leave Chromium's senders silent.
+- **One side restarts.** The peer with the lexicographically greater id is *polite*. Only the other (impolite) side restarts ICE. The polite side applies the same servers and takes over after 2.5 s if no restart offer arrived. Simultaneous restarts collide: home-lab browser tests observed that a rolled-back restart offer could leave Chromium's senders silent.
 - **Both sides gather against the same relays.** A description names the extra gateways in use, and the receiver adds those servers before it answers.
 - **Nothing deadlocks on a lost envelope.** An offer that gets no answer within 8 s is rolled back and sent again. Candidates for an ICE generation that has not arrived yet wait in a buffer of 128.
 - **Media is watched.** If a connected link's live track sends no packets for two 5-second checks, the link restarts (the polite side asks the impolite side to do it).
@@ -52,9 +52,9 @@ Step through the phases of one pair, or let it run. Each outcome stops at the ph
 
 ## Worked examples
 
-Each row below comes from the original [lab qualification](../results.mdx), before the later security fixes, and passed three out of three Chromium runs; the results page also lists the Firefox and WebKit runs. The lab emulates each network with a Linux kernel NAT profile; physical carrier networks are not yet verified.
+Each row below comes from the original [home-lab network tests](../results.mdx), before the later security fixes, and passed three out of three Chromium runs; the results page also lists the Firefox and WebKit runs. The home-built test environment simulates each network with a Linux kernel NAT profile; physical carrier networks are not yet verified.
 
-| People in the call | Networks | What happens | Result | Lab scenario |
+| People in the call | Simulated networks | What happens | Result | Test scenario |
 |---|---|---|---|---|
 | Two participants like Ana | Two ordinary home routers | STUN-discovered addresses work, because each router keeps the same public port for every destination | <PathBadge kind="direct" /> | `direct-eim` |
 | Ivy and a friend on the same kind of network | IPv6 on both sides, IPv4 UDP blocked | Global IPv6 addresses; the stateful firewalls let the replies in once both sides send | <PathBadge kind="direct" /> | `ipv6-direct` |

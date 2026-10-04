@@ -1,16 +1,16 @@
 ---
-title: Qualification results
-sidebar_label: Qualification results
-description: Freehop's lab qualification of 2 October 2026, 40 of 40 runs across 11 network scenarios and three browser engines, plus unit, conformance and browser-suite evidence.
+title: Network test results
+sidebar_label: Network test results
+description: "Results from Freehop's developer-run home-lab network tests on 2 October 2026: 40 of 40 simulated-network runs across 11 scenarios and three browser engines, plus unit, conformance and browser-suite evidence."
 ---
 
 import PathBadge from '@site/src/components/PathBadge';
 import { StatGrid, Stat } from '@site/src/components/Stats';
 
-Freehop was qualified on 2 October 2026 in an isolated network lab: real browsers behind real Linux kernel NATs, one clean run of the then-current code. Browser and desktop audio and video connected in every lab network where any route exists inside the session, including the cases that earlier direct-only research could not connect.
+These are Freehop's own network-test results, produced by its developer in a home lab—not an independent testing laboratory or tests on live ISP, mobile, corporate or physical home-router networks. On 2 October 2026, the current code was run in an isolated Linux environment with simulated NAT profiles and real browser engines. Browser and desktop audio and video connected in every simulated network where a route exists inside the session, including cases direct-only WebRTC cannot connect.
 
 <StatGrid>
-  <Stat value="40/40" label="lab runs passed, 0 failed" note="11 scenarios × 3 Chromium trials, plus 7 cross-engine runs" />
+  <Stat value="40/40" label="home-lab network runs passed, 0 failed" note="11 simulated scenarios × 3 Chromium trials, plus 7 cross-engine runs" />
   <Stat value="156/156" label="unit tests" note="STUN, TURN, port mapper, gate and gateway" />
   <Stat value="800/800" label="TURN messages over UDP" note="coturn's turnutils_uclient, 0 lost" />
   <Stat value="800/800" label="TURN messages over TCP" note="coturn's turnutils_uclient, 0 lost" />
@@ -18,13 +18,13 @@ Freehop was qualified on 2 October 2026 in an isolated network lab: real browser
 
 :::note[Scope]
 
-This is kernel-NAT qualification in network namespaces, not a test on physical ISP, carrier or corporate networks. The 40-run matrix was re-run on 2 October 2026 on the current revision, after the security fixes: gateways and host nodes now relay only inside their session, and every scenario still passed. See [Not yet verified](#not-yet-verified) below.
+This is a repeatable kernel-NAT test in Linux network namespaces, not a certification, independent evaluation or test on physical ISP, carrier or corporate networks. The 40-run matrix was run on 2 October 2026 on the current revision, after the security fixes: gateways and host nodes now relay only inside their session, and every simulated scenario still passed. See [Not yet verified](#not-yet-verified) below.
 
 :::
 
-## How the lab works
+## How the home-lab test environment works
 
-Real **Chromium 151**, **Firefox 153** and **WebKit 26.5** ran in separate Linux network namespaces, each behind its own router namespace with a kernel NAT profile, using fake cameras and microphones. The gate ran on a simulated internet. Desktop gateways and host nodes ran next to their peers. Every run asserts:
+Real **Chromium 151**, **Firefox 153** and **WebKit 26.5** ran in separate Linux network namespaces, each behind its own router namespace with a Linux kernel NAT profile, using fake cameras and microphones. The gate ran on a simulated internet. Desktop gateways and host nodes ran next to their peers. This setup exercises controlled, repeatable network profiles; it does not reproduce the full behavior or variability of real routers and internet providers. Every run asserts:
 
 - the path that **each side** of every pair reports;
 - that media actually flows: more than 50 audio packets and more than 30 decoded video frames per origin peer;
@@ -65,15 +65,15 @@ Peers are named by letter: `a`, `b` and `c` are browser participants, `g` is a d
 | `udpblock-pair-host-node` | a=udpblock, b=udpblock, h=public | Chromium | 3/3 | a–b <PathBadge kind="relay" via="h" /> | 65 KB |
 | `gate-only` | a=gateonly, b=eim, c=public | Chromium | 3/3 | a–b, a–c <PathBadge kind="unreachable" /> (the boundary), b–c <PathBadge kind="direct" /> | 207 KB |
 
-**Total: 40 of 40 runs passed, 0 failed.** The cross-engine runs put Firefox and WebKit behind the hard profiles, and use Chromium only where a third party is needed.
+**Total: 40 of 40 home-lab network runs passed, 0 failed.** The cross-engine runs put Firefox and WebKit behind the simulated hard profiles, and use Chromium only where a third party is needed.
 
 ### What this answers
 
-Earlier research that only tried direct routes proved its own boundary: two fully random symmetric NATs connected in 0 of 3 attempts, and UDP-blocked peers had no route at all. In this lab Freehop connects both cases, through a desktop participant's gateway, the session's host node or a participant. The lab also leaves a hard-NAT pair without a helper unreachable. A network that reaches nothing but the gate (`gate-only`) remains unreachable even with session helpers. There, media is impossible without the operator carrying it, and Freehop reports `unreachable`.
+Earlier research that only tried direct routes proved its own boundary: two fully random symmetric NATs connected in 0 of 3 attempts, and UDP-blocked peers had no route at all. In these simulated network tests Freehop connects both cases, through a desktop participant's gateway, the session's host node or a participant. The same test setup leaves a hard-NAT pair without a helper unreachable. A network profile that reaches nothing but the gate (`gate-only`) remains unreachable even with session helpers. There, media is impossible without the operator carrying it, and Freehop reports `unreachable`.
 
 ## Other evidence
 
-### Unit tests: 146 of 146
+### Unit tests: 156 of 156
 
 - STUN codec with the RFC 5769 test vectors, plus fuzzing.
 - TURN server: integrity, framing, quotas, room bandwidth, IPv6 destination policy and TCP deadlines.
@@ -82,17 +82,17 @@ Earlier research that only tried direct routes proved its own boundary: two full
 - Gateway: bounded room-scoped credentials, revocation retention, renderer isolation and loopback refusal.
 - Protocol regressions: gate audiences, STUN pinning, discovery churn, both-endpoint forwarding consent and cancellation, key rotation and copied aliases.
 
-### Independent TURN conformance (original qualification)
+### TURN conformance-tool run (part of the original home-lab test run)
 
 coturn's `turnutils_uclient` against Freehop's TURN server: **UDP 800/800 and TCP 800/800 messages, 0 lost.** It runs in Send/Data mode, because coturn's client uses obsolete RFC 5766 channel numbers. ChannelData is covered by the browser tests.
 
-### TURN browser interop (macOS, original qualification)
+### TURN browser interop (macOS, original test run)
 
 20 passed, 0 failed, 6 blocked. All six blocked cases are WebKit over TCP, caused by a TURN URL bug in Playwright's WebKit build (WebKit bug 320931). The client detects it and degrades to UDP TURN for that engine.
 
 ### Local browser suites (macOS)
 
-The original qualification included every suite below. After the security fixes, the three-engine TLS mesh, multi-gate outage, kick/rekey and SDK reference app suites were rerun. Public tracker connectivity was also exercised in the live demo checks.
+The original local test run included every suite below. After the security fixes, the three-engine TLS mesh, multi-gate outage, kick/rekey and SDK reference app suites were rerun. Public tracker connectivity was also exercised in the live demo checks.
 
 - A mesh of three Chromium browsers.
 - Chromium, Firefox and WebKit in one mesh over TLS.
@@ -103,7 +103,7 @@ The original qualification included every suite below. After the security fixes,
 
 ### Security review
 
-The earlier qualification recorded 11 findings. The subsequent source review and security regressions cover key epochs, alias revocation, tickets, authority races, forwarding authorization, gate input limits, UDP response budgets and Electron IPC. See the [security model](./concepts/security.mdx) for the current trust limits.
+The earlier source and test review recorded 11 findings. The subsequent source review and security regressions cover key epochs, alias revocation, tickets, authority races, forwarding authorization, gate input limits, UDP response budgets and Electron IPC. See the [security model](./concepts/security.mdx) for the current trust limits.
 
 ## Not yet verified
 
@@ -120,7 +120,7 @@ node test/browser/smoke.mjs chromium,firefox,webkit --tls
 node test/browser/multigate.mjs && node test/browser/rekey.mjs && node test/browser/tracker.mjs && node test/browser/example-app.mjs
 ```
 
-The NAT lab builds network namespaces and kernel NAT rules, so its scripts refuse to run anywhere except a disposable, privileged Linux container (`FREEHOP_DISPOSABLE_LAB=yes`, as root):
+The home-lab NAT test harness builds network namespaces and kernel NAT rules, so its scripts refuse to run anywhere except a disposable, privileged Linux container (`FREEHOP_DISPOSABLE_LAB=yes`, as root):
 
 ```bash
 docker run -d --name freehop-lab --privileged -v "$PWD":/work mcr.microsoft.com/playwright:v1.62.0-noble sleep infinity

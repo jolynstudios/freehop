@@ -184,7 +184,7 @@ export default function PathFinder() {
         </button>
       </div>
       <div className={clsx(d.cardBody, s.body)}>
-        <p>Illustrative network model, not a test of your connection. Lab figures below come from the original qualification before the later security fixes.</p>
+        <p>Illustrative network model, not a test of your connection. Figures below come from Freehop's original home-lab network tests, before the later security fixes.</p>
         <div className={s.controls}>
           {group('Ana', a, setA)}
           {group('Ben', b, setB)}
@@ -229,7 +229,7 @@ export default function PathFinder() {
                 <dd>Sealed signalling only. Media bytes: 0.</dd>
               </div>
               <div>
-                <dt>Lab evidence</dt>
+                <dt>Home-lab test evidence</dt>
                 <dd>
                   {v.lab ? (
                     <>
@@ -237,7 +237,7 @@ export default function PathFinder() {
                       {v.lab.note && ` ${v.lab.note}`}
                     </>
                   ) : (
-                    'Not a lab scenario as such: this follows the same rules.'
+                    'No matching home-lab test scenario; this follows the same routing rules.'
                   )}
                 </dd>
               </div>
