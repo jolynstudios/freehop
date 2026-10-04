@@ -52,7 +52,7 @@ flowchart TB
 | `src/client/crypto.mjs` | HKDF room-tag and key derivation, AES-256-GCM seal/open with AAD binding (room, sender, recipient) |
 | `src/client/gate-client.mjs` | One WebSocket gate: hello/join, keepalive, reconnect with backoff |
 | `src/client/tracker-client.mjs` | WebTorrent tracker used as a gate (offers = hellos, answers = envelopes) |
-| `src/client/room.mjs` | The orchestrator: hints and admission, routing (mesh → gates → introducer → outbox), caps, path ladder, bridging, media controls, departures, rekey |
+| `src/client/room.mjs` | The orchestrator: hints and admission, routing (mesh → gates → introducer → outbox), caps, path ladder, bridging, per-link adaptive video, media controls, departures, rekey |
 | `src/client/peer.mjs` | One `RTCPeerConnection` per remote peer: perfect negotiation, candidate buffering, offer timeout, single-initiator ICE restarts, path classification |
 | `src/sdk/authority.mjs` | Backend: room secrets, tickets, kick-and-rotate |
 | `src/sdk/client.mjs` | `connect(ticket)`: desktop-gateway detection, `update()`, `disconnectPeer()`, `levels()`, `attach()` |

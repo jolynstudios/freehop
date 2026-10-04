@@ -2,6 +2,7 @@ import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import PageHeader from '@site/src/components/PageHeader';
 import {DemosArt} from '@site/src/components/home/HeaderScenes';
+import AppShowcase from '@site/src/components/home/AppShowcase';
 import PathFinder from '@site/src/components/demos/PathFinder';
 import EscalationTimeline from '@site/src/components/demos/EscalationTimeline';
 import GateSees from '@site/src/components/demos/GateSees';
@@ -17,19 +18,21 @@ const DEMOS = [
 
 export default function Demos() {
   return (
-    <Layout title="Interactive demos" description="Play with Freehop's path ladder, its escalation timers, the gate's view of sealed envelopes and a relay cost estimate.">
+    <Layout title="Demos and examples" description="See Freehop embedded in a live call, a small meeting app and a browser game, then explore interactive networking demos.">
       <main>
-        <PageHeader eyebrow="Interactive demos" title="Play with the path ladder." art={<DemosArt />}>
-          <p>Four small tools that run in this page, built on the same rules and the same crypto as the SDK.</p>
+        <PageHeader eyebrow="Built with Freehop" title="Calls inside the experience." art={<DemosArt />}>
+          <p>Freehop is a developer SDK, not a meeting product. Try the same voice, video and data building blocks in a live call, a small meeting app and a browser game.</p>
+          <Link to="/docs/quickstart">Build it into your app <span aria-hidden="true">&gt;</span></Link>
+        </PageHeader>
+        <AppShowcase />
+        <PageHeader eyebrow="Under the hood" title="Explore how the network works." art={<DemosArt />}>
+          <p>These smaller tools use the SDK’s path rules and crypto to make the networking easier to inspect.</p>
           <nav className={styles.jump} aria-label="Demos on this page">
             {DEMOS.map(d => (
               <a key={d.id} href={`#${d.id}`} className={styles.jumpLink}>
                 {d.title}
               </a>
             ))}
-            <Link to="/demo" className={styles.jumpLive}>
-              Live call <span aria-hidden="true">&gt;</span>
-            </Link>
           </nav>
         </PageHeader>
         <div className={styles.container}>

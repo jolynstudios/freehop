@@ -11,7 +11,7 @@ import PathBadge from '@site/src/components/PathBadge';
 
 <IntroScene caption="Homes are the people in the call, the globe is the internet, and the mailbox is a gate. Media hops from home to home." />
 
-Freehop adds peer-to-peer audio, video and data to browser and desktop apps. Its initial target is small rooms of 2 to 8 people; that is a starting target, not a measured hardware limit. Your servers never carry or pay for the media: they only run **gates**, blind mailboxes that pass sealed signalling envelopes between the people in a call.
+Freehop is a JavaScript SDK for adding peer-to-peer audio, video and data to browser and desktop apps—including games that want a voice overlay without becoming a meeting app. Keep your own UI, room flow and account system; Freehop supplies the connection and media controls. Its initial target is small rooms of 2 to 8 people; that is a starting target, not a measured hardware limit. Your servers never carry or pay for the media: they only run **gates**, blind mailboxes that pass sealed signalling envelopes between the people in a call.
 
 :::caution[Alpha, lab-qualified]
 
@@ -77,6 +77,7 @@ The browser client has zero runtime dependencies. The gate uses `ws`. The gatewa
 ## Where to go next
 
 - [Quickstart](./quickstart.mdx): the five pieces of an integration, with code.
+- [Examples](/demos): see Freehop inside a live call, Hopper and a small browser game.
 - [Gates](./concepts/gates.mdx): what a gate is, and what it can and cannot see.
 - [Paths and escalation](./concepts/paths.mdx): how a pair of peers finds its route, with an interactive path finder.
 - [Cost model](./concepts/cost.mdx): what moves off your bill, and who carries it instead.

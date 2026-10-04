@@ -24,7 +24,7 @@ const codeTheme: PrismTheme = {
 
 const config: Config = {
   title: 'Freehop',
-  tagline: 'Peer-to-peer voice, video and data. Your servers never carry the call.',
+  tagline: 'Add peer-to-peer voice, video and data to your app or game.',
   favicon: 'img/favicon.svg',
 
   future: {
@@ -121,8 +121,7 @@ const config: Config = {
         {to: '/docs/concepts/paths', label: 'How it works', position: 'left'},
         {to: '/demos', label: 'Demos', position: 'left'},
         {to: '/docs/protocol', label: 'Protocol', position: 'left'},
-        {to: '/demo', label: 'Live call', position: 'right', className: 'navbar-live-call'},
-        {to: '/hopper', label: 'Hopper', position: 'right', className: 'navbar-hopper'},
+        {to: '/docs/quickstart', label: 'Start building', position: 'right', className: 'navbar-live-call'},
         {href: GITHUB, label: 'GitHub', position: 'right', className: 'navbar-github'},
       ],
     },

@@ -35,6 +35,7 @@ This is browser code: bundle the package import with your frontend build tool an
 | `gateway` | none | Public gateway metadata plus a `credentialsFor(tag, peer)` broker, or the gateway object itself in privileged Node code. Never expose a signing key to the page. |
 | `stun` | none | Application-approved STUN URLs, overriding `ticket.stun`. Gate-supplied URLs are ignored. |
 | `forward` | `true` | Whether this participant may [forward](../concepts/forwarding.mdx) media for pairs that cannot connect. |
+| `adaptiveVideo` | `false` | Opt into per-peer video quality adjustment when sustained congestion or processing pressure is measured. |
 | `log` | none | `(event, details) => void` for diagnostics. |
 | `timing`, `limits` | built-in | Overrides for the protocol's timers and limits. Leave them alone unless you test the protocol itself. |
 
@@ -50,6 +51,7 @@ Media is captured with echo cancellation, noise suppression and automatic gain c
 | `on(event, handler)` | Subscribes to an event and returns an unsubscribe function. `off(event, handler)` also works. |
 | `setMicrophone(enabled)` | Turns the microphone on (capturing it on first use) or mutes it. Muting disables the track without renegotiation. |
 | `setCamera(enabled)` | Turns the camera on, or stops it and frees the device. |
+| `setAdaptiveVideo(enabled)` | Enables or disables automatic per-link video quality changes at runtime. Audio is unchanged. |
 | `attach(track, element)` | Plays a remote track in an `<audio>` or `<video>` element (sets `srcObject`, autoplay, inline playback). |
 | `levels()` | Resolves to `{ [peerId]: 0..1 }`: the current speaking level of each origin peer, from inbound audio statistics. |
 | `update(ticket, { dropped })` | Applies an unexpired newer ticket with a new secret for the same app and room. Closes old links, revokes the old desktop gateway epoch, adopts the new ticket's gates and STUN servers, and reconnects approved members. A failed gateway revocation never blocks the rotation; it is retried on `leave()`. Resolves to `false` for an invalid update. |
@@ -73,6 +75,7 @@ Media is captured with echo cancellation, noise suppression and automatic gain c
 | `track` | `{ peer, via, track, stream }` | A remote track. `peer` is the origin. `via` is the forwarding participant when the pair is bridged, otherwise `null`. |
 | `track-ended` | `{ peer, via, stream }` | A forwarded stream was withdrawn. |
 | `path` | `{ peer, kind, via, ... }` | The route to a peer changed. See below. |
+| `video-quality` | `{ peer, direction, level, reason }` | Adaptive video changed the local send level or requested a receive level from this peer. Levels are `normal`, `reduced`, `minimal` or `paused`. |
 | `link` | `{ peer, connected }` | The connection to a peer came up or went down. |
 | `gate` | `{ url, state, code }` | A gate's state: `joined`, `reconnecting` or `error` (with an error `code`). |
 | `gateway` | `{ id, available }` | A host node (gateway member) appeared or left. |
@@ -90,6 +93,8 @@ Media is captured with echo cancellation, noise suppression and automatic gain c
 | `unreachable` | No route inside the session right now | |
 
 `via` is a peer id. It is `'unknown'` in the rare case where a relay cannot be matched to a member. Show users the path: "voice unavailable on this network" is a better message than silence.
+
+Adaptive video waits for two consecutive five-second samples before stepping down. It looks at video packet loss, dropped frames, decode time, encoder limitation reasons and the per-link outgoing estimate; a high RTT alone does not trigger a change. Five healthy samples allow one step back up. If video is paused, Freehop probes at minimal quality after 25 seconds to check for recovery. Stats and encoding controls vary by browser; unavailable measurements leave the current level unchanged. Manual camera-off always wins.
 
 ## stats()
 

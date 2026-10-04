@@ -59,13 +59,13 @@ export default function Hero() {
       <div className={styles.inner}>
         <div className={styles.top}>
           <p className={styles.eyebrow}>
-            <span className={styles.chip}>Open source</span>
-            Peer-to-peer voice, video and data SDK
+            <span className={styles.chip}>Open source SDK</span>
+            Voice, video and data for apps and games
           </p>
           <h1 className={styles.title}>
-            <span className={styles.line1}>Calls</span>
+            <span className={styles.line1}>Build</span>
             <span className={styles.line2}>
-              hop
+              with
               <svg className={styles.hopMark} viewBox="0 0 220 120" aria-hidden="true">
                 <path d="M6 110 Q 96 -26 206 64" fill="none" stroke="#333" strokeWidth="7" strokeLinecap="round" strokeDasharray="0.1 19.9" className={styles.hopDots} />
                 <g transform="translate(206 64) rotate(42)">
@@ -74,7 +74,7 @@ export default function Hero() {
                 </g>
               </svg>
             </span>
-            <span className={styles.line3}>free.</span>
+            <span className={styles.line3}>Freehop.</span>
           </h1>
         </div>
         <div className={styles.art}>
@@ -82,26 +82,27 @@ export default function Hero() {
         </div>
         <div className={styles.bottom}>
           <p className={styles.lede}>
-            Add voice, video and data to your browser or desktop app. Freehop sends the call between the people
-            in it. Your servers only help them find each other, through <strong>gates</strong> that pass encrypted introductions.
+            Add live voice, video and data to the product people already use. Freehop is a JavaScript SDK for browser and desktop apps:
+            your backend admits the room, while the call travels between the people in it.
           </p>
           <div className={styles.ctas}>
-            <Link className={styles.primary} to="/demo">
-              Try the live demo <span aria-hidden="true">&gt;</span>
+            <Link className={styles.primary} to="/docs/quickstart">
+              Start building <span aria-hidden="true">&gt;</span>
             </Link>
-            <Link className={styles.secondary} to="/docs">
-              Read the docs <span aria-hidden="true">&gt;</span>
+            <Link className={styles.secondary} to="/demo">
+              Try a live call <span aria-hidden="true">&gt;</span>
             </Link>
             <Link className={styles.tertiary} href="https://github.com/jolynstudios/freehop">
               GitHub
             </Link>
-            <Link className={styles.tertiary} to="#freehop-in-20-seconds">Freehop in 20 seconds</Link>
           </div>
           <p className={styles.facts}>
             <span>Apache-2.0</span>
+            <span>Browser + Electron</span>
             <span>Alpha</span>
             <Link to="/docs/results">Original lab matrix: 40/40 passed</Link>
           </p>
+          <p className={styles.snippet}><code>{'const call = await connect(ticket, { media: { audio: true } });'}</code></p>
         </div>
       </div>
     </header>

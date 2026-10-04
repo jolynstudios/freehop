@@ -50,12 +50,13 @@ plaintext = JSON { kind, n, ...body }
   re-labels or re-routes an envelope makes it fail authentication.
 - `n` is a per-sender counter. Receivers keep a 1024-wide replay window per sender and drop
   duplicates. The same envelope legitimately arrives via several gates and the mesh.
-- Kinds: `caps`, `description`, `candidate`, `bye`, `restart-request`, `bridge-request`,
+- Kinds: `caps`, `description`, `candidate`, `bye`, `restart-request`, `video-quality`, `bridge-request`,
   `bridge-offer`, `bridge-accept`, `bridge-confirm`, `bridge-ready`, `bridge-active`, `bridge-release`, `bridge-fail`,
   `forward-map`, `forward-unmap`, `app`. Unknown kinds are dropped. `app` carries application data
   (`session.send`): at most 4096 characters of JSON, and each receiver accepts at most 20 per
   second from one sender (burst 40). Tracker gates add a
   room-broadcast `hello` (to `*`).
+- **Adaptive video request.** A receiver that opted in sends `{kind:"video-quality", level:"normal"|"reduced"|"minimal"|"paused"}` to the peer sending video. Requests are sealed peer-to-peer envelopes, ordered by the envelope counter and rate-limited to one accepted change per second. `normal` releases the request; other levels cap or pause video on this link only. Audio is never changed. A peer that did not opt in ignores requests, and older implementations drop the unknown kind.
 - **Admission.** Gate rosters and arrival events are unauthenticated hints. A hint only makes a
   peer greet the hinted id with its sealed caps, at most once per 20 s and for at most 64
   hints. A peer becomes a member, with `peer` events, a link and a slot, only after an

@@ -48,7 +48,7 @@ This runs in the browser or Electron renderer. Bundle the package import with yo
 
 ```js
 import { connect } from 'freehop';
-const session = await connect(ticket, { media: { audio: true, video: false } });
+const session = await connect(ticket, { media: { audio: true, video: false }, adaptiveVideo: true });
 session.on('peer', ({ id }) => …);                       // an authenticated member appeared
 session.on('track', ({ peer, track }) => session.attach(track, elementFor(peer)));
 session.on('path', ({ peer, kind, via }) => …);          // direct | gateway | relay | bridged | unreachable
@@ -59,10 +59,16 @@ await session.update(newTicket, { dropped: [kickedPeerId] });   // after a kick
 await session.switchDevice('audio', deviceId);      // another microphone or camera, no renegotiation
 await session.send({ type: 'chat', text: 'hi' });   // app data to everyone (or { to: peerId })
 session.on('message', ({ from, data }) => …);      // untrusted input: render as text
+session.on('video-quality', ({ peer, direction, level, reason }) => …);
+await session.setAdaptiveVideo(false);              // disable at runtime
 await session.refresh(reissuedTicket);   // same epoch, fresh gate tokens for long calls
 await session.leave();                   // also releases the room on a desktop gateway
 ```
 `session.disconnectPeer(peerId)` removes only a local connection. It does not revoke membership. The former `session.kick()` throws a migration error; use `authority.kick()` and distribute replacement tickets for removal.
+
+`adaptiveVideo` is opt-in and defaults to `false`. When enabled, Freehop uses per-link WebRTC statistics to lower video after sustained packet loss, dropped frames, encoder CPU limitation or a low outgoing bitrate estimate. It never changes audio. It can ask the other endpoint on that link to lower video too; peers that did not opt in ignore the request. Recovery requires 25 seconds of healthy samples and moves one level at a time. Severe sustained pressure can pause video; a minimal-quality probe checks for recovery before restoring it. A manual `setCamera(false)` remains authoritative.
+
+The `video-quality` event reports `{ peer, direction: 'send'|'receive', level: 'normal'|'reduced'|'minimal'|'paused', reason }`. `reason` is `monitoring`, `cpu`, `bandwidth`, `peer-request`, `recovery-probe`, `recovery` or `disabled`. Browser support and stats availability vary; missing measurements leave the current quality unchanged.
 
 Map your member ids to Freehop peer ids (`session.id`) in your backend, so that a kick can
 name the peer the remaining clients must drop.

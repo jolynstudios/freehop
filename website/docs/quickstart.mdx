@@ -91,6 +91,8 @@ For experiments you can skip this step: a public WebTorrent tracker works as a g
 
 This is browser JavaScript. Fetch `ticket` from your authenticated backend, then call `connect()` from a Join button on an HTTPS page (localhost works for development). `addTile`, `mediaElementFor`, `showRoute` and `removeTile` are functions you supply in your UI. The microphone, camera and leave calls below are separate examples for your controls; do not run them all immediately after joining.
 
+To let Freehop adjust video per peer when it detects sustained congestion, opt in with `adaptiveVideo: true`; this remains off by default.
+
 ```js title="call.js"
 import { connect } from 'freehop';
 

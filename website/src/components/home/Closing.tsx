@@ -15,19 +15,19 @@ export function FinalCta() {
         </Mover>
       </svg>
       <div className={styles.finalInner}>
-        <Eyebrow className={styles.finalEyebrow}>No sign-up, no server of ours</Eyebrow>
-        <Title id="try" className={styles.finalTitle}>
-          Make a real call, right here.
+      <Eyebrow className={styles.finalEyebrow}>For the app you are building</Eyebrow>
+      <Title id="try" className={styles.finalTitle}>
+          Add a real call to your app.
         </Title>
         <p className={styles.finalLede}>
-          The live demo runs Freehop in your browser. Two public WebTorrent trackers act as gates and media travels between machines in the call, directly when possible. Camera and microphone stay off until you press join.
+          Keep your own screens, users and room flow. Freehop handles the peer connection, media paths and optional quality adjustment. Start with the developer quickstart, or try the game overlay in your browser.
         </p>
         <div className={styles.finalCtas}>
-          <Link className={styles.primary} to="/demo">
-            <Chevron>Start a live call</Chevron>
+          <Link className={styles.primary} to="/docs/quickstart">
+            <Chevron>Start building</Chevron>
           </Link>
-          <Link className={styles.secondary} to="/docs/quickstart">
-            <Chevron>Read the quickstart</Chevron>
+          <Link className={styles.secondary} to="/maze">
+            <Chevron>Try the game overlay</Chevron>
           </Link>
         </div>
       </div>

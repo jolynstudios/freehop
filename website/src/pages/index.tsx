@@ -1,6 +1,7 @@
 import Layout from '@theme/Layout';
 import Head from '@docusaurus/Head';
 import Hero from '@site/src/components/home/Hero';
+import AppShowcase from '@site/src/components/home/AppShowcase';
 import Explainer from '@site/src/components/home/Explainer';
 import Problem from '@site/src/components/home/Problem';
 import Ladder from '@site/src/components/home/Ladder';
@@ -15,20 +16,21 @@ import YourCost from '@site/src/components/home/YourCost';
 export default function Home() {
   return (
     <Layout
-      title="Peer-to-peer calls where your servers never carry the media"
-      description="Freehop is an open-source peer-to-peer voice, video and data SDK. You run only blind gates for sealed signalling; the media hops between the people in the call.">
+      title="Add voice and video to your app with Freehop"
+      description="Freehop is an open-source JavaScript SDK for adding peer-to-peer voice, video and data to browser and desktop apps and games.">
       <Head>
         <html className="fh-home" />
       </Head>
       <main>
         <Hero />
+        <AppShowcase />
+        <Quickstart />
         <Explainer />
         <Problem />
         <Ladder />
         <YourCost />
         <Proof />
         <Compare />
-        <Quickstart />
         <Redline />
         <Honest />
         <FinalCta />

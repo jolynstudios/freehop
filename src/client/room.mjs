@@ -16,13 +16,21 @@ const pairKey = (a, b) => a < b ? `${a}|${b}` : `${b}|${a}`;
 // Gateway members (the session's host node) announce themselves with this id prefix. The
 // prefix is only a hint; their gateway is learned from sealed caps like anything else.
 const isGatewayMember = id => id.startsWith('gw_');
-const KINDS = new Set(['caps', 'description', 'candidate', 'bye', 'restart-request', 'bridge-request', 'bridge-offer', 'bridge-accept',
+const KINDS = new Set(['caps', 'description', 'candidate', 'bye', 'restart-request', 'video-quality', 'bridge-request', 'bridge-offer', 'bridge-accept',
   'bridge-confirm', 'bridge-ready', 'bridge-active', 'bridge-release', 'bridge-fail', 'forward-map', 'forward-unmap', 'app']);
 // Application messages (session.send): sealed like all signalling, at most 4096 characters of JSON; each
 // receiver accepts at most 20 per second from one sender (burst 40).
 export const APP_MESSAGE_BYTES = 4096;
 const MIC = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
 const CAM = { width: { ideal: 640 }, height: { ideal: 360 }, frameRate: { ideal: 24, max: 30 } };
+const VIDEO_QUALITY = Object.freeze(['normal', 'reduced', 'minimal', 'paused']);
+const VIDEO_QUALITY_INDEX = Object.freeze(Object.fromEntries(VIDEO_QUALITY.map((level, index) => [level, index])));
+const VIDEO_QUALITY_SETTINGS = Object.freeze([
+  {bitrate: null, framerate: null, scale: 1, active: true},
+  {bitrate: 180000, framerate: 15, scale: 1.5, active: true},
+  {bitrate: 90000, framerate: 10, scale: 2, active: true},
+  {bitrate: null, framerate: null, scale: 2, active: false},
+]);
 const deviceId = id => id === null || id === undefined || typeof id === 'string' && id.length > 0 && id.length <= 256;
 const APP_RATE = 20, APP_BURST = 40;
 
@@ -90,6 +98,8 @@ export class Room extends Emitter {
     this.getUserMedia = options.getUserMedia ?? (c => navigator.mediaDevices.getUserMedia(c));
     this.timing = { ...DEFAULT_TIMING, ...options.timing };
     this.limits = { ...DEFAULT_LIMITS, ...options.limits };
+    if (options.adaptiveVideo !== undefined && typeof options.adaptiveVideo !== 'boolean') throw new TypeError('adaptiveVideo must be a boolean');
+    this.adaptiveVideoEnabled = options.adaptiveVideo === true;
     this.log = options.log ?? (() => {});
     do { this.id = randomId(16); } while (isGatewayMember(this.id));
     this.links = new Map(); this.caps = new Map(); this.known = new Set(); this.departed = new Map(); this.gatewayMembers = new Set();
@@ -110,6 +120,7 @@ export class Room extends Emitter {
       meshForwarded: 0, candidateErrors: 0, negotiationErrors: 0, linkErrors: 0, escalations: 0, bridgesUsed: 0, bridgesServed: 0,
       offerTimeouts: 0, mediaStalls: 0, appSent: 0, appReceived: 0, appDropped: 0 };
     this.appBudget = new Map();   // sender -> { tokens, at }
+    this.videoQuality = new Map(); // peer -> per-link send/receive controller state
     // Preferred capture devices (options.devices, switchDevice); every later capture uses them.
     if (!deviceId(options.devices?.audio) || !deviceId(options.devices?.video)) throw new TypeError('Invalid capture device id');
     this.devices = { audio: options.devices?.audio ?? null, video: options.devices?.video ?? null };
@@ -332,7 +343,7 @@ export class Room extends Emitter {
     clearTimeout(this.pendingLinks.get(peer)); this.pendingLinks.delete(peer);
     this.links.get(peer)?.close(); this.links.delete(peer);
     this.known.delete(peer); this.hintedAt.delete(peer); this.caps.delete(peer); this.presence.delete(peer); this.early.delete(peer); this.outbox.delete(peer);
-    this.sendProgress.delete(peer); this.meshBudget.delete(peer); this.appBudget.delete(peer);
+    this.sendProgress.delete(peer); this.meshBudget.delete(peer); this.appBudget.delete(peer); this.videoQuality.delete(peer);
     this.lastContact.delete(peer); this.gatewayCreds.delete(`${this.tag8}:${peer}`);
     // The replay window survives a soft departure: a returning peer keeps its counter.
     if (reason !== 'gone') this.sequences.delete(peer);
@@ -486,6 +497,9 @@ export class Room extends Emitter {
         if (link && !link.polite) link.enqueue(() => link.restart());
         return;
       }
+      case 'video-quality':
+        this.receiveVideoQuality(from, p);
+        return;
       default: return this.onBridgeMessage(from, p);
     }
   }
@@ -652,6 +666,13 @@ export class Room extends Emitter {
     this.lastContact.set(link.id, Date.now());
     this.scheduleCapsBroadcast();
     this.applyEncodingLimits(link);
+    if (this.adaptiveVideoEnabled) {
+      const quality = this.videoQualityState(link.id);
+      quality.previous = null; quality.sendBad = quality.sendGood = quality.receiveBad = quality.receiveGood = 0;
+      this.emit('video-quality', {peer: link.id, direction: 'send', level: this.effectiveVideoLevel(quality), reason: 'monitoring'});
+      this.emit('video-quality', {peer: link.id, direction: 'receive', level: quality.receiveLevel, reason: 'monitoring'});
+      if (quality.receiveLevel !== 'normal') this.signalTo(link.id, {kind: 'video-quality', level: quality.receiveLevel}).catch(() => {});
+    }
     this.flushOutbox(link.id);
     const key = pairKey(this.id, link.id), bridge = this.bridges.get(key);
     if (bridge) { this.bridges.delete(key); if (bridge.via) this.signalTo(bridge.via, { kind: 'bridge-release', a: this.id, b: link.id }); }
@@ -851,6 +872,14 @@ export class Room extends Emitter {
       if (kind === 'audio') { track.enabled = false; return; }   // muted mic keeps its slot, no renegotiation
       track.stop(); this.localStream.removeTrack(track);
       for (const link of this.links.values()) link.senders.get(kind)?.replaceTrack(null);
+      // Camera-off is an explicit user choice. Do not leave an automatic pause latched
+      // when the user turns the camera back on later.
+      if (kind === 'video' && this.adaptiveVideoEnabled) {
+        for (const [peer, state] of this.videoQuality) {
+          state.sendLevel = 'normal'; state.sendBad = state.sendGood = 0; state.sendProbe = false;
+          this.setVideoQuality(peer, 'send', this.effectiveVideoLevel(state), 'camera-off');
+        }
+      }
       return;
     }
     if (track) { track.enabled = true; return; }
@@ -863,6 +892,7 @@ export class Room extends Emitter {
       const sender = link.senders.get(kind);
       if (sender) await sender.replaceTrack(track);
       else link.senders.set(kind, link.pc.addTrack(track, this.localStream));
+      await this.applyEncodingLimits(link);
     }
   }
 
@@ -889,21 +919,189 @@ export class Room extends Emitter {
     track.enabled = old.enabled;
     this.localStream.addTrack(track); this.localStream.removeTrack(old);
     for (const link of this.links.values()) await link.senders.get(kind)?.replaceTrack(track);
+    for (const link of this.links.values()) await this.applyEncodingLimits(link);
     old.stop();
     return true;
   }
 
   async applyEncodingLimits(link) {
     const forwarded = new Set();
-    for (const entry of link.forwardSenders.values()) for (const s of entry.senders.values()) forwarded.add(s);
-    for (const sender of link.pc.getSenders()) {
+    for (const entry of link.forwardSenders?.values?.() ?? []) for (const s of entry.senders.values()) forwarded.add(s);
+    const senders = link.pc.getSenders?.() ?? [...link.senders.values()];
+    for (const sender of senders) {
       if (!sender.track) continue;
       const params = sender.getParameters();
       if (!params.encodings?.length) continue;
       const max = sender.track.kind === 'audio' ? this.limits.audioBitrate : forwarded.has(sender) ? this.limits.forwardVideoBitrate : this.limits.videoBitrate;
+      const state = this.videoQuality.get(link.id);
+      const localLevel = this.adaptiveVideoEnabled ? state?.sendLevel ?? 'normal' : 'normal';
+      const remoteLevel = this.adaptiveVideoEnabled ? state?.remoteLevel ?? 'normal' : 'normal';
+      const quality = VIDEO_QUALITY_SETTINGS[Math.max(VIDEO_QUALITY_INDEX[localLevel], VIDEO_QUALITY_INDEX[remoteLevel])];
       let changed = false;
-      for (const e of params.encodings) if (e.maxBitrate !== max) { e.maxBitrate = max; changed = true; }
+      for (const e of params.encodings) {
+        const bitrate = sender.track.kind === 'audio' ? max : quality.bitrate === null ? max : Math.min(max, quality.bitrate);
+        if (e.maxBitrate !== bitrate) { e.maxBitrate = bitrate; changed = true; }
+        if (sender.track.kind === 'video') {
+          if (e.active !== quality.active) { e.active = quality.active; changed = true; }
+          if (quality.framerate !== null && e.maxFramerate !== quality.framerate) { e.maxFramerate = quality.framerate; changed = true; }
+          if (quality.framerate === null && e.maxFramerate !== undefined) { delete e.maxFramerate; changed = true; }
+          if (e.scaleResolutionDownBy !== quality.scale) { e.scaleResolutionDownBy = quality.scale; changed = true; }
+        }
+      }
       if (changed) { try { await sender.setParameters(params); } catch (error) { this.count('encodingErrors', error); } }
+    }
+  }
+
+  videoQualityState(peer) {
+    let state = this.videoQuality.get(peer);
+    if (!state) {
+      state = {sendLevel: 'normal', reportedSendLevel: 'normal', receiveLevel: 'normal', remoteLevel: 'normal', sendBad: 0, sendGood: 0,
+        receiveBad: 0, receiveGood: 0, previous: null, receiveProbe: false, sendProbe: false, lastControlAt: 0, lastRequestN: 0};
+      this.videoQuality.set(peer, state);
+    }
+    return state;
+  }
+
+  setVideoQuality(peer, direction, level, reason) {
+    const state = this.videoQualityState(peer);
+    const property = direction === 'send' ? 'reportedSendLevel' : 'receiveLevel';
+    if (state[property] === level) return false;
+    state[property] = level;
+    this.emit('video-quality', {peer, direction, level, reason});
+    return true;
+  }
+
+  async setAdaptiveVideo(enabled) {
+    if (typeof enabled !== 'boolean') throw new TypeError('enabled must be a boolean');
+    if (enabled === this.adaptiveVideoEnabled) return enabled;
+    if (!enabled) {
+      for (const [peer, state] of this.videoQuality) {
+        if (state.receiveLevel !== 'normal') this.signalTo(peer, {kind: 'video-quality', level: 'normal'}).catch(() => {});
+        if (state.reportedSendLevel !== 'normal') this.emit('video-quality', {peer, direction: 'send', level: 'normal', reason: 'disabled'});
+        if (state.receiveLevel !== 'normal') this.emit('video-quality', {peer, direction: 'receive', level: 'normal', reason: 'disabled'});
+        state.sendBad = state.sendGood = state.receiveBad = state.receiveGood = 0;
+        state.sendProbe = state.receiveProbe = false;
+        state.sendLevel = state.reportedSendLevel = state.receiveLevel = state.remoteLevel = 'normal';
+      }
+      this.adaptiveVideoEnabled = false;
+    } else {
+      this.adaptiveVideoEnabled = true;
+      for (const [peer, link] of this.links) {
+        const state = this.videoQualityState(peer);
+        state.previous = null; state.sendBad = state.sendGood = state.receiveBad = state.receiveGood = 0;
+        this.emit('video-quality', {peer, direction: 'send', level: this.effectiveVideoLevel(state), reason: 'monitoring'});
+        this.emit('video-quality', {peer, direction: 'receive', level: state.receiveLevel, reason: 'monitoring'});
+        if (link.connected && state.receiveLevel !== 'normal') this.signalTo(peer, {kind: 'video-quality', level: state.receiveLevel}).catch(() => {});
+      }
+    }
+    for (const link of this.links.values()) await this.applyEncodingLimits(link);
+    return enabled;
+  }
+
+  receiveVideoQuality(from, message) {
+    const link = this.links.get(from);
+    if (!this.adaptiveVideoEnabled || !link?.connected || !VIDEO_QUALITY.includes(message.level) ||
+        !Number.isSafeInteger(message.n) || message.n <= 0) return;
+    const state = this.videoQualityState(from), now = Date.now();
+    if (message.n <= state.lastRequestN || now - state.lastControlAt < 1000) return;
+    state.lastRequestN = message.n; state.lastControlAt = now;
+    if (state.remoteLevel === message.level) return;
+    state.remoteLevel = message.level;
+    this.setVideoQuality(from, 'send', this.effectiveVideoLevel(state), 'peer-request');
+    this.applyEncodingLimits(link);
+  }
+
+  effectiveVideoLevel(state) {
+    return VIDEO_QUALITY[Math.max(VIDEO_QUALITY_INDEX[state.sendLevel], VIDEO_QUALITY_INDEX[state.remoteLevel])];
+  }
+
+  reportReceiveVideoQuality(link, level, reason) {
+    const state = this.videoQualityState(link.id);
+    const changed = state.receiveLevel !== level;
+    if (!changed) return;
+    state.receiveLevel = level;
+    this.emit('video-quality', {peer: link.id, direction: 'receive', level, reason});
+    this.signalTo(link.id, {kind: 'video-quality', level}).catch(error => this.count('videoQualityErrors', error));
+  }
+
+  async checkAdaptiveVideo(link, stats) {
+    if (!this.adaptiveVideoEnabled || !link.connected || link.closed) return;
+    const state = this.videoQualityState(link.id), values = [...stats.values()];
+    const outbound = values.filter(s => s.type === 'outbound-rtp' && s.kind === 'video');
+    const inbound = values.filter(s => s.type === 'inbound-rtp' && s.kind === 'video');
+    const transport = values.find(s => s.type === 'transport' && s.selectedCandidatePairId);
+    const pair = (transport && stats.get(transport.selectedCandidatePairId)) ??
+      values.find(s => s.type === 'candidate-pair' && (s.selected || s.nominated)) ??
+      values.find(s => s.type === 'candidate-pair' && s.state === 'succeeded');
+    const sum = (items, key) => items.reduce((total, item) => total + (item[key] ?? 0), 0);
+    const current = {
+      outBytes: sum(outbound, 'bytesSent'), outPackets: sum(outbound, 'packetsSent'),
+      inBytes: sum(inbound, 'bytesReceived'), inPackets: sum(inbound, 'packetsReceived'), inLost: sum(inbound, 'packetsLost'),
+      inFrames: sum(inbound, 'framesDecoded'), inDropped: sum(inbound, 'framesDropped'), inDecode: sum(inbound, 'totalDecodeTime'),
+      limitation: outbound.some(s => s.qualityLimitationReason === 'cpu') ? 'cpu' : outbound.some(s => s.qualityLimitationReason === 'bandwidth') ? 'bandwidth' : 'none',
+      available: pair?.availableOutgoingBitrate ?? null,
+    };
+    const previous = state.previous;
+    state.previous = current;
+    if (!previous) return;
+    const hasLocalVideo = this.localStream?.getTracks().some(track => track.kind === 'video' && track.readyState === 'live');
+    const sentBytes = current.outBytes - previous.outBytes;
+    const recvPackets = current.inPackets - previous.inPackets;
+    const lostPackets = current.inLost - previous.inLost;
+    const decoded = current.inFrames - previous.inFrames;
+    const dropped = current.inDropped - previous.inDropped;
+    const decodeTime = current.inDecode - previous.inDecode;
+    const lossRate = Math.max(0, recvPackets) + Math.max(0, lostPackets) > 0 ? Math.max(0, lostPackets) / (Math.max(0, recvPackets) + Math.max(0, lostPackets)) : 0;
+    const dropRate = Math.max(0, decoded) + Math.max(0, dropped) > 0 ? Math.max(0, dropped) / (Math.max(0, decoded) + Math.max(0, dropped)) : 0;
+    const decodeSlow = decoded >= 5 && decodeTime / decoded > 0.05;
+    const sendLimit = VIDEO_QUALITY_SETTINGS[VIDEO_QUALITY_INDEX[this.effectiveVideoLevel(state)]].bitrate ?? this.limits.videoBitrate;
+    const lowEstimate = current.available !== null && current.available < Math.min(180000, sendLimit * 0.7);
+    const outgoingBad = current.limitation === 'cpu' || current.limitation === 'bandwidth' && lowEstimate || lowEstimate && sentBytes > 0;
+    const incomingBad = recvPackets + lostPackets >= 10 && lossRate >= 0.08 || decoded + dropped >= 10 && dropRate >= 0.12 || decodeSlow;
+    const severeReceive = lossRate >= 0.25 || dropRate >= 0.3 || decoded >= 5 && decodeTime / decoded > 0.15;
+    const now = Date.now();
+
+    state.sendBad = hasLocalVideo && outgoingBad ? state.sendBad + 1 : 0;
+    state.sendGood = hasLocalVideo && !outgoingBad ? state.sendGood + 1 : 0;
+    if (hasLocalVideo && state.sendBad >= 2) {
+      const severeSend = current.available !== null && current.available < 60000 || state.sendLevel === 'minimal' && current.limitation === 'cpu';
+      const next = severeSend ? 'paused' : VIDEO_QUALITY[Math.min(2, VIDEO_QUALITY_INDEX[state.sendLevel] + 1)];
+      state.sendBad = 0;
+      if (next !== state.sendLevel) {
+        state.sendProbe = false;
+        state.sendGood = state.sendBad = 0;
+        state.sendChangedAt = now;
+        state.sendLevel = next;
+        this.setVideoQuality(link.id, 'send', this.effectiveVideoLevel(state), current.limitation === 'cpu' ? 'cpu' : 'bandwidth');
+        await this.applyEncodingLimits(link);
+      }
+    } else if (hasLocalVideo && state.sendLevel === 'paused' && !state.sendProbe && now - (state.sendChangedAt ?? now) >= 25000) {
+      state.sendProbe = true; state.sendLevel = 'minimal'; state.sendGood = 0;
+      this.setVideoQuality(link.id, 'send', this.effectiveVideoLevel(state), 'recovery-probe');
+      await this.applyEncodingLimits(link);
+    } else if (hasLocalVideo && state.sendGood >= 5 && state.sendLevel !== 'normal') {
+      state.sendLevel = VIDEO_QUALITY[Math.max(0, VIDEO_QUALITY_INDEX[state.sendLevel] - 1)];
+      state.sendProbe = false; state.sendGood = state.sendBad = 0; state.sendChangedAt = now;
+      this.setVideoQuality(link.id, 'send', this.effectiveVideoLevel(state), 'recovery');
+      await this.applyEncodingLimits(link);
+    }
+
+    state.receiveBad = incomingBad ? state.receiveBad + 1 : 0;
+    state.receiveGood = incomingBad ? 0 : state.receiveGood + 1;
+    if (state.receiveBad >= 2) {
+      const next = severeReceive ? 'paused' : VIDEO_QUALITY[Math.min(3, VIDEO_QUALITY_INDEX[state.receiveLevel] + 1)];
+      state.receiveBad = 0;
+      if (next !== state.receiveLevel) {
+        state.receiveProbe = false; state.receiveGood = state.receiveBad = 0; state.receiveChangedAt = now;
+        this.reportReceiveVideoQuality(link, next, decodeSlow ? 'cpu' : 'bandwidth');
+      }
+    } else if (state.receiveLevel === 'paused' && !state.receiveProbe && now - (state.receiveChangedAt ?? now) >= 25000) {
+      state.receiveProbe = true; state.receiveGood = 0;
+      this.reportReceiveVideoQuality(link, 'minimal', 'recovery-probe');
+    } else if (state.receiveGood >= 5 && state.receiveLevel !== 'normal') {
+      const next = VIDEO_QUALITY[Math.max(0, VIDEO_QUALITY_INDEX[state.receiveLevel] - 1)];
+      state.receiveProbe = false; state.receiveGood = state.receiveBad = 0; state.receiveChangedAt = now;
+      this.reportReceiveVideoQuality(link, next, 'recovery');
     }
   }
 
@@ -916,11 +1114,14 @@ export class Room extends Emitter {
       let stats; try { stats = await link.pc.getStats(); } catch { continue; }
       if (this.closed || this.crypto !== epoch || link.closed) return;
       this.updatePath(link, stats);
+      await this.checkAdaptiveVideo(link, stats);
       const sent = {};
       for (const s of stats.values()) if (s.type === 'outbound-rtp' && s.kind) sent[s.kind] = (sent[s.kind] ?? 0) + (s.packetsSent ?? 0);
       const progress = this.sendProgress.get(link.id) ?? {};
       for (const track of this.localStream?.getTracks() ?? []) {
-        if (track.readyState !== 'live' || !link.senders.get(track.kind)?.track) continue;
+        const sender = link.senders.get(track.kind);
+        if (track.kind === 'video' && this.effectiveVideoLevel(this.videoQualityState(link.id)) === 'paused') { delete progress.video; continue; }
+        if (track.readyState !== 'live' || !sender?.track) { delete progress[track.kind]; continue; }
         const now = sent[track.kind] ?? 0, before = progress[track.kind];
         const stalls = before && now <= before.packets ? before.stalls + 1 : 0;
         progress[track.kind] = { packets: now, stalls };
@@ -979,6 +1180,7 @@ export class Room extends Emitter {
     for (const t of this.pendingLinks.values()) clearTimeout(t);
     for (const link of this.links.values()) link.close();
     this.links.clear(); this.outbox.clear();
+    this.videoQuality.clear();
     for (const gate of this.gates) gate.close();
     if (this.ownsMedia) for (const track of this.localStream?.getTracks() ?? []) track.stop();
     this.emit('closed', {});
