@@ -13,16 +13,8 @@ const MEDIA = [
 
 const SOURCES = [
   {
-    label: 'callstats.io: 22% of conferences needed a TURN relay (Jan 2015 to Feb 2016), webrtcHacks',
-    href: 'https://webrtchacks.com/usage-stats/',
-  },
-  {
-    label: 'appear.in: 17.7% of peer-to-peer calls relayed (2017)',
-    href: 'https://medium.com/@fippo/what-kind-of-turn-server-is-being-used-d67dbfc2ff5d',
-  },
-  {
-    label: 'Cloudflare Realtime TURN: $0.05 per real-time GB outbound to the TURN client',
-    href: 'https://developers.cloudflare.com/realtime/turn/',
+    label: 'Cloudflare Realtime TURN pricing: monthly free allowance, then $0.05/GB for standalone TURN',
+    href: 'https://developers.cloudflare.com/realtime/turn/faq/',
   },
 ];
 
@@ -59,16 +51,17 @@ function Field({label, note, children, htmlFor}: {label: string; note?: ReactNod
   );
 }
 
-/** Estimate a month of relay traffic: a classic operator-run TURN relay versus Freehop's gates. */
+/** Illustrate a separate TURN provider's egress and Freehop gate signalling traffic. */
 export default function CostCalculator() {
   const id = useId();
   const [people, setPeople] = useState(1000);
   const [hours, setHours] = useState(240);
-  const [share, setShare] = useState(20);
+  const [share, setShare] = useState(0);
   const [kbps, setKbps] = useState(332);
   const [group, setGroup] = useState(2);
   const [minutes, setMinutes] = useState(30);
   const [price, setPrice] = useState(0.05);
+  const [allowanceGB, setAllowanceGB] = useState(1000);
 
   const r = useMemo(() => {
     const personHours = people * hours;
@@ -77,8 +70,9 @@ export default function CostCalculator() {
     const calls = (personHours * 60) / (minutes * group);
     const pairs = (group * (group - 1)) / 2;
     const gateGB = (calls * pairs * KB_PER_PAIR * 1000) / 1e9;
-    return {personHours, relayed, relayGB, cost: relayGB * price, calls, gateGB, ratio: relayGB > 0 ? gateGB / relayGB : 0};
-  }, [people, hours, share, kbps, group, minutes, price]);
+    const billableGB = Math.max(0, relayGB - allowanceGB);
+    return {personHours, relayed, relayGB, billableGB, cost: billableGB * price, calls, gateGB, ratio: relayGB > 0 ? gateGB / relayGB : 0};
+  }, [people, hours, share, kbps, group, minutes, price, allowanceGB]);
 
   const relay = bytes(r.relayGB);
   const gate = bytes(r.gateGB);
@@ -117,11 +111,11 @@ export default function CostCalculator() {
             <input id={`${id}-hours`} type="number" min={1} max={744} value={hours} onChange={e => setHours(clamp(Number(e.target.value), 1, 744))} className={s.number} />
           </Field>
           <Field
-            label="Share of received streams relayed"
+            label="Share of participant-hours using TURN"
             htmlFor={`${id}-share`}
             note={
               <>
-                Illustrative default: 20%. Historical studies measured calls or conferences, not this exact stream share.
+                Set this from your own route measurements. The default 0% is only a neutral starting point, not a usage claim.
               </>
             }>
             <input type="range" min={0} max={60} value={share} onChange={e => setShare(Number(e.target.value))} aria-label="Relay share, slider" className={s.range} />
@@ -154,36 +148,42 @@ export default function CostCalculator() {
               <span>min</span>
             </span>
           </Field>
-          <Field label="Relay price per GB" htmlFor={`${id}-price`} note="Example: Cloudflare's TURN list price.">
+          <Field label="TURN egress price per GB" htmlFor={`${id}-price`} note="Enter your provider's rate after any free allowance or bundle.">
             <span className={s.withUnit}>
               <span>$</span>
               <input id={`${id}-price`} type="number" min={0} step={0.01} value={price} onChange={e => setPrice(clamp(Number(e.target.value), 0, 100))} className={s.number} />
               <span>per GB</span>
             </span>
           </Field>
+          <Field label="Monthly free egress allowance" htmlFor={`${id}-allowance`} note="Cloudflare Realtime TURN currently includes 1,000 GB/month; change this for your provider or plan.">
+            <span className={s.withUnit}>
+              <input id={`${id}-allowance`} type="number" min={0} step={100} value={allowanceGB} onChange={e => setAllowanceGB(clamp(Number(e.target.value), 0, 1000000))} className={s.number} />
+              <span>GB</span>
+            </span>
+          </Field>
         </div>
 
         <div className={s.outputs} aria-live="polite">
           <div className={clsx(s.result, s.classic)}>
-            <p className={s.resultLabel}>TURN you run or rent</p>
+            <p className={s.resultLabel}>Separate TURN service or server</p>
             <p className={s.big}>
               {relay.value}
               <span className={s.unit}>{relay.unit} / month</span>
             </p>
             <p className={s.bill}>
-              {money(r.cost)} <span>per month at {money(price)}/GB</span>
+              {money(r.cost)} <span>estimated egress, before other fees</span>
             </p>
             <div className={s.bar} aria-hidden="true">
               <span className={s.barFill} style={{width: r.relayGB > 0 ? '100%' : '0%'}} />
             </div>
           </div>
           <div className={clsx(s.result, s.freehop)}>
-            <p className={s.resultLabel}>Freehop, gates only</p>
+            <p className={s.resultLabel}>Freehop gate-only path</p>
             <p className={s.big}>
-              0<span className={s.unit}>GB relayed by you</span>
+              0<span className={s.unit}>GB of media through your gate</span>
             </p>
             <p className={s.bill}>
-              $0 <span>relay bill</span>
+              $0 <span>TURN egress through the gate</span>
             </p>
             <div className={s.bar} aria-hidden="true">
               <span className={clsx(s.barFill, s.barGate)} style={{width: `${gateWidth}%`}} />
@@ -194,9 +194,9 @@ export default function CostCalculator() {
             </p>
           </div>
           <p className={s.who}>
-            With Freehop the relayed share still exists: a desktop participant's gateway, the session's host node or a forwarding
-            participant carries it. That is upload inside the session, not a line on your bill. Host sessions only on machines
-            whose bandwidth you are willing to spend.
+            This Freehop column assumes the media gateway belongs to a participant and the gate carries signalling only. It excludes
+            hosting your backend or gate. If you run the session host or gateway on infrastructure you pay for, its media bandwidth and
+            compute can still appear on your bill.
           </p>
           <details className={s.math}>
             <summary>How this is calculated</summary>
@@ -208,6 +208,7 @@ export default function CostCalculator() {
               <li>
                 Gates: {Math.round(r.calls).toLocaleString('en-US')} calls of {minutes} min, {(group * (group - 1)) / 2} peer pair{group > 2 ? 's' : ''} each, an assumed {KB_PER_PAIR} KB per pair at setup. Excludes keepalives, discovery, retries, protocol overhead and hosting costs; complex paths can use more.
               </li>
+              <li>TURN estimate: {relay.value} {relay.unit} total egress less {allowanceGB.toLocaleString('en-US')} GB included, charged at {money(price)}/GB. Provider bundles, taxes and other fees are excluded.</li>
             </ul>
           </details>
         </div>

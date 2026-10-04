@@ -1,7 +1,7 @@
 ---
 title: Cost model
 sidebar_label: Cost model
-description: Where the bandwidth of a Freehop call goes, what moves off the operator's bill, and who carries relayed media instead.
+description: What Freehop itself costs, where your own infrastructure can incur costs, and how to estimate a separate TURN relay bill.
 ---
 
 import { CostScene } from '@site/src/components/scenes';
@@ -9,62 +9,49 @@ import CostCalculator from '@site/src/components/demos/CostCalculator';
 
 <CostScene caption="A relay meter runs for every relayed minute. A mailbox only handles envelopes." />
 
-With a classic TURN setup, the calls that cannot connect directly flow through a relay that you rent, and you pay for every gigabyte. With Freehop, your servers carry sealed signalling only. The relayed share does not disappear: it rides machines that belong to the session instead.
+## Freehop does not charge you
 
-## How big is the relayed share?
+Freehop is open-source software under the Apache-2.0 license. There is no Freehop subscription, per-seat fee or per-minute media charge. The provider prices and estimates on this page describe other services or infrastructure you choose to run; they are not fees charged by Freehop.
 
-Two public measurements give an idea of how many WebRTC calls need a relay:
+Your deployment can still have costs. You may pay to host your application backend and gate, and for any bandwidth or compute used by a gateway or host node that runs on infrastructure you pay for. If the gateway belongs to a participant, that participant contributes the upload. A gate carries sealed signalling only; it does not relay media.
 
-| Source | Finding |
-|---|---|
-| callstats.io, January 2015 to February 2016 ([The Big Churn: learning from real usage stats](https://webrtchacks.com/usage-stats/), Lasse Lumiaho and Varun Singh, webrtcHacks, April 2016) | 22% of conferences needed some kind of TURN relay server |
-| appear.in peer-to-peer calls in Chrome ([What kind of TURN server is being used?](https://medium.com/@fippo/what-kind-of-turn-server-is-being-used-d67dbfc2ff5d), Philipp Hancke, 2017) | 17.7% of connected calls were relayed: 12.1% over TURN/UDP, 5% over TURN/TCP and about 0.5% over TURN/TLS |
+## Estimate a separate TURN relay bill
 
-Both are older measurements from specific services, and network mixes change. Use them as a starting point, not as a prediction for your users.
+If you use a conventional TURN provider, the provider may charge for relayed traffic. The interactive estimate below compares that hypothetical TURN egress with Freehop's gate signalling traffic. It does not include Freehop software fees (there are none), gate/backend hosting, or the cost of a session gateway that you host yourself.
 
-## What does relayed media cost?
+There is no relay percentage that can predict every product. Public figures are tied to particular services, network mixes and measurement periods, so they are not a reliable default for your app. The calculator's relay-share input is a scenario you set, not an industry benchmark. Measure the routes in your own user and network mix before using the result for a budget.
 
-Relay pricing varies by provider. As one public example, Cloudflare's Realtime TURN service lists **$0.05 per real-time GB** sent from Cloudflare to the TURN client, and is free when used together with Cloudflare's Realtime SFU ([pricing](https://developers.cloudflare.com/realtime/turn/)). Treat it as an example rate and put your own in the calculator.
-
-## Estimate your own numbers
-
-Change the assumptions to match your application. The result is an estimate, not a quote.
+TURN pricing depends on the provider and plan. As one current example, Cloudflare lists a 1,000 GB monthly free allowance for Realtime TURN, then $0.05 per GB of egress for standalone TURN; it is free when used with Cloudflare Realtime SFU. The calculator lets you enter a rate and an allowance, but does not model every provider's bundle, tax, discount or billing rule. [Cloudflare TURN pricing and billing details](https://developers.cloudflare.com/realtime/turn/faq/). This is a Cloudflare service price, not a Freehop price.
 
 <CostCalculator />
 
-## Reading the numbers
+## What moves over the network?
 
-The arithmetic is simple enough to check by hand. With Freehop's default bitrates, and decimal units (1 GB = 1,000 MB):
+The arithmetic below uses Freehop's default media bitrates and decimal units (1 GB = 1,000 MB). These are traffic volumes, not prices:
 
-| Item | Size |
-|---|---|
+| Item | Data volume |
+|---|---:|
 | One person-hour of relayed audio at 32 kbit/s, delivered by the relay | 14.4 MB |
 | One person-hour of relayed audio plus video at 32 + 300 kbit/s | 149.4 MB |
-| One call setup through a Freehop gate, per pair of peers | about 15 to 35 KB |
+| One call setup through a Freehop gate, per peer pair | about 15 to 35 KB |
 
-So one hour of one person's relayed audio moves as many bytes as roughly 400 to 1,000 call setups through a gate. At the example rate of $0.05 per GB, 100,000 relayed person-hours a month cost about **$72** for audio only and about **$747** with video, for two-person calls. In a group call, each relayed person receives one stream per other participant, so the relay delivers proportionally more.
+Connected pairs move most signalling onto their own data channels. Keepalives, newcomer discovery and recovery still use the gate. In the [qualification lab](../results.mdx), a gate's total for a whole scenario run, retries included, was 30 to 210 KB.
 
-The gate's share stays small because connected pairs move signalling onto their own data channels. Keepalives, newcomer discovery and recovery still contribute traffic. In the [qualification lab](../results.mdx), a gate's total for a whole scenario run, retries included, was 30 to 210 KB.
+## Who carries the media?
 
-## Who carries the relayed share instead
-
-| Path | Who carries the media | Who pays for the bandwidth |
+| Path | Who carries the media | Where bandwidth or compute costs may land |
 |---|---|---|
-| `direct` | Nobody in between | The two people talking, on their own connections |
-| `gateway` | A desktop participant's own gateway | That participant's upload |
-| `relay` | The gateway of another session member | That member: a desktop participant, or the machine hosting the session |
-| `bridged` | A participant who forwards | That participant's upload, plus CPU to re-encode |
-| `unreachable` | Nobody | Nobody: no media flows, and Freehop says so |
+| `direct` | The two endpoints communicate directly | Each participant uses their own connection |
+| `gateway` | A desktop participant's gateway | That participant's upload, unless you run the gateway |
+| `relay` | A gateway belonging to a session member | The gateway owner's connection or hosting bill |
+| `bridged` | A participant that forwards and re-encodes | That participant's upload and CPU |
+| `unreachable` | Nobody; no media flows | No media traffic is sent |
 
-None of these rows is your operator infrastructure. That is the point of the design, and it comes with obligations:
+Freehop avoids sending media through its gates. It cannot make bandwidth free: if you run the session host or gateway on your own paid server, you pay that server's normal bandwidth and compute costs. Forwarded video is capped at 200 kbit/s, and gateways have per-allocation, per-room and overall quotas.
 
-- **Do not host sessions on servers whose bandwidth you pay for.** A host node relays media for its session. If that host is your own server, the relay bill is back.
-- **Forwarding costs a participant's upload.** How much a forwarding participant on home broadband can spare is not yet measured. Freehop caps forwarded video at 200 kbit/s.
-- **Gateways have quotas.** By default a gateway relays at most 4 Mbit/s per allocation, 20 Mbit/s per room and 40 Mbit/s in total, separately per direction, with at most 6 allocations per username, 32 per room and 64 overall.
+## What you need to run
 
-## What you still run
-
-You still run gates, or none at all: a public WebTorrent tracker can serve as a room's only gate, as the [live call](/demo) on this site does. A gate needs no TURN ports, no media bandwidth and a public HTTPS/WebSocket endpoint, plus a UDP port if you enable STUN. See [Gate service](../sdk/gate-service.mdx).
+You can run a gate, or use a public WebTorrent tracker as a room's gate, as the [live call](/demo) on this site does. A gate needs a public HTTPS/WebSocket endpoint and, if you enable STUN, a UDP port. Hosting and traffic for your backend and gate depend on your provider and usage. See [Gate service](../sdk/gate-service.mdx).
 
 ## Next
 
