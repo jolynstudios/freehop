@@ -29,6 +29,7 @@
 
 .top {
   grid-area: top;
+  container-type: inline-size;
 }
 
 .bottom {
@@ -60,7 +61,7 @@
 .title {
   font-family: var(--fh-display);
   font-weight: 400;
-  font-size: clamp(4.6rem, 11vw, 10.4rem);
+  font-size: clamp(3.5rem, 23cqi, 10.4rem);
   line-height: 0.8;
   letter-spacing: 0;
   color: var(--fh-charcoal);
@@ -81,6 +82,7 @@
   padding-left: 0.18em;
   transform: rotate(-2deg);
   transform-origin: left center;
+  white-space: nowrap;
 }
 
 .hopMark {
@@ -278,7 +280,7 @@
 
 @media (max-width: 480px) {
   .title {
-    font-size: 4.6rem;
+    font-size: clamp(3.5rem, 23cqi, 4.6rem);
     margin-bottom: 0.6rem;
   }
   .eyebrow {
