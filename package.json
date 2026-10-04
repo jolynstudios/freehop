@@ -1,7 +1,6 @@
 {
   "name": "freehop",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.1.0-alpha.0",
   "description": "Peer-to-peer voice, video and data where your servers never carry or pay for media: blind gates for signalling, session-owned gateways and forwarding instead of operator relays.",
   "license": "Apache-2.0",
   "type": "module",
