@@ -1,7 +1,7 @@
 {
   "name": "freehop",
-  "version": "0.1.0-alpha.0",
-  "description": "Peer-to-peer voice, video and data where your servers never carry or pay for media: blind gates for signalling, session-owned gateways and forwarding instead of operator relays.",
+  "version": "0.1.0-alpha.1",
+  "description": "Open-source peer-to-peer voice, video and data SDK for browser and desktop apps, with signalling gates and session-member media gateways.",
   "license": "Apache-2.0",
   "type": "module",
   "engines": {

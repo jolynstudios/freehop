@@ -2,7 +2,7 @@
 
 # Freehop
 
-### Voice and video between your users, without your servers carrying the call.
+### An open-source SDK for voice and video inside your app or game.
 
 **[Live demo](https://jolynstudios.github.io/freehop/demo)** ·
 **[Documentation](https://jolynstudios.github.io/freehop/)** ·
@@ -13,33 +13,29 @@
 ![License: Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-303055)
 ![Docs: CC BY 4.0](https://img.shields.io/badge/docs-CC%20BY%204.0-303055)
 ![Original lab matrix: 40/40](https://img.shields.io/badge/original%20lab%20matrix-40%2F40-096e72)
-![Unit tests: 151/151](https://img.shields.io/badge/unit%20tests-151%2F151-096e72)
+![Unit tests: 156/156](https://img.shields.io/badge/unit%20tests-156%2F156-096e72)
 ![Status: alpha](https://img.shields.io/badge/status-alpha-ef3b2c)
 
 </div>
 
 ---
 
-Adding voice or video to a game or app comes with a hidden bill. WebRTC connects people
-directly when it can. When it can't, because of strict NATs or firewalls that block UDP, the
-standard answer is a **TURN relay that you run and pay for**. Every byte of those calls flows
-through your servers. Historical measurements from 2015–2017 found relay use in roughly one fifth of calls or conferences on those services; they are not a current prediction
-([callstats.io: ~22%](https://webrtchacks.com/usage-stats/),
-[appear.in: ~17.7%](https://medium.com/@fippo/what-kind-of-turn-server-is-being-used-d67dbfc2ff5d)),
-and managed TURN is billed per gigabyte (e.g.
-[$0.05/GB](https://developers.cloudflare.com/realtime/turn/)).
+WebRTC first tries to connect people directly. Strict NATs and firewalls can block that path, so
+some applications use TURN servers to relay media. If you rent a TURN service, its traffic may
+appear on your infrastructure bill.
 
-**Freehop removes your servers from the media path entirely.** Your infrastructure only runs
-small *gates* that introduce people to each other: tens of kilobytes of sealed signalling per
-call, plus presence announcements and connection recovery. When a direct connection is impossible, the call hops through machines that
-**already belong to the session**: a desktop participant's own router-mapped gateway, the machine
-hosting the session, or another participant. The cost of a call stays with the people on it.
+**Freehop is an open-source SDK, not a hosted calling service.** It has no Freehop subscription
+or per-minute fee. Its *gates* introduce participants and exchange sealed setup messages; gates
+do not carry media. When a direct connection fails, media can use a participant's gateway, the
+session host, or another participant. If you run that gateway or host on infrastructure you pay
+for, its bandwidth and compute can still appear on your bill. If no route inside the session
+works, Freehop reports `unreachable` instead of sending media through an operator-run gate.
 
 ## Why Freehop
 
 | | |
 |---|---|
-| 💸 **Zero media on your servers** | Gates carry sealed signalling only. In every lab run, gate traffic for an entire scenario stayed between 30 and 210 KB, with no media at all. |
+| 💸 **No media through your gate** | Gates carry sealed signalling only. In every lab run, gate traffic for an entire scenario stayed between 30 and 210 KB. A session gateway you run can still carry media on your bill. |
 | 🧱 **Connects the "impossible" pairs** | Two strict (symmetric) NATs, or a network that blocks UDP, can't connect directly. Freehop routes them through a session member's gateway or the session host, still with no operator relay. |
 | 🛰️ **No single point of failure** | Run one gate or many, operated by you, your community, or public WebTorrent trackers. Peers on different gates still find each other. **Calls keep running when every gate is down.** |
 | 🔐 **Private by construction** | Signalling is sealed (HKDF + AES-256-GCM), so gates can't read or forge envelopes. Direct and gateway paths preserve end-to-end DTLS-SRTP; a forwarding participant decodes and re-encodes media. |
@@ -89,7 +85,7 @@ Every run asserts the path taken and that audio *and* video actually arrive.
 | A network that can only reach the gate | ✅ 3/3 | `unreachable` (no route exists without your server) |
 
 **40/40 lab runs passed** on the current revision, re-run on 2 October 2026 after security hardening, including gateways that relay only inside their session. Other checks:
-- **151/151 unit tests**, including the RFC 5769 STUN vectors and the security regressions.
+- **156/156 unit tests**, including the RFC 5769 STUN vectors and the security regressions.
 - **coturn's own test client** against Freehop's TURN server: 800/800 messages over UDP and 800/800 over TCP, 0 lost.
 - **Browser suites:** multi-gate with every gate shut down mid-call, kick/rekey, a public WebTorrent tracker as the only gate, and the SDK example app.
 
@@ -111,7 +107,7 @@ Freehop is an independent project; any app can use the same public SDK.
 ## Quickstart
 
 ```bash
-npm install freehop@alpha                 # current alpha: 0.1.0-alpha.0
+npm install freehop@alpha                 # current alpha: 0.1.0-alpha.1
 ```
 
 **Backend:** decide who is in a room.
@@ -155,7 +151,7 @@ two people cannot connect directly, and who pays for that traffic.
 
 | Option | What it is | When a direct route fails, media goes through | Your media bill | Built for | License |
 |---|---|---|---|---|---|
-| **Freehop** | Peer-to-peer SDK plus small signalling gates | Machines in the session: a participant's desktop gateway, the host node, or a forwarding participant | **No operator media bill; session machines carry the traffic** | 2 to 8 people (mesh) | Apache-2.0 |
+| **Freehop** | Peer-to-peer SDK plus small signalling gates | Machines in the session: a participant's desktop gateway, the host node, or a forwarding participant | **Gates carry no media; operator cost depends on who runs the session gateway** | 2 to 8 people (mesh) | Apache-2.0 |
 | WebRTC + your own TURN | The browser API, plus the servers you build (e.g. coturn) | Your TURN server | Every relayed byte | Small groups (mesh), more with an SFU you add | coturn: BSD-3-Clause |
 | [PeerJS](https://peerjs.com) | Library for one-to-one connections by peer id, with PeerServer signalling | A TURN server you supply; its free TURN service closed in December 2023 | Yours, once you add TURN | One-to-one; groups are a mesh you build | MIT |
 | [Trystero](https://github.com/dmotz/trystero) | Serverless peer-to-peer matchmaking library | A TURN server you add; without one, hard-NAT pairs fail | Yours, once you add TURN | Small groups (mesh) | MIT |
@@ -165,10 +161,11 @@ two people cannot connect directly, and who pays for that traffic.
 | Hosted video APIs | Daily, Agora, Twilio Video, Cloudflare Realtime and others | The provider's servers: most send every stream through them | Per participant-minute, or per GB (Cloudflare) | Large rooms, nothing to run | Proprietary |
 
 Freehop is built for products where **people in the session can help carry their own call**:
-games, small-group voice and video, communities. If you need 50-person rooms, recording, or a
-guarantee on networks that block everything except your server, an SFU or a paid relay is the
-right tool. The [full comparison](https://jolynstudios.github.io/freehop/docs/comparison) adds
-signalling and encryption, with sources.
+games, small-group voice and video, communities. If you run the session host or gateway on your
+own paid infrastructure, its media traffic is still your cost. If you need 50-person rooms,
+recording, or a guarantee on networks that block everything except your server, an SFU or a paid
+relay is the right tool. The [full comparison](https://jolynstudios.github.io/freehop/docs/comparison)
+adds signalling and encryption, with sources.
 
 ## Honest limits
 
