@@ -113,7 +113,7 @@ export default function Quickstart() {
   const [active, setActive] = useState(TABS[0].id);
   const [copied, setCopied] = useState(false);
   const tab = TABS.find(t => t.id === active) ?? TABS[0];
-  const install = 'npm install github:jolynstudios/freehop';
+  const install = 'npm install freehop@alpha';
 
   const copy = async () => {
     try {
@@ -188,7 +188,7 @@ export default function Quickstart() {
               {copied ? 'Copied' : 'Copy'}
             </button>
           </div>
-          <p className={styles.installNote}>Install into your app, then bundle the browser import with your frontend build. Node 22+ is for backend, gate and gateway processes. Alpha; not on the npm registry yet.</p>
+          <p className={styles.installNote}>Install Freehop alpha 0.1.0-alpha.0 from npm, then bundle the browser import with your frontend build. Node 22+ is for backend, gate and gateway processes.</p>
           <Link className={styles.more} to="/docs/quickstart">
             <Chevron>Walk through the full quickstart</Chevron>
           </Link>

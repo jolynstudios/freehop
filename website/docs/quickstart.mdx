@@ -18,14 +18,14 @@ The examples below show where each piece runs. A ticket-based integration uses a
 
 ## 0. Install
 
-:::note[Not on npm yet]
+:::note[Alpha release on npm]
 
-Freehop is alpha and is not published to the npm registry. Add it from GitHub, or clone [the repository](https://github.com/jolynstudios/freehop). The backend, gate and host helpers need Node.js 22 or newer. The client runs in the browser; bundle its package import with your frontend build tool.
+Freehop alpha `0.1.0-alpha.0` is published on npm. Install the alpha tag with the command below. The backend, gate and host helpers need Node.js 22 or newer. The client runs in the browser; bundle its package import with your frontend build tool.
 
 :::
 
 ```bash
-npm install github:jolynstudios/freehop
+npm install freehop@alpha
 ```
 
 The package has these entry points:
@@ -79,7 +79,7 @@ FREEHOP_GATE_TRUST_PROXY=1 \
 node bin/freehop-gate.mjs
 ```
 
-In a project that depends on `freehop`, `./node_modules/.bin/freehop-gate` runs the same service. Do not use `npx freehop-gate`: Freehop is not on npm, so npx could fetch a stranger's package and hand it your token secret. Put it behind your TLS proxy so clients reach it as `wss://gate.example.com/freehop`. [Gate service](./sdk/gate-service.mdx) has a systemd unit and a Caddy snippet.
+In a project that depends on `freehop`, `./node_modules/.bin/freehop-gate` runs the installed service. Avoid an unpinned `npx freehop-gate`, which can resolve a different package from the registry. From a checkout, use `node bin/freehop-gate.mjs`. Put the gate behind your TLS proxy so clients reach it as `wss://gate.example.com/freehop`. [Gate service](./sdk/gate-service.mdx) has a systemd unit and a Caddy snippet.
 
 :::tip[No gate of your own]
 

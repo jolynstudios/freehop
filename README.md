@@ -111,7 +111,7 @@ Freehop is an independent project; any app can use the same public SDK.
 ## Quickstart
 
 ```bash
-npm install github:jolynstudios/freehop    # npm registry release follows with 1.0
+npm install freehop@alpha                 # current alpha: 0.1.0-alpha.0
 ```
 
 **Backend:** decide who is in a room.
@@ -143,7 +143,7 @@ FREEHOP_GATE_TOKEN_SECRET="$FREEHOP_GATE_TOKEN_SECRET" \
 FREEHOP_GATE_TOKEN_AUDIENCE=wss://example.com/freehop \
 FREEHOP_GATE_TRUST_PROXY=1 ./node_modules/.bin/freehop-gate
 ```
-Run the installed copy, not `npx freehop-gate`: Freehop is not on npm, so npx could fetch a stranger's package and hand it your token secret.
+Run the installed copy, not an unpinned `npx freehop-gate`: the local binary uses the `freehop` dependency in your project, while `npx` can resolve a different package from the registry. From a checkout, run `node bin/freehop-gate.mjs`.
 
 Desktop apps (Electron) and session hosts get one call each. See [SDK.md](SDK.md). For a
 complete runnable consumer, run `npm run example` and open it in two windows. Existing integrations should follow the [security model](PROTOCOL.md): gateway credentials now come from a privileged broker, tokens name their gate, and STUN servers come from application configuration. Use `authority.kick()` for membership revocation; `disconnectPeer()` is local removal only.

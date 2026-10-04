@@ -13,7 +13,7 @@ node bin/freehop-gate.mjs              # from a checkout of the repository
 ./node_modules/.bin/freehop-gate       # in a project that depends on freehop
 ```
 
-Do not run `npx freehop-gate`. Freehop is not on npm, so npx could download a stranger's package and give it your token secret.
+Use the installed local binary above. An unpinned `npx freehop-gate` can resolve a different package from the registry; from a checkout, run `node bin/freehop-gate.mjs` instead.
 
 It prints one line when it is ready. With STUN configured, for example:
 
