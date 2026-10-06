@@ -188,7 +188,7 @@ export default function Quickstart() {
               {copied ? 'Copied' : 'Copy'}
             </button>
           </div>
-          <p className={styles.installNote}>Install Freehop alpha 0.1.0-alpha.1 from npm, then bundle the browser import with your frontend build. Node 22+ is for backend, gate and gateway processes.</p>
+          <p className={styles.installNote}>Install the current Freehop alpha from npm, then bundle the browser import with your frontend build. Node 22+ is for backend, gate and gateway processes.</p>
           <Link className={styles.more} to="/docs/quickstart">
             <Chevron>Walk through the full quickstart</Chevron>
           </Link>

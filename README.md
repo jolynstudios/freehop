@@ -13,7 +13,7 @@
 ![License: Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-303055)
 ![Docs: CC BY 4.0](https://img.shields.io/badge/docs-CC%20BY%204.0-303055)
 ![Home-built network test matrix: 40/40](https://img.shields.io/badge/home%E2%80%91built%20network%20tests-40%2F40-096e72)
-![Unit tests: 167/167](https://img.shields.io/badge/unit%20tests-167%2F167-096e72)
+![Unit tests: 173/173](https://img.shields.io/badge/unit%20tests-173%2F173-096e72)
 ![Status: alpha](https://img.shields.io/badge/status-alpha-ef3b2c)
 
 </div>
@@ -88,8 +88,8 @@ arrive.
 
 **40/40 home-lab network test runs passed** on 2 October 2026 after security hardening,
 including gateways that relay only inside their session. That matrix has not been rerun for
-alpha.2. These are repeatable simulated-network results, not field reliability evidence. Other checks:
-- **167/167 unit tests**, including the RFC 5769 STUN vectors and the security regressions.
+this revision. These are repeatable simulated-network results, not field reliability evidence. Other checks:
+- **173/173 unit tests**, including the RFC 5769 STUN vectors and the security regressions.
 - **coturn's own test client** against Freehop's TURN server: 800/800 messages over UDP and 800/800 over TCP, 0 lost.
 - **Browser suites:** multi-gate with every gate shut down mid-call, kick/rekey, a public WebTorrent tracker as the only gate, and the SDK example app.
 
@@ -111,7 +111,7 @@ Freehop is an independent project; any app can use the same public SDK.
 ## Quickstart
 
 ```bash
-npm install freehop@alpha                 # current alpha: 0.1.0-alpha.2
+npm install freehop@alpha                 # install the current alpha release
 ```
 
 **Backend:** decide who is in a room.
