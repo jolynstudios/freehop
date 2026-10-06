@@ -121,11 +121,14 @@ export class Room extends Emitter {
       offerTimeouts: 0, mediaStalls: 0, appSent: 0, appReceived: 0, appDropped: 0 };
     this.appBudget = new Map();   // sender -> { tokens, at }
     this.videoQuality = new Map(); // peer -> per-link send/receive controller state
+    this.mutedPeers = new Set();  // peers muted locally (setPeerMuted)
+    this.remoteAudio = new Map(); // peer -> Set of live remote audio tracks, for flipping enabled
     // Preferred capture devices (options.devices, switchDevice); every later capture uses them.
     if (!deviceId(options.devices?.audio) || !deviceId(options.devices?.video)) throw new TypeError('Invalid capture device id');
     this.devices = { audio: options.devices?.audio ?? null, video: options.devices?.video ?? null };
     this.sendCounter = 0; this.closed = false; this.localStream = null; this.ownsMedia = false;
     this.sendProgress = new Map(); this.meshBudget = new Map();
+    this.audioRestores = new WeakMap(); this.checkingSending = false;
   }
 
   get tag8() { return this.tag.slice(0, 8); }
@@ -345,8 +348,10 @@ export class Room extends Emitter {
     this.known.delete(peer); this.hintedAt.delete(peer); this.caps.delete(peer); this.presence.delete(peer); this.early.delete(peer); this.outbox.delete(peer);
     this.sendProgress.delete(peer); this.meshBudget.delete(peer); this.appBudget.delete(peer); this.videoQuality.delete(peer);
     this.lastContact.delete(peer); this.gatewayCreds.delete(`${this.tag8}:${peer}`);
-    // The replay window survives a soft departure: a returning peer keeps its counter.
-    if (reason !== 'gone') this.sequences.delete(peer);
+    this.remoteAudio.delete(peer);
+    // A softly departed ('gone') peer may return with the same id: its replay window and local
+    // mute survive. Terminal departures ('bye', 'dropped', 'rekey') clear both.
+    if (reason !== 'gone') { this.sequences.delete(peer); this.mutedPeers.delete(peer); }
     this.departed.set(peer, { at: Date.now(), reason });
     if (this.departed.size > 256) this.departed.delete(this.departed.keys().next().value);
     for (const [key, b] of [...this.bridgePending]) if (b.a === peer || b.b === peer) {
@@ -899,6 +904,18 @@ export class Room extends Emitter {
   setMicrophone(enabled) { return this.#enableTrack('audio', enabled, MIC); }
   setCamera(enabled) { return this.#enableTrack('video', enabled, CAM); }
 
+  /**
+   * Silences one member locally: enabled = false on their current and future remote audio
+   * tracks. Media still arrives and nothing is signalled, so the peer cannot tell. Muting
+   * an unknown peer is allowed and applies when their audio arrives. Video is untouched.
+   */
+  setPeerMuted(peer, muted) {
+    if (typeof peer !== 'string' || !PEER_ID.test(peer)) throw new TypeError('Invalid peer id');
+    if (typeof muted !== 'boolean') throw new TypeError('muted must be a boolean');
+    if (muted) this.mutedPeers.add(peer); else this.mutedPeers.delete(peer);
+    for (const track of this.remoteAudio.get(peer) ?? []) track.enabled = !muted;
+  }
+
   constraintsFor(kind, base) { const id = this.devices[kind]; return id ? { ...base, deviceId: { exact: id } } : base; }
 
   /**
@@ -1105,36 +1122,100 @@ export class Room extends Emitter {
     }
   }
 
-  // Safety net: a connected link whose live local track sends no packets for two checks gets
-  // a fresh ICE restart from its impolite side (the polite side asks for one).
-  async checkSending() {
-    const epoch = this.crypto;
-    for (const link of [...this.links.values()]) {
-      if (!link.connected || link.closed) continue;
-      let stats; try { stats = await link.pc.getStats(); } catch { continue; }
-      if (this.closed || this.crypto !== epoch || link.closed) return;
-      this.updatePath(link, stats);
-      await this.checkAdaptiveVideo(link, stats);
-      const sent = {};
-      for (const s of stats.values()) if (s.type === 'outbound-rtp' && s.kind) sent[s.kind] = (sent[s.kind] ?? 0) + (s.packetsSent ?? 0);
-      const progress = this.sendProgress.get(link.id) ?? {};
-      for (const track of this.localStream?.getTracks() ?? []) {
-        const sender = link.senders.get(track.kind);
-        if (track.kind === 'video' && this.effectiveVideoLevel(this.videoQualityState(link.id)) === 'paused') { delete progress.video; continue; }
-        if (track.readyState !== 'live' || !sender?.track) { delete progress[track.kind]; continue; }
-        const now = sent[track.kind] ?? 0, before = progress[track.kind];
-        const stalls = before && now <= before.packets ? before.stalls + 1 : 0;
-        progress[track.kind] = { packets: now, stalls };
-        if (stalls === 2) {
-          this.counters.mediaStalls++;
-          if (link.polite) this.signalTo(link.id, { kind: 'restart-request' }); else link.restart();
-        }
-      }
-      this.sendProgress.set(link.id, progress);
+  // A negotiated Chromium audio sender can remain silent although ICE and
+  // video are healthy. Rebind its existing track before trying ICE recovery.
+  async restoreAudioSender(link, sender, state) {
+    const { track, epoch } = state;
+    // Leave, rekey, replacement links, or a device switch owns the new state.
+    if (this.closed || this.crypto !== epoch || link.closed || this.links.get(link.id) !== link ||
+        sender.track !== null || !this.localStream?.getTracks().includes(track) || track.readyState !== 'live') {
+      this.audioRestores.delete(sender);
+      return true;
+    }
+    if (state.wait > 0) { state.wait--; return true; }
+    try {
+      await sender.replaceTrack(track);
+      this.audioRestores.delete(sender);
+      this.log('audio-sender-refreshed', { peer: link.id });
+      return true;
+    } catch (error) {
+      // Detachment succeeded: keep ownership so a later watch can reattach.
+      // Persistent failures back off rather than leaving a null sender forever.
+      state.failures++;
+      state.wait = Math.min(12, 2 ** Math.min(state.failures - 1, 4)) - 1;
+      this.count('linkErrors', error);
+      return false;
     }
   }
 
+  async refreshAudioSender(link, sender, track, epoch) {
+    if (link.pc.signalingState !== 'stable' || typeof sender.replaceTrack !== 'function') return false;
+    const state = { track, epoch, failures: 0, wait: 0 };
+    try {
+      await sender.replaceTrack(null);
+    } catch (error) { this.count('linkErrors', error); return false; }
+    this.audioRestores.set(sender, state);
+    return this.restoreAudioSender(link, sender, state);
+  }
+
+  // Safety net: observe packet progress after an audio refresh. Continued
+  // silence falls back to ICE once; successful promises alone are not recovery.
+  async checkSending() {
+    if (this.checkingSending) return;
+    this.checkingSending = true;
+    const epoch = this.crypto;
+    try {
+      for (const link of [...this.links.values()]) {
+        if (!link.connected || link.closed) continue;
+        let stats; try { stats = await link.pc.getStats(); } catch { continue; }
+        if (this.closed || this.crypto !== epoch || link.closed) return;
+        this.updatePath(link, stats);
+        await this.checkAdaptiveVideo(link, stats);
+        const sent = {};
+        for (const s of stats.values()) if (s.type === 'outbound-rtp' && s.kind) sent[s.kind] = (sent[s.kind] ?? 0) + (s.packetsSent ?? 0);
+        const progress = this.sendProgress.get(link.id) ?? {};
+        for (const track of this.localStream?.getTracks() ?? []) {
+          const sender = link.senders.get(track.kind);
+          const pending = sender && this.audioRestores.get(sender);
+          if (pending) {
+            await this.restoreAudioSender(link, sender, pending);
+            if (this.closed || this.crypto !== epoch || link.closed) return;
+          }
+          if (track.kind === 'video' && this.effectiveVideoLevel(this.videoQualityState(link.id)) === 'paused') { delete progress.video; continue; }
+          if (track.readyState !== 'live' || track.enabled === false || !sender?.track) {
+            if (!this.audioRestores.has(sender ?? {})) delete progress[track.kind];
+            continue;
+          }
+          const now = sent[track.kind] ?? 0, before = progress[track.kind];
+          const stalls = before && now <= before.packets ? before.stalls + 1 : 0;
+          const state = progress[track.kind] = { packets: now, stalls,
+            fallback: stalls > 0 && before?.fallback === true };
+          let restart = false;
+          if (stalls === 2) {
+            this.counters.mediaStalls++;
+            restart = track.kind !== 'audio' || !await this.refreshAudioSender(link, sender, track, epoch);
+          } else if (track.kind === 'audio' && stalls >= 4 && !state.fallback) {
+            restart = true;
+          }
+          if (this.closed || this.crypto !== epoch || link.closed) return;
+          if (restart) {
+            state.fallback = true;
+            if (link.polite) this.signalTo(link.id, { kind: 'restart-request' }); else link.restart();
+          }
+        }
+        this.sendProgress.set(link.id, progress);
+      }
+    } finally { this.checkingSending = false; }
+  }
+
   onRemoteTrack(link, origin, track, stream) {
+    if (track.kind === 'audio') {
+      let set = this.remoteAudio.get(origin);
+      if (!set) this.remoteAudio.set(origin, set = new Set());
+      set.add(track);
+      track.addEventListener('ended', () => set.delete(track));
+      if (this.mutedPeers.has(origin)) track.enabled = false;
+    }
     this.emit('track', { peer: origin, via: origin === link.id ? null : link.id, track, stream });
     if (origin !== link.id) return;
     // A forwarder keeps forwarding tracks the origin adds later (e.g. camera switched on).
