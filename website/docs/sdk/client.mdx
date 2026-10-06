@@ -47,12 +47,13 @@ Media is captured with echo cancellation, noise suppression and automatic gain c
 
 | Member | What it does |
 |---|---|
-| `id` | This peer's id: 22 base64url characters, fresh for every join. |
+| `id` | This peer's id: 22 base64url characters, fresh for every join (stable across reconnects and ticket rotations within the session). If your backend keeps its own member ids, correlate them by announcing `session.id` to your backend after connect — a roster must speak these ids, not control-channel nonces. |
 | `on(event, handler)` | Subscribes to an event and returns an unsubscribe function. `off(event, handler)` also works. |
 | `setMicrophone(enabled)` | Turns the microphone on (capturing it on first use) or mutes it. Muting disables the track without renegotiation. |
 | `setCamera(enabled)` | Turns the camera on, or stops it and frees the device. |
 | `setAdaptiveVideo(enabled)` | Enables or disables automatic per-link video quality changes at runtime. Audio is unchanged. |
 | `attach(track, element)` | Plays a remote track in an `<audio>` or `<video>` element (sets `srcObject`, autoplay, inline playback). |
+| `setPeerMuted(peerId, muted)` | Silences one member locally: their current and future audio tracks stop rendering (video unchanged). Works before the peer sends audio; they cannot tell they are muted. `levels()` keeps reporting their speaking level. State clears when the peer leaves for good, not on a temporary disconnect (`gone`). |
 | `levels()` | Resolves to `{ [peerId]: 0..1 }`: the current speaking level of each origin peer, from inbound audio statistics. |
 | `update(ticket, { dropped })` | Applies an unexpired newer ticket with a new secret for the same app and room. Closes old links, revokes the old desktop gateway epoch, adopts the new ticket's gates and STUN servers, and reconnects approved members. A failed gateway revocation never blocks the rotation; it is retried on `leave()`. Resolves to `false` for an invalid update. |
 | `switchDevice(kind, deviceId)` | Uses another microphone (`'audio'`) or camera (`'video'`), by `deviceId` from `navigator.mediaDevices.enumerateDevices()`, or `null` for the default. A running track is replaced on every link without renegotiation and keeps its mute state; otherwise the choice applies to the next `setMicrophone(true)` or `setCamera(true)`. Initial choices can be passed as `connect(ticket, { devices: { audio, video } })`. |
@@ -64,6 +65,17 @@ Media is captured with echo cancellation, noise suppression and automatic gain c
 | `ticket()` | The current ticket. |
 | `stats()` | Resolves to a snapshot of gates, links, paths, media counters and bridges (see below). |
 | `leave()` | Says goodbye to every member, closes all links and gates, stops the devices it captured, and releases the room on this participant's desktop gateway. |
+
+## Mute a member
+
+`setPeerMuted(peerId, muted)` silences one member locally. It applies to the tracks they are already sending and to every track they send later, so you can mute somebody before they speak:
+
+```js
+session.setPeerMuted(peerId, true);   // their audio stops rendering for you
+session.setPeerMuted(peerId, false);  // back to normal
+```
+
+Mute is one-way and audio-only: media still arrives and counts against bandwidth, `levels()` keeps reporting their speaking level, and nothing is signalled to the muted peer. The state clears when the peer leaves for good and survives a temporary disconnect (`gone`), because they may come back with the same id.
 
 ## Events
 

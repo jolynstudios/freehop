@@ -34,7 +34,7 @@ export default function AppShowcase() {
     <Section tone="yellow" labelledBy="apps-built-on-freehop" className={styles.section}>
       <div className={styles.heading}>
         <div><Eyebrow>For developers</Eyebrow><Title id="apps-built-on-freehop" className={styles.title}>Put the call inside your app.</Title></div>
-        <p>Add it to a game lobby, a shared workspace or any app where people need to talk. Keep your own interface, users and room flow.</p>
+        <p>Add it to a game lobby, a shared workspace or any app where people need to talk. Keep your own interface, users and room flow — and the controls that go with it, down to a one-line local mute for any member.</p>
       </div>
       <div className={styles.codeRow}>
         <code>{'const call = await connect(ticket, { media: { audio: true }, adaptiveVideo: true });'}</code>

@@ -55,6 +55,7 @@ session.on('path', ({ peer, kind, via }) => …);          // direct | gateway |
 session.on('peer-left', ({ id, reason }) => …);
 await session.setMicrophone(false); await session.setCamera(true);
 const levels = await session.levels();                   // speaking indicators
+await session.setPeerMuted(peerId, true);          // silence one member locally
 await session.update(newTicket, { dropped: [kickedPeerId] });   // after a kick
 await session.switchDevice('audio', deviceId);      // another microphone or camera, no renegotiation
 await session.send({ type: 'chat', text: 'hi' });   // app data to everyone (or { to: peerId })
