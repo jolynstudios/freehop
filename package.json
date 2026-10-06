@@ -1,6 +1,6 @@
 {
   "name": "freehop",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "Open-source peer-to-peer voice, video and data SDK for browser and desktop apps, with signalling gates and session-member media gateways.",
   "license": "Apache-2.0",
   "type": "module",
@@ -27,6 +27,10 @@
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "test:browsers": "node test/browser/smoke.mjs chromium,firefox,webkit --tls && node test/browser/multigate.mjs && node test/browser/rekey.mjs && node test/browser/example-app.mjs",
+    "unitgate": "node tools/unitgate.mjs",
+    "exportsgate": "node tools/exportsgate.mjs",
+    "docsyncgate": "node tools/docsyncgate.mjs",
+    "ship": "node tools/ship.mjs",
     "gate": "node bin/freehop-gate.mjs",
     "example": "node examples/minimal/server.mjs"
   },
