@@ -5,8 +5,8 @@
   gap: 0.42em;
   padding: 0.16em 0.62em 0.16em 0.5em;
   border-radius: var(--fh-round);
-  border: 1px solid color-mix(in srgb, var(--k) 32%, #171e2d);
-  background: color-mix(in srgb, var(--k) 8%, #171e2d);
+  border: 1px solid color-mix(in srgb, var(--k) 32%, var(--fh-surface));
+  background: color-mix(in srgb, var(--k) 8%, var(--fh-surface));
   color: var(--k);
   font-family: var(--fh-mono);
   font-weight: 500;
@@ -53,12 +53,12 @@
 }
 .unreachable {
   --k: var(--fh-path-unreachable);
-  background: #171e2d;
+  background: var(--fh-surface);
   border-style: dashed;
   border-color: #8a8a96;
 }
 .unreachable .dot {
-  background: #171e2d;
+  background: var(--fh-surface);
   border: 2px solid var(--k);
 }
 .connecting {

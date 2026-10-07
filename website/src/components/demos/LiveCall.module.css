@@ -106,7 +106,7 @@
 .panel {
   border: 1px solid var(--fh-lavender);
   border-radius: 14px;
-  background: #0b0b0c;
+  background: var(--fh-surface);
   padding: 1rem 1.2rem;
 }
 
@@ -149,7 +149,7 @@
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--fh-ink);
-  background: #0b0b0c;
+  background: var(--fh-surface);
   border: 1px solid var(--fh-lavender);
   border-radius: var(--fh-r-xs);
   padding: 0.45rem 0.85rem;
@@ -203,7 +203,7 @@
   height: 0.7rem;
   border-radius: 50%;
   border: 2px solid var(--fh-charcoal);
-  background: #0b0b0c;
+  background: var(--fh-surface);
 }
 
 .trackerName {
@@ -233,7 +233,7 @@
 
 @keyframes blink {
   50% {
-    background: #0b0b0c;
+    background: var(--fh-surface);
   }
 }
 
@@ -284,7 +284,7 @@
 }
 
 .secondary {
-  background: #0b0b0c;
+  background: var(--fh-surface);
   color: var(--fh-ink);
 }
 
@@ -313,7 +313,7 @@
   margin: 0;
   border: 2px dashed var(--fh-charcoal);
   border-radius: 12px;
-  background: #0b0b0c;
+  background: var(--fh-surface);
   padding: 0.85rem 1rem;
   color: var(--fh-ink);
   font-weight: 500;
@@ -331,7 +331,7 @@
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--fh-ink);
-  background: #0b0b0c;
+  background: var(--fh-surface);
   border: 2px solid var(--fh-charcoal);
   border-radius: var(--fh-round);
   padding: 0.5rem 1rem;
@@ -343,7 +343,7 @@
 
 .control:hover:not(:disabled) {
   transform: translateY(-2px);
-  background: #1c1c1f;
+  background: var(--fh-surface-hover);
 }
 
 .controlOff {
@@ -352,7 +352,7 @@
 }
 
 .controlOff:hover:not(:disabled) {
-  background: #1f1f1f;
+  background: var(--fh-surface-hover);
 }
 
 .leave {
@@ -361,7 +361,7 @@
 }
 
 .leave:hover:not(:disabled) {
-  background: #1f1f1f;
+  background: var(--fh-surface-hover);
 }
 
 .you {
@@ -382,7 +382,7 @@
 }
 
 .meter {
-  background: #0b0b0c;
+  background: var(--fh-surface);
   padding: 0.8rem 1rem;
   display: grid;
   gap: 0.2rem;
@@ -412,7 +412,7 @@
   border: 3px solid var(--fh-charcoal);
   border-radius: 18px;
   overflow: hidden;
-  background: #0b0b0c;
+  background: var(--fh-surface);
 }
 
 .screen {
@@ -427,7 +427,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  background: #1f1f1f;
+  background: var(--fh-surface-hover);
 }
 
 .mirrored {
@@ -541,15 +541,15 @@
 }
 
 .joinBox {
-  background: #141416;
+  background: var(--fh-surface-raised);
   border: var(--fh-hairline);
   border-radius: 6px;
 }
 .screen {
-  background: #1c1c1f;
+  background: var(--fh-surface-hover);
 }
 .placeholder span {
-  background: #1c1c1f;
+  background: var(--fh-surface-hover);
   color: var(--fh-yellow);
   border: var(--fh-hairline);
   border-radius: 6px;
@@ -568,7 +568,7 @@
   transform: none;
 }
 .leave {
-  background: #302333;
+  background: var(--fh-danger-bg);
   color: var(--fh-coral);
 }
 .tile,

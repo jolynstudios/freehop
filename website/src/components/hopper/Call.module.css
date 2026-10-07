@@ -4,6 +4,17 @@
  */
 
 .stage {
+  color-scheme: dark;
+  --fh-paper: #000;
+  --fh-surface: #0b0b0c;
+  --fh-ink: #f0f0f0;
+  --fh-slate: #c6c6c6;
+  --fh-fog: #a1a4a5;
+  --fh-lavender: #292d30;
+  --fh-charcoal: #000;
+  --fh-yellow: #f0f0f0;
+  --fh-coral: #f398ac;
+  --fh-azure: #c6c6c6;
   --hp-stage: #000000;
   --hp-tile: #151516;
   --hp-raise: #1c1c1f;

@@ -1,7 +1,7 @@
 .footer {
   position: relative;
   background: var(--fh-charcoal);
-  color: #ffffff;
+  color: var(--fh-ink);
   margin-top: 48px;
   padding: 0 var(--fh-gutter);
 }
@@ -28,14 +28,14 @@
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 2fr);
   gap: 2.5rem 3rem;
-  border-bottom: 1px solid #4a4a4a;
+  border-bottom: 1px solid var(--fh-lavender);
 }
 
 .wordmark {
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  color: #ffffff;
+  color: var(--fh-ink);
   font-family: var(--fh-display);
   font-size: 2.1rem;
   line-height: 1;
@@ -48,7 +48,7 @@
 .tagline {
   margin: 1rem 0 0;
   max-width: 22rem;
-  color: #e4e4ea;
+  color: var(--fh-slate);
   font-size: 0.9375rem;
   line-height: 1.6;
 }
@@ -65,7 +65,7 @@
   font-weight: 600;
   letter-spacing: 0.056em;
   text-transform: uppercase;
-  color: #c9c9d3;
+  color: var(--fh-fog);
   margin: 0 0 0.9rem;
 }
 
@@ -80,7 +80,7 @@
 }
 
 .column a {
-  color: #ffffff;
+  color: var(--fh-ink);
   font-size: 0.9375rem;
   text-decoration: underline;
   text-decoration-color: transparent;
@@ -106,7 +106,7 @@
   padding: 1.6rem 0 2.2rem;
   font-size: 0.8125rem;
   line-height: 1.6;
-  color: #d4d4dc;
+  color: var(--fh-fog);
 }
 
 .legal p {
@@ -114,7 +114,7 @@
 }
 
 .warranty {
-  color: #ffffff;
+  color: var(--fh-ink);
   font-weight: 500;
   margin-bottom: 0.35rem !important;
 }
@@ -157,9 +157,9 @@
 }
 
 .footer {
-  background: #000;
+  background: var(--fh-paper);
   margin-top: 0;
-  border-top: 1px solid #292d30;
+  border-top: 1px solid var(--fh-lavender);
 }
 .inner {
   padding-top: 65px;
@@ -170,30 +170,30 @@
   letter-spacing: -0.06em;
 }
 .tagline {
-  color: #999;
+  color: var(--fh-fog);
   font-size: 13px;
   max-width: 250px;
 }
 .heading {
   font-size: 10px;
-  color: #999;
+  color: var(--fh-fog);
   font-weight: 400;
 }
 .column a {
   font-size: 12px;
-  color: #c6c6c6;
+  color: var(--fh-slate);
 }
 .column a:hover {
-  color: white;
+  color: var(--fh-ink);
 }
 .legal {
   font-size: 10px;
-  color: #777;
+  color: var(--fh-fog);
 }
 .warranty {
   font-weight: 400;
   font-size: 11px;
-  color: #999;
+  color: var(--fh-fog);
 }
 .warranty::before {
   display: none;

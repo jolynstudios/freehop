@@ -6,8 +6,7 @@ import type {PrismTheme} from 'prism-react-renderer';
 
 const GITHUB = 'https://github.com/jolynstudios/freehop';
 
-// Code colours from the documentation palette: plum, cobalt, teal and rust on a pale
-// lavender surface. Every token colour keeps at least 4.5:1 contrast on the code surface.
+// Syntax colors are scoped to code and paired with each theme's surface.
 const codeTheme: PrismTheme = {
   plain: {color: '#f0f0f0', backgroundColor: '#0b0b0c'},
   styles: [
@@ -20,6 +19,26 @@ const codeTheme: PrismTheme = {
     {types: ['punctuation', 'operator'], style: {color: '#c6c6c6'}},
     {types: ['deleted'], style: {color: '#f398ac', textDecorationLine: 'line-through'}},
   ],
+};
+
+const lightCodeTheme: PrismTheme = {
+  plain: {color: '#171719', backgroundColor: '#fafafa'},
+  styles: codeTheme.styles.map((entry) => ({
+    ...entry,
+    style: {
+      ...entry.style,
+      color: (
+        {
+          '#a1a4a5': '#606067',
+          '#c4bddb': '#65518a',
+          '#c6c6c6': '#424247',
+          '#85d9ca': '#146457',
+          '#f398ac': '#a72b45',
+          '#f0f0f0': '#171719',
+        } as Record<string, string>
+      )[entry.style.color as string],
+    },
+  })),
 };
 
 const config: Config = {
@@ -55,7 +74,10 @@ const config: Config = {
 
   clientModules: ['./src/clientModules/pauseOffscreen.ts'],
 
-  headTags: [{tagName: 'meta', attributes: {name: 'theme-color', content: '#000000'}}],
+  headTags: [
+    {tagName: 'meta', attributes: {name: 'theme-color', content: '#000000', media: '(prefers-color-scheme: dark)'}},
+    {tagName: 'meta', attributes: {name: 'theme-color', content: '#ffffff', media: '(prefers-color-scheme: light)'}},
+  ],
   presets: [
     [
       'classic',
@@ -87,8 +109,8 @@ const config: Config = {
     ],
     colorMode: {
       defaultMode: 'dark',
-      disableSwitch: true,
-      respectPrefersColorScheme: false,
+      disableSwitch: false,
+      respectPrefersColorScheme: true,
     },
     docs: {
       sidebar: {
@@ -118,7 +140,8 @@ const config: Config = {
       ],
     },
     prism: {
-      theme: codeTheme,
+      theme: lightCodeTheme,
+      darkTheme: codeTheme,
       additionalLanguages: ['bash', 'json', 'ini', 'diff'],
     },
   } satisfies Preset.ThemeConfig,

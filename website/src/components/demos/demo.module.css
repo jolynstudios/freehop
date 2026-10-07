@@ -4,7 +4,7 @@
   position: relative;
   border: 1px solid var(--fh-lavender);
   border-radius: 14px;
-  background: #0b0b0c;
+  background: var(--fh-surface);
   margin: 1.5rem 0 2.5rem;
   overflow: hidden;
   font-size: 1rem;
@@ -18,7 +18,7 @@
   gap: 1rem;
   padding: 0.85rem 1.1rem 0.85rem 1.25rem;
   border-bottom: 1px solid var(--fh-lavender);
-  background: #141416;
+  background: var(--fh-surface-raised);
 }
 
 .cardTitle {
@@ -52,7 +52,7 @@
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--fh-slate);
-  background: #0b0b0c;
+  background: var(--fh-surface);
   border: 1px solid var(--fh-lavender);
   border-radius: var(--fh-r-xs);
   padding: 0.3rem 0.7rem;
@@ -123,7 +123,7 @@
   padding: 0.42rem 0.8rem;
   border-radius: var(--fh-round);
   border: 2px solid var(--fh-charcoal);
-  background: #0b0b0c;
+  background: var(--fh-surface);
   color: var(--fh-ink);
   font-size: 0.875rem;
   font-weight: 500;
@@ -138,7 +138,7 @@
 
 .chip span:hover {
   transform: translateY(-2px);
-  background: #1c1c1f;
+  background: var(--fh-surface-hover);
 }
 
 .chip input:active + span {
@@ -186,7 +186,7 @@
   height: 1.5rem;
   border-radius: var(--fh-round);
   border: 2px solid var(--fh-charcoal);
-  background: #0b0b0c;
+  background: var(--fh-surface);
   flex: none;
   transition: background-color 0.18s var(--fh-ease);
 }
@@ -219,7 +219,7 @@
 }
 
 .switch:hover .track {
-  background: #1c1c1f;
+  background: var(--fh-surface-hover);
 }
 
 .switch input:checked:hover + .track {
@@ -311,6 +311,6 @@
   font-weight: 600;
 }
 .button {
-  background: #1c1c1f;
+  background: var(--fh-surface-hover);
   color: var(--fh-ink);
 }

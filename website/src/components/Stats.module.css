@@ -10,7 +10,7 @@
 }
 
 .stat {
-  background: #171e2d;
+  background: var(--fh-surface);
   padding: 1.25rem 1.3rem 1.2rem;
   display: flex;
   flex-direction: column;
@@ -28,7 +28,6 @@
 }
 
 .value span {
-  background: linear-gradient(transparent 58%, var(--fh-yellow) 58%, var(--fh-yellow) 92%, transparent 92%);
   padding: 0 0.08em;
 }
 

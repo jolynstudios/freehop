@@ -1,5 +1,5 @@
 .wrap {
-  background: #0b0b0c;
+  background: var(--fh-surface);
   border: 1px solid var(--fh-lavender);
   border-radius: 14px;
   overflow: hidden;
@@ -40,7 +40,7 @@
 }
 
 .table thead th {
-  background: #141416;
+  background: var(--fh-surface-raised);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.056em;
@@ -56,7 +56,7 @@
 .table tbody tr {
   border: none;
   border-top: 1px solid var(--fh-lavender);
-  background: #0b0b0c;
+  background: var(--fh-surface);
   transition: background-color 0.15s var(--fh-ease);
 }
 
@@ -65,7 +65,7 @@
 }
 
 .table tbody tr:hover {
-  background: #141416;
+  background: var(--fh-surface-raised);
 }
 
 .table tbody th,
@@ -91,11 +91,11 @@
 }
 
 .tableFull .option {
-  background: #0b0b0c;
+  background: var(--fh-surface);
 }
 
 .tableFull .optionHead {
-  background: #141416;
+  background: var(--fh-surface-raised);
 }
 
 .name {
@@ -131,7 +131,7 @@
 .ours,
 .ours:hover,
 .tableFull .ours .option {
-  background: #1c1c1f !important;
+  background: var(--fh-surface-hover) !important;
 }
 
 .ours .option {
@@ -169,17 +169,17 @@
 
 .bill_none {
   color: var(--fh-teal);
-  background: #183733;
+  background: var(--fh-success-bg);
 }
 
 .bill_yours {
   color: var(--fh-rust);
-  background: #302333;
+  background: var(--fh-danger-bg);
 }
 
 .bill_provider {
   color: var(--fh-plum);
-  background: #292538;
+  background: var(--fh-info-bg);
 }
 
 .nowrap {

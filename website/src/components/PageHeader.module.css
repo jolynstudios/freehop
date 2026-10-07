@@ -96,7 +96,7 @@
 .header {
   padding-top: 80px;
   padding-bottom: 70px;
-  background: #000;
+  background: var(--fh-paper);
 }
 .title {
   font: 400 clamp(52px, 6vw, 84px)/1.03 var(--fh-editorial);
@@ -104,19 +104,19 @@
   max-width: 20ch;
 }
 .copy p:not(.eyebrow) {
-  color: #a1a4a5;
+  color: var(--fh-fog);
   font-size: 16px;
   max-width: 700px;
 }
 .eyebrow {
   font-size: 10px;
   font-weight: 400;
-  color: #999;
+  color: var(--fh-fog);
   letter-spacing: 0.06em;
 }
 .eyebrow::before {
   display: none;
 }
 .header :focus-visible {
-  outline-color: #fff;
+  outline-color: var(--fh-ink);
 }

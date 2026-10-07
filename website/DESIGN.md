@@ -76,3 +76,31 @@ The network tools remain embedded in their concept documentation; the Three.js g
 integration into the reader's own app without claiming supplied game examples.
 
 Revision verification: production build and TypeScript passed; desktop/mobile layouts show the SDK immediately after the hero and no game links. The two-peer smoke test passes for live audio/video, media controls, messages, Hopper chat and leave/rejoin.
+
+## System theme and contrast correction
+
+User screenshots identified a legacy highlight crossing the result numbers and pale calculator
+text on a pale result panel. Remove the highlight; give the calculator result its own complete,
+contrasting foreground/background palette. Preserve the approved typography, layout and logo.
+
+Refero MCP research revisited Resend (`b2f7a9d7-ba46-4c00-bc73-426969097ff9`) and Ui
+(`c14c0a94-1037-449e-bf5b-4cb972656ac7`). Resend retains the dark theme's type roles and
+hairline surfaces. Ui contributes only the light theme's white canvas, neutral surface steps
+and dark text. The user explicitly requested a light theme; the approved dark media stage
+remains local to the hero and active video meeting. No new decorative colors or layout changes.
+
+| Decision | Source / role | Implementation |
+|---|---|---|
+| System, Light, Dark | User request, existing Docusaurus color-mode provider | Follow OS initially and on changes; persist explicit choice; allow return to System |
+| Light surfaces and dark text | Ui neutral roles; Refero color craft | White canvas, near-white panels, charcoal text, readable secondary gray |
+| Status and code colors | Existing semantic roles | Separate light/dark contrast pairs; no use as decorative fills |
+| Number legibility | User screenshot | Remove the old marker background entirely |
+| Calculator result | User screenshot | Dark text on its light result panel in either theme |
+| Favicon | User correction | Unchanged |
+
+Verification: TypeScript and strict production build passed. Desktop/mobile theme checks
+cover initial light/dark OS preferences, live OS changes, explicit override persistence and
+return to System. WCAG A/AA automated audits cover home, docs, results, cost, comparison,
+quickstart, demos, live call, paths, gates and Hopper in both themes. Screenshots confirm
+unobscured results and readable calculator panels. Real two-peer audio/video, controls,
+chat and Hopper leave/rejoin checks passed. Favicon files remain unchanged.

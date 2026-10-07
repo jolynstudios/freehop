@@ -105,10 +105,10 @@
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--fh-ink);
-  border: 2px solid var(--fh-charcoal);
+  border: 1px solid var(--fh-border-strong);
   border-radius: 8px;
   padding: 0.3rem 0.5rem;
-  background: #141416;
+  background: var(--fh-surface-raised);
 }
 
 .number:focus {
@@ -134,9 +134,9 @@
   font: inherit;
   font-size: 0.8125rem;
   font-weight: 500;
-  border: 2px solid var(--fh-charcoal);
+  border: 1px solid var(--fh-border-strong);
   border-radius: var(--fh-round);
-  background: #0b0b0c;
+  background: var(--fh-surface);
   color: var(--fh-ink);
   padding: 0.32rem 0.75rem;
   cursor: pointer;
@@ -147,7 +147,7 @@
 
 .preset:hover {
   transform: translateY(-2px);
-  background: #1c1c1f;
+  background: var(--fh-surface-hover);
 }
 
 .presetOn,
@@ -164,15 +164,22 @@
 .result {
   border-radius: 14px;
   padding: 1.1rem 1.2rem 1.15rem;
-  border: 3px solid var(--fh-charcoal);
+  border: 1px solid var(--fh-lavender);
 }
 
 .classic {
-  background: #0b0b0c;
+  background: var(--fh-surface);
 }
 
 .freehop {
-  background: var(--fh-yellow);
+  --fh-ink: #171719;
+  --fh-slate: #424247;
+  --fh-fog: #606067;
+  --fh-surface: #ffffff;
+  --fh-charcoal: #171719;
+  --fh-azure: #424247;
+  background: #f0f0f0;
+  color: var(--fh-ink);
 }
 
 .resultLabel {
@@ -229,8 +236,8 @@
 .bar {
   height: 14px;
   border-radius: var(--fh-round);
-  border: 2px solid var(--fh-charcoal);
-  background: #0b0b0c;
+  border: 1px solid var(--fh-border-strong);
+  background: var(--fh-surface);
   overflow: hidden;
 }
 
@@ -243,7 +250,7 @@
 }
 
 .barGate {
-  background: var(--fh-charcoal);
+  background: #171719;
   border-right: none;
 }
 
@@ -279,7 +286,7 @@
 
 .sources {
   border-top: 1px solid var(--fh-lavender);
-  background: #141416;
+  background: var(--fh-surface-raised);
   padding: 0.85rem 1.25rem 1rem;
   font-size: 0.8125rem;
 }

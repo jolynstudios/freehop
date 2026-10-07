@@ -31,7 +31,7 @@
 }
 
 .playing {
-  background: #0b0b0c;
+  background: var(--fh-surface);
   color: var(--fh-ink);
 }
 
@@ -70,7 +70,7 @@
 }
 
 .segGrace {
-  background: repeating-linear-gradient(-45deg, #0b0b0c 0 6px, #9cd3cf 6px 12px);
+  background: repeating-linear-gradient(-45deg, var(--fh-surface) 0 6px, #9cd3cf 6px 12px);
 }
 
 .seg1 {
@@ -82,7 +82,7 @@
 }
 
 .seg3 {
-  background: #0b0b0c;
+  background: var(--fh-surface);
   border-style: dashed;
 }
 
@@ -115,7 +115,7 @@
   height: 12px;
   border-radius: 50%;
   border: 2.5px solid var(--fh-charcoal);
-  background: #0b0b0c;
+  background: var(--fh-surface);
 }
 
 .retryOn {
@@ -125,7 +125,7 @@
 
 @keyframes retryPulse {
   50% {
-    background: #0b0b0c;
+    background: var(--fh-surface);
   }
 }
 
@@ -242,12 +242,12 @@
 
 .now {
   border-color: var(--fh-ink);
-  background: #1c1c1f;
+  background: var(--fh-surface-hover);
 }
 
 .past {
   border-color: var(--fh-lavender);
-  background: #0b0b0c;
+  background: var(--fh-surface);
 }
 
 .past .phaseName::after {
@@ -257,11 +257,10 @@
 }
 
 .next {
-  background: #0b0b0c;
+  background: var(--fh-surface);
 }
 
 .skipped {
-  opacity: 0.85;
   border-style: dashed;
 }
 

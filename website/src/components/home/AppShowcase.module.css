@@ -1,6 +1,6 @@
 .section {
   padding: 100px 0 0;
-  background: #000;
+  background: var(--fh-paper);
 }
 .heading {
   max-width: 1320px;
@@ -13,20 +13,20 @@
 }
 .heading > p {
   font: 11px var(--fh-mono);
-  color: #a1a4a5;
+  color: var(--fh-fog);
   margin: 8px 0;
 }
 .heading h2 {
   font: 400 clamp(42px, 5vw, 70px)/1.03 var(--fh-display);
   letter-spacing: -0.055em;
   margin: 0 0 25px;
-  color: #fff;
+  color: var(--fh-ink);
 }
 .heading > span {
   grid-column: 2;
   font-size: 14px;
   line-height: 1.8;
-  color: #a1a4a5;
+  color: var(--fh-fog);
 }
 .more {
   max-width: 1320px;
@@ -35,19 +35,19 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 80px;
-  border-bottom: 1px solid #292d30;
+  border-bottom: 1px solid var(--fh-lavender);
 }
 .more > a {
-  border-top: 1px solid #292d30;
+  border-top: 1px solid var(--fh-lavender);
   padding: 28px 0;
-  color: #fff;
+  color: var(--fh-ink);
 }
 .more > a:hover {
   text-decoration: none;
 }
 .more > a > span {
   font: 11px var(--fh-mono);
-  color: #a1a4a5;
+  color: var(--fh-fog);
 }
 .more h2,
 .more h3 {
@@ -58,13 +58,13 @@
 .more p {
   font-size: 13px;
   line-height: 1.8;
-  color: #a1a4a5;
+  color: var(--fh-fog);
 }
 .more b {
   display: block;
   font-weight: 400;
   font-size: 12px;
-  color: #ddd;
+  color: var(--fh-slate);
   margin-top: 26px;
 }
 .more > a:hover b {

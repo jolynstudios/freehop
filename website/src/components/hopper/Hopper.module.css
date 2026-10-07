@@ -3,7 +3,7 @@
 }
 
 .scene {
-  background: #141416;
+  background: var(--fh-surface-raised);
   color: var(--fh-ink);
   padding: clamp(28px, 4.5vw, 60px) var(--fh-gutter) clamp(44px, 6vw, 84px);
   overflow: hidden;
@@ -369,13 +369,20 @@
 }
 
 .preview {
+  color-scheme: dark;
+  --fh-ink: #f0f0f0;
+  --fh-fog: #a1a4a5;
+  --fh-charcoal: #000;
+  --fh-yellow: #f0f0f0;
+  --fh-surface: #0b0b0c;
+  --fh-surface-raised: #141416;
   position: relative;
   aspect-ratio: 16 / 9;
   border-radius: 24px;
   border: 4px solid var(--fh-charcoal);
   background: #1e1e1e;
   overflow: hidden;
-  color: #ffffff;
+  color: var(--fh-ink);
 }
 
 .previewVideo {
@@ -414,7 +421,7 @@
   max-width: 26rem;
   font-size: 0.9375rem;
   line-height: 1.5;
-  color: #d4d4dc;
+  color: var(--fh-fog);
 }
 
 .checkButton {
@@ -425,7 +432,7 @@
   padding: 0.75rem 1.3rem;
   border: 0;
   border-radius: var(--fh-round);
-  background: #141416;
+  background: var(--fh-surface-raised);
   color: var(--fh-ink);
   cursor: pointer;
   transition: transform 0.18s var(--fh-ease);
@@ -436,7 +443,7 @@
 }
 
 .preview :focus-visible {
-  outline: 3px solid #ffffff;
+  outline: 3px solid var(--fh-ink);
   outline-offset: 3px;
 }
 
@@ -446,7 +453,7 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: #141416;
+  background: var(--fh-surface-raised);
   color: var(--fh-ink);
   font-family: var(--fh-display);
   font-size: clamp(1.8rem, 5vw, 3rem);
@@ -489,7 +496,7 @@
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.9);
   background: rgba(24, 24, 24, 0.55);
-  color: #ffffff;
+  color: var(--fh-ink);
   cursor: pointer;
   transition:
     background-color 0.15s var(--fh-ease),
@@ -506,7 +513,7 @@
 
 .roundOff,
 .roundOff:hover {
-  background: #141416;
+  background: var(--fh-surface-raised);
   border-color: var(--fh-yellow);
   color: var(--fh-ink);
 }
@@ -563,7 +570,7 @@
 }
 
 .meter i.meterOn {
-  background: #141416;
+  background: var(--fh-yellow);
 }
 
 .previewErrors,
@@ -709,7 +716,7 @@
 
 .secondarySmall:hover,
 .copyButton:hover {
-  background: #141416;
+  background: var(--fh-surface-raised);
 }
 
 .joinNow {
@@ -832,7 +839,7 @@
   place-items: center;
   align-content: center;
   gap: 1rem;
-  background: #141416;
+  background: var(--fh-surface-raised);
   color: var(--fh-ink);
   font-weight: 500;
 }
@@ -1004,7 +1011,7 @@
 }
 .primary:hover,
 .joinNow:hover {
-  background: #ffffff;
+  background: var(--fh-ink);
   color: var(--fh-charcoal);
 }
 .eyebrow {
@@ -1017,7 +1024,7 @@
 }
 
 .scene {
-  background: #000;
+  background: var(--fh-paper);
   padding-top: 70px;
 }
 .homeInner {
@@ -1033,7 +1040,7 @@
 }
 .homeLede {
   font-size: 16px;
-  color: #a1a4a5;
+  color: var(--fh-fog);
   max-width: 630px;
 }
 .lockupName {
@@ -1045,8 +1052,8 @@
 .primary,
 .joinNow {
   background: transparent;
-  color: #fff;
-  border: 1px solid #777;
+  color: var(--fh-ink);
+  border: 1px solid var(--fh-fog);
   font-size: 14px;
   border-radius: 500px;
 }
@@ -1057,8 +1064,8 @@
 }
 .primary:hover,
 .joinNow:hover {
-  background: #151515;
-  color: #fff;
+  background: var(--fh-surface-hover);
+  color: var(--fh-ink);
 }
 .benefitsTitle {
   font-weight: 400;
