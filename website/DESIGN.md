@@ -104,3 +104,18 @@ return to System. WCAG A/AA automated audits cover home, docs, results, cost, co
 quickstart, demos, live call, paths, gates and Hopper in both themes. Screenshots confirm
 unobscured results and readable calculator panels. Real two-peer audio/video, controls,
 chat and Hopper leave/rejoin checks passed. Favicon files remain unchanged.
+
+## Practical use cases and plain copy
+
+User rejected abstract “world” slogans and asked to show more than games, keeping both demos.
+The hero now says “Voice and video, inside your app.”; the close says “Build your first call.”
+SDK code remains immediately below the hero. A new section shows five concrete integration
+ideas: small meeting rooms, in-app calls, shared workspaces, Electron collaboration and
+community/game rooms. Each links to a recipe grounded in the existing SDK API. These are
+clearly presented as things to build; Hopper and the live demo remain the working examples.
+
+The approved Refero layout remains the target: spacious type, flat surfaces, hairline row
+separators and neutral themes. Use cases are readable rows rather than fabricated product
+screens or more demos. README, introduction, AI build brief, navigation, footer and social
+preview carry the same broader positioning. Desktop/mobile checks in both themes pass with
+five valid recipe anchors, no overflow, runtime errors or automated WCAG A/AA violations.

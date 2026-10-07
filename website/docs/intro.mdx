@@ -2,16 +2,16 @@
 slug: /
 title: Build with Freehop
 sidebar_label: Introduction
-description: Open-source voice, video and session data for browser games, Electron apps and AI-assisted platforms.
+description: Open-source voice, video and session data for small meeting rooms, in-app calls, shared workspaces and Electron apps.
 ---
 
 import { IntroScene } from '@site/src/components/scenes';
 import { StatGrid, Stat } from '@site/src/components/Stats';
 import PathBadge from '@site/src/components/PathBadge';
 
-<IntroScene caption="Players connect through session routes. Gates only introduce them." />
+<IntroScene caption="Participants connect through session routes. Gates only introduce them." />
 
-Freehop is a JavaScript SDK for adding peer-to-peer audio, video and data to browser and desktop apps—including games that want a voice overlay without becoming a meeting app. Keep your own UI, room flow and account system; Freehop supplies the connection and media controls. Its initial target is small rooms of 2 to 8 people; that is a starting target, not a measured hardware limit. **Gates never carry media.** If you run a session host or gateway on infrastructure you pay for, its media bandwidth and compute can still appear on your bill.
+Freehop is a JavaScript SDK for adding peer-to-peer audio, video and data to browser and desktop apps: small meeting rooms, calls inside existing tools, shared workspaces, communities and games. Keep your own UI, room flow and account system; Freehop supplies the connection and media controls. Its initial target is small rooms of 2 to 8 people; that is a starting target, not a measured hardware limit. **Gates never carry media.** If you run a session host or gateway on infrastructure you pay for, its media bandwidth and compute can still appear on your bill.
 
 :::caution[Alpha, home-lab network tests only]
 
@@ -21,12 +21,13 @@ Freehop is alpha software. Its developer-built test setup, run in a home lab, pa
 
 ## Choose your starting point
 
+- **[Use cases](./use-cases.mdx):** recipes for meeting rooms, embedded calls, shared workspaces, desktop tools and communities.
 - **[Browser games](./games.mdx):** Three.js worlds with a voice/video overlay and small shared events.
 - **[Electron](./sdk/desktop.mdx):** the same client, plus a desktop participant’s gateway.
 - **[Build with AI](./build-with-ai.mdx):** a scoped build brief for your coding agent, or a checklist for your own implementation.
 - **[Demos](/demos):** Hopper and a live call with connection inspection, with source you can inspect.
 
-Freehop supplies connections and media controls. Your app supplies gameplay, accounts, persistence and any AI services.
+Freehop supplies connections and media controls. Your app supplies its interface, accounts, persistence and any AI services.
 
 ## The one rule
 
@@ -86,7 +87,7 @@ The browser client has zero runtime dependencies. The gate uses `ws`. The gatewa
 ## Where to go next
 
 - [Quickstart](./quickstart.mdx): the five pieces of an integration, with code.
-- [Examples](/demos): see Freehop inside Three.js games, Hopper squad rooms and the comms lab.
+- [Examples](/demos): try Hopper or inspect a real call in the live demo.
 - [Gates](./concepts/gates.mdx): what a gate is, and what it can and cannot see.
 - [Paths and escalation](./concepts/paths.mdx): how a pair of peers finds its route, with an interactive path finder.
 - [Cost model](./concepts/cost.mdx): what moves off your bill, and who carries it instead.

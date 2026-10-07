@@ -1,31 +1,31 @@
 ---
 title: Build with AI. Keep control.
 sidebar_label: AI-assisted development
-description: A practical build brief for adding Freehop to an AI-assisted game or platform project.
+description: A practical build brief for adding Freehop calling to a small app or shared workspace.
 ---
 
-# From prompt to connected platform
+# Build calling into your app
 
-Use an AI coding agent to scaffold a Three.js game, prototype an Electron app, or build your own community space. Freehop provides the same JavaScript API whether you write the code yourself or pair with an agent.
+Use an AI coding agent to scaffold a small meeting room, add calling to an existing app, or prototype an Electron workspace. Freehop provides the same JavaScript API whether you write the code yourself or pair with an agent.
 
-Freehop does not ship an AI model, hosted assistant, transcription pipeline or agent runtime. If your platform needs AI NPCs, a copilot or moderation, choose and connect those services in your own application. Keep provider secrets on your backend and make any sharing of voice, video or messages with an AI service explicit to participants.
+Freehop does not ship an AI model, hosted assistant, transcription pipeline or agent runtime. If your platform needs summaries, a copilot or moderation, choose and connect those services in your own application. Keep provider secrets on your backend and make any sharing of voice, video or messages with an AI service explicit to participants.
 
 ## A build brief you can use
 
 ```text
-Build a small browser co-op prototype using Three.js and Freehop.
+Build a small browser meeting room using Freehop.
 
 Read Freehop's Quickstart and public client API before writing code.
-Use freehop@alpha and keep the rendering and connection layers separate.
+Use freehop@alpha and keep the interface and connection layers separate.
 
 - My backend authenticates users and issues session tickets.
 - Start with microphone and camera off. Enable each only after a click.
 - Attach incoming media tracks to my own HTML call panel.
-- Share small, validated player events, throttled below 20 per second.
+- Support chat with small, validated messages, below 20 per second.
 - Show the actual path: direct, gateway, relay, bridged or unreachable.
 - Handle missing permissions, blocked playback and connection failures.
-- Leave the session and dispose Three.js resources on navigation.
-- Keep keyboard, touch controls and a 2D fallback usable.
+- Leave the session and stop owned media on navigation.
+- Keep keyboard controls, labels and mobile layouts usable.
 - Test two independent browsers, peer departure and media shutdown.
 
 Do not invent SDK methods or claim production reliability.
@@ -33,13 +33,13 @@ Do not put authority secrets, provider keys or gateway signing keys
 in the browser. Do not add an AI service or upload media by default.
 ```
 
-Start with the [Quickstart](./quickstart.mdx), [client reference](./sdk/client.mdx) and [Three.js guide](./games.mdx). A build brief is a starting specification; review the resulting code and test it on your target devices and networks.
+Start with the [Quickstart](./quickstart.mdx), [client reference](./sdk/client.mdx) and [use-case recipes](./use-cases.mdx). A build brief is a starting specification; review the resulting code and test it on your target devices and networks.
 
 ## Build the platform you have in mind
 
 | Idea | Freehop’s role | Your application supplies |
 |---|---|---|
-| Co-op world with an AI NPC | Human voice/video and small session events | NPC model, provider backend, game rules |
+| Small meeting room | Human voice/video, chat transport and device controls | Room UI, invitations and admission |
 | Shared creation workspace | People talking inside the canvas | Editor, persistence and collaboration model |
 | Electron community app | Session client and optional desktop gateway | Accounts, navigation, packaging and updates |
 | Human + AI support room | Human participants and media controls | AI integration, consent flow and moderation |
@@ -48,4 +48,4 @@ Start with the [Quickstart](./quickstart.mdx), [client reference](./sdk/client.m
 
 Check that every generated method exists in the [SDK reference](./sdk/client.mdx). Validate incoming messages, test reconnect and leave flows, and inspect what network requests the app makes. Publish the alpha limitations alongside your prototype.
 
-For a concrete foundation, remix [Hopper](/hopper) for squad comms or the [live demo](/demo) to inspect the calling layer. The SDK, protocol and examples are open source; you can inspect the whole path from a player action to a peer connection.
+For a concrete foundation, remix [Hopper](/hopper) for small rooms or the [live demo](/demo) to inspect the calling layer. The SDK, protocol and examples are open source; you can inspect the whole path from a Join action to a peer connection.

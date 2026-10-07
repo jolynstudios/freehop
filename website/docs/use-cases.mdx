@@ -1,0 +1,94 @@
+---
+title: What you can build
+sidebar_label: Use cases
+description: Build small meeting rooms, in-app calls, shared workspaces, Electron collaboration tools and community rooms with Freehop.
+---
+
+Freehop adds voice, video and small session messages to an interface you control. You can build a standalone calling app or add a conversation to an existing tool. The same client runs in a browser or an Electron renderer.
+
+These are integration ideas and starting recipes. [Hopper](/hopper) and the [live demo](/demo) are the working examples you can try today.
+
+## Meeting rooms
+
+**Build:** a room for a team check-in, study group or project discussion. Let someone create a room, share a joining link and check their microphone and camera before entering.
+
+**Use Freehop for:** incoming media tracks, mic/camera controls, speaking levels and chat messages. Your app handles the room page, names, admission and invitations.
+
+A typical flow is:
+
+1. Your backend opens a room and issues a ticket to each admitted member.
+2. Your Join button calls `connect(ticket, { media: { audio: true, video: true } })` after the user chooses their devices.
+3. Attach incoming tracks to your room tiles; use `setMicrophone()` and `setCamera()` for controls.
+4. Send a chat message with `session.send({ type: 'chat', text })`, and render validated incoming messages as text.
+5. Call `session.leave()` when the member leaves the room.
+
+Start with [Hopper](/hopper) for the preview, room and chat UI, then follow the [Quickstart](./quickstart.mdx). The initial room target is 2–8 people; enforce your own admission rules. See [room sizing](./limits.mdx#small-rooms).
+
+## In-app calls
+
+**Build:** a customer and a support teammate talking beside the same project, order or task. The call lives in a panel in the app, so neither person has to lose the context of the conversation.
+
+**Use Freehop for:** the voice/video session and media controls. Your existing backend checks who can access that project and issues room tickets. Your app supplies the call button, availability, names and any notes.
+
+Use a room identifier associated with the task on your backend. Issue tickets only to the people allowed into that conversation. Join from an explicit action, attach media to the panel, and leave when the panel closes.
+
+```js title="Your call panel"
+// ticket comes from your authenticated backend.
+const session = await connect(ticket, {
+  media: { audio: true, video: false }
+});
+
+// A camera button can opt into video later.
+await session.setCamera(true);
+
+// On closing the call panel:
+await session.leave();
+```
+
+These are API excerpts, not a complete UI. See the [client reference](./sdk/client.mdx) and [authority reference](./sdk/authority.mdx) for the complete setup. Freehop does not supply a support queue or customer database.
+
+## Shared workspaces
+
+**Build:** a conversation beside a design canvas, project board or pair-building workspace. People can discuss the same item while keeping their workspace open.
+
+**Use Freehop for:** voice/video and small interaction messages such as a selected item, a raised hand or a ready signal. Keep documents, durable history and conflict resolution in your existing collaboration layer.
+
+```js title="A small workspace event"
+await session.send({ type: 'selection', itemId: selectedItemId });
+
+session.on('message', ({ from, data }) => {
+  if (data?.type !== 'selection' || typeof data.itemId !== 'string') return;
+  // Your application checks access and draws the peer's selection.
+  showPeerSelection(from, data.itemId);
+});
+```
+
+`selectedItemId` and `showPeerSelection` belong to your app. Messages are limited to 4,096 JSON characters and 20 messages per second from one sender. Coalesce frequent UI changes; use your own document sync or file-transfer system for larger data. A selected-item event does not grant permission to read that item.
+
+See [application messages](./sdk/client.mdx#the-session) and inspect the [live demo](/demo) to observe session activity.
+
+## Desktop apps
+
+**Build:** an Electron project tool, small team workspace or desktop community app with calling in its own window.
+
+**Use Freehop for:** the same renderer client plus an optional desktop gateway. The gateway can offer a route for session peers when direct connections fail. Availability depends on the participant's network and router; the gateway is not a guarantee that every network can connect.
+
+Your app supplies the window, accounts, updates and packaging. Keep gateway setup in the Electron main process and expose only the supported preload bridge to the renderer. The SDK discovers that bridge automatically.
+
+Follow the [Electron guide](./sdk/desktop.mdx), then inspect the actual connection path in the [live demo](/demo). No separate Electron demo is required to use the browser client.
+
+## Community rooms
+
+**Build:** a small club hangout, a co-op voice room or a conversation alongside a shared activity. Start with voice, make video optional and let people join only the room they chose.
+
+**Use Freehop for:** participants, audio/video controls and small room events. Your app owns membership, moderation, the activity and saved content. For a watch group, bring your own lawful playback source and playback synchronization. For a game, keep simulation and high-frequency state in your game networking layer.
+
+Hopper shows the basic voice/video/chat room. You can adapt that flow to your community; the [Three.js integration guide](./games.mdx) explains the game-specific boundary.
+
+## With or without AI
+
+An AI coding tool can help scaffold any of these interfaces using the [build brief](./build-with-ai.mdx). Freehop is the calling SDK in either case. Your app can integrate its own AI features, but models, transcription and summaries are separate services you choose and connect explicitly.
+
+## Start with a working call
+
+Use the [Quickstart](./quickstart.mdx), then open two independent browsers and verify media, room messages and leaving the session. Test your target devices and networks before depending on an integration. Freehop is currently alpha; [limits](./limits.mdx) and [network results](./results.mdx) document its present scope.

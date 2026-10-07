@@ -4,9 +4,9 @@
 
 # freehop
 
-### A human connection. In any world.
+### Voice and video, inside your app.
 
-Open-source voice, video and data for browser games, Electron apps and the platforms you build next.
+Open-source calling for small meeting rooms, in-app conversations, shared workspaces and Electron apps.
 
 **[Try the demos](https://jolynstudios.github.io/freehop/demos)** · **[Documentation](https://jolynstudios.github.io/freehop/docs)** · **[Quickstart](#quickstart)** · **[Protocol](PROTOCOL.md)**
 
@@ -16,18 +16,30 @@ Open-source voice, video and data for browser games, Electron apps and the platf
 
 </div>
 
-## Put people inside your world
+## Add a call to what you’re building
 
-Build a co-op browser game, a shared 3D workspace, a community platform, or an Electron app. Freehop adds the human layer: voice, optional video, and small session messages inside your own interface.
+Build a small meeting app, add a support call to an existing tool, or put voice beside a shared workspace. Freehop provides audio, optional video and small session messages inside your own interface. The same SDK also fits community rooms and games.
 
-**Build with AI. Build without it. Own the result.** Use an AI coding agent to scaffold an integration or write it yourself. Freehop has an inspectable JavaScript API and source; bring your own models, NPC logic, authentication and backend. It does not include an AI model, transcription service, or agent runtime.
+**Build with AI. Build without it. Own the result.** Use an AI coding agent to scaffold an integration or write it yourself. Freehop has an inspectable JavaScript API and source; bring your own models, application logic, authentication and backend. It does not include an AI model, transcription service, or agent runtime.
 
 | Start here | What you can try |
 |---|---|
-| [Hopper](https://jolynstudios.github.io/freehop/hopper) | Squad rooms with device preview, video, voice and chat. |
+| [Hopper](https://jolynstudios.github.io/freehop/hopper) | Small rooms with device preview, video, voice and chat. |
 | [Live demo](https://jolynstudios.github.io/freehop/demo) | A real browser call with connection-path and playback inspection. |
 
 Open Hopper or the live demo in two browsers, or share a room link with someone. Both run the real Freehop client and demonstrate voice, video and session connections.
+
+### Where it fits
+
+| Build | Freehop provides | Your app provides |
+|---|---|---|
+| Small meeting rooms | Voice, video, controls and chat messages | Room UI, invitations and admission |
+| Calls inside a portal or tool | A call attached to the current task | Identity, access rules and customer/project data |
+| Shared workspaces | Media plus small selection or ready events | Editor, document sync and persistence |
+| Electron collaboration apps | Renderer client and optional desktop gateway | Desktop UI, packaging and updates |
+| Community rooms and games | Voice-first rooms, optional video, small events | Community rules, activity or game logic |
+
+These are integration ideas; Hopper and the live demo are the working examples. See the [use-case recipes](https://jolynstudios.github.io/freehop/docs/use-cases).
 
 Read the [Three.js integration guide](https://jolynstudios.github.io/freehop/docs/games), [Electron reference](https://jolynstudios.github.io/freehop/docs/sdk/desktop), or [AI build brief](https://jolynstudios.github.io/freehop/docs/build-with-ai).
 

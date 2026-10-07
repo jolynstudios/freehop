@@ -43,7 +43,7 @@ const lightCodeTheme: PrismTheme = {
 
 const config: Config = {
   title: 'freehop',
-  tagline: 'Build worlds. Bring people. Open-source voice, video and data for games and platforms.',
+  tagline: 'Voice and video, inside your app. Open-source calling for small rooms, browser apps and Electron.',
   favicon: 'img/favicon.svg',
 
   future: {
@@ -133,6 +133,7 @@ const config: Config = {
       items: [
         {type: 'docSidebar', sidebarId: 'docs', position: 'left', label: 'Docs'},
 
+        {to: '/docs/use-cases', label: 'Use cases', position: 'left'},
         {to: '/demos', label: 'Demos', position: 'left'},
         {to: '/docs/sdk/desktop', label: 'Electron', position: 'left'},
         {to: '/docs/quickstart', label: 'Start building', position: 'right', className: 'navbar-live-call'},

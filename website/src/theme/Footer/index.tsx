@@ -7,6 +7,7 @@ const COLUMNS = [
     title: 'Learn',
     links: [
       {label: 'Introduction', to: '/docs'},
+      {label: 'Use cases', to: '/docs/use-cases'},
       {label: 'Quickstart', to: '/docs/quickstart'},
       {label: 'Paths and escalation', to: '/docs/concepts/paths'},
       {label: 'Security model', to: '/docs/concepts/security'},
@@ -45,7 +46,7 @@ export default function Footer() {
             <img src={logo} alt="" width={40} height={40} />
             <span>freehop</span>
           </Link>
-          <p className={styles.tagline}>Open-source comms for the worlds you build. Browser games, Electron apps, and your next platform.</p>
+          <p className={styles.tagline}>Open-source voice, video and data for small rooms and the apps you build. Browser and Electron.</p>
         </div>
         <nav className={styles.columns} aria-label="Footer">
           {COLUMNS.map((column) => (

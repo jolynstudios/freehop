@@ -5,6 +5,7 @@ import Link from '@docusaurus/Link';
 import BrowserOnly from '@docusaurus/BrowserOnly';
 import CodeBlock from '@theme/CodeBlock';
 import AppShowcase from '@site/src/components/home/AppShowcase';
+import UseCases from '@site/src/components/home/UseCases';
 import CompareTable from '@site/src/components/compare/CompareTable';
 import s from './index.module.css';
 const snippet = `import { connect } from 'freehop';
@@ -23,8 +24,8 @@ export default function Home() {
   const [copy, setCopy] = useState('Copy');
   return (
     <Layout
-      title="A human connection. In any world."
-      description="Freehop is the open-source voice, video and data SDK for browser games, Electron apps and platforms. Build with AI or without it."
+      title="Voice and video, inside your app."
+      description="An open-source calling SDK for small meeting rooms, in-app calls, shared workspaces and Electron apps. Your interface, with voice, video and session data."
     >
       <Head>
         <html className="fh-home" />
@@ -43,7 +44,7 @@ export default function Home() {
             <span>
               Open-source connections.
               <br />
-              Built for the worlds you create.
+              For the apps you build.
             </span>
             <span>
               Browser / Desktop
@@ -53,16 +54,16 @@ export default function Home() {
           </div>
           <div className={s.heroCopy}>
             <h1 id="hero-title">
-              A human connection.
+              Voice and video,
               <br />
-              In any world.
+              inside your app.
             </h1>
             <div className={s.heroBottom}>
               <div>
                 <p>
-                  Voice, video and data for your game or platform.
+                  An open-source SDK for small rooms and in-app calls.
                   <br />
-                  Your interface. Your community. Your code.
+                  Browser or desktop. Your interface, your code.
                 </p>
                 <div className={s.actions}>
                   <Link className={s.primary} to="/demo">
@@ -95,9 +96,9 @@ export default function Home() {
           <div className={s.buildIntro}>
             <p className={s.label}>The Freehop SDK</p>
             <h2>
-              Voice, video, data.
+              One SDK.
               <br />
-              Inside your app.
+              Your interface.
             </h2>
             <p>
               Connect a session, attach incoming media to your own interface, and send small messages between participants. The same JavaScript API works in the
@@ -137,6 +138,7 @@ export default function Home() {
             </p>
           </div>
         </section>
+        <UseCases />
         <AppShowcase />
         <section className={s.network}>
           <p className={s.label}>How the connection works</p>
@@ -187,9 +189,9 @@ export default function Home() {
         <section className={s.closing}>
           <p className={s.label}>Apache-2.0 / No Freehop subscription</p>
           <h2>
-            The next world
+            Build your
             <br />
-            is yours.
+            first call.
           </h2>
           <div className={s.actions}>
             <Link className={s.primary} to="/docs/quickstart">
