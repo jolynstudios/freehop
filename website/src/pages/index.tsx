@@ -34,7 +34,7 @@ export default function Home() {
           <div className={s.heroMedia}>
             <BrowserOnly>
               {() => {
-                const Scene = require('@site/src/components/world/ConnectionSculpture').default;
+                const Scene = require('@site/src/components/world/SignalField').default;
                 return <Scene paused={paused} />;
               }}
             </BrowserOnly>
@@ -75,9 +75,9 @@ export default function Home() {
               </div>
               <div className={s.sceneControls}>
                 <span>
-                  A study in connection.
+                  Signal study.
                   <br />
-                  Drag to turn.
+                  Drag to explore.
                 </span>
                 <button
                   type="button"

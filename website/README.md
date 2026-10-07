@@ -78,7 +78,7 @@ files in `lib/` with a JavaScript MIME type: browsers refuse module scripts othe
 | `src/pages/index.tsx` | Home page, assembled from `src/components/home/` |
 | `src/pages/demos.tsx` | All interactive demos on one page |
 | `src/pages/demo.tsx` | The live call, rendered only in the browser |
-| `src/components/world/` | Three.js connection sculpture and playable game renderer |
+| `src/components/world/` | Three.js signal field and playable game renderer |
 | `src/components/scenes/` | Technical diagrams for concept pages |
 | `src/components/demos/` | Network tools, Signal Run / Orbital controls, live call |
 | `src/components/hopper/` | Hopper room, device preview and chat |

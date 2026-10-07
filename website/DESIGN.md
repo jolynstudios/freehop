@@ -21,12 +21,12 @@ The public style UUIDs did not resolve through MCP (`INVALID_STYLE_UUIDS`). The 
 
 Direct build from the user's explicit references. Active Theory owns the full-bleed canvas and scene-first composition. Resend contributes only the editorial display / UI / code distinction and restrained code presentation. Apple contributes the scale of media chapters and quiet controls, not its white canvas or purchase colors.
 
-Preserve: pure black, monochromatic chrome, dominant dimensional scene, low density, generous spacing. The hero is a live Three.js study of connected paths, not a simulated call or a claim about live users. Actual gameplay appears in the demo showcases.
+Preserve: pure black, monochromatic chrome, dominant dimensional scene, low density, generous spacing. The hero is a live Three.js woven signal field, not a simulated call or a claim about live users. Actual gameplay appears in the demo showcases.
 
 | Decision | Source and role | Implementation |
 |---|---|---|
 | Full-bleed `#000` canvas | Active Theory: scene owns the viewport | No blue page fill, ambient CSS wash or framed hero dashboard |
-| Large live 3D object | Active Theory: rendered media carries light/color | Metal connection paths with moving packets; pointer rotation; pause and reduced motion |
+| Large live 3D object | Active Theory: rendered media carries light/color | Fine illuminated strands forming an open waveform surface; bounded pointer rotation; pause and reduced motion |
 | White and gray shell | Active Theory | White text, `#a1a4a5` secondary copy, `#292d30` structural edges |
 | Editorial hero type | Resend: display only | Instrument Serif as an openly available high-contrast display substitute; UI remains sans |
 | Code is its own voice | Resend | IBM Plex Mono retained as the project's existing readable code face; syntax colors stay in code |
@@ -53,3 +53,15 @@ Compare desktop and mobile renders to this lock. Check scene scale, typography, 
 - Fonts are self-hosted. Reduced-motion scenes render on demand; active scenes are capped at 30 fps and pause off screen. Game movement messages are coalesced below the receiver limit.
 
 The original site is retained at git tag `archive/pre-rebrand-2026-10-07` and in a local archive outside the repository. This release changes the website, examples and documentation; the published SDK remains `0.1.0-alpha.3`.
+
+## Hero revision
+
+The user approved the site and logo but rejected the animated rings. Retain the logo and
+all page composition. Replace only the hero artwork with an open, folded signal field:
+fine luminous strands, restrained pearl / steel-blue / warm-white light, and slow motion.
+Active Theory remains the immersive-media reference; the existing Resend typography and
+large uninterrupted media treatment remain. A fresh Refero MCP style search confirmed the
+dark-canvas / luminous-graphic direction. No circular sculpture, particle cloud, fabricated
+call activity or new interface decoration. Update the social preview to match the hero.
+
+Revision checks passed: desktop/mobile render without overflow or browser errors; active motion, pause, pointer interaction, reduced-motion freeze, and non-WebGL fallback; TypeScript and production build. Logo assets are unchanged.
