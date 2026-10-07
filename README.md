@@ -17,11 +17,11 @@ Open-source calling for small meeting rooms, in-app conversations, shared worksp
 </div>
 
 **Typed SDK:** declarations for all 15 public entry points are included in **0.1.0-alpha.4**.
-This version is available as a [GitHub release](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.4);
-npm publication is pending (the npm `alpha` tag still points to alpha.3).
+Install the current alpha from [npm](https://www.npmjs.com/package/freehop), or download the
+[GitHub release](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.4).
 
 ```sh
-npm install https://github.com/jolynstudios/freehop/releases/download/v0.1.0-alpha.4/freehop-0.1.0-alpha.4.tgz
+npm install freehop@alpha
 ```
 
 See the [TypeScript guide](https://jolynstudios.github.io/freehop/docs/typescript) for typed sessions,

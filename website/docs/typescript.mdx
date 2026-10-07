@@ -10,13 +10,15 @@ is still JavaScript, so existing JavaScript integrations keep working.
 
 ## Install the typed release
 
-The typed alpha is available from [GitHub Releases](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.4).
-It has not yet been published to npm; the npm `alpha` tag currently provides 0.1.0-alpha.3.
-Install the versioned package directly:
+The typed alpha is available on [npm](https://www.npmjs.com/package/freehop) and
+[GitHub Releases](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.4).
+Install the current alpha:
 
 ```sh
-npm install https://github.com/jolynstudios/freehop/releases/download/v0.1.0-alpha.4/freehop-0.1.0-alpha.4.tgz
+npm install freehop@alpha
 ```
+
+To pin this release, use `npm install freehop@0.1.0-alpha.4`.
 
 No separate `@types/freehop` package is needed. Use a current TypeScript compiler and
 `moduleResolution: "Bundler"` in a browser build or `"NodeNext"` in an ESM Node project.

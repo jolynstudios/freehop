@@ -12,8 +12,8 @@ Import `type Session`, `type Ticket` or `type ConnectOptions` from `freehop` as 
 Incoming message data is `unknown` and must be narrowed. Outgoing messages are checked for
 JSON compatibility. Backend-only imports do not require DOM types.
 
-The typed release is currently distributed on [GitHub](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.4);
-npm publication is pending. See the [TypeScript setup guide](https://jolynstudios.github.io/freehop/docs/typescript).
+Install the typed release with `npm install freehop@alpha`. It is also available on
+[GitHub](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.4). See the [TypeScript setup guide](https://jolynstudios.github.io/freehop/docs/typescript).
 
 
 ```
