@@ -4,6 +4,18 @@ Freehop is built to be consumed. Any application uses the same five pieces. Redl
 a planned consumer and test environment, using the same public API. Nothing below is
 game-specific.
 
+## TypeScript support
+
+Version 0.1.0-alpha.4 includes declarations for every public entry point. The runtime remains
+JavaScript; options, event callbacks, tickets, stats and backend APIs are typed for consumers.
+Import `type Session`, `type Ticket` or `type ConnectOptions` from `freehop` as needed.
+Incoming message data is `unknown` and must be narrowed. Outgoing messages are checked for
+JSON compatibility. Backend-only imports do not require DOM types.
+
+The typed release is currently distributed on [GitHub](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.4);
+npm publication is pending. See the [TypeScript setup guide](https://jolynstudios.github.io/freehop/docs/typescript).
+
+
 ```
  your backend            your gate host            every client               hosts (optional)
  ───────────             ─────────────             ────────────               ────────────────

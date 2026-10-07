@@ -89,11 +89,11 @@ files in `lib/` with a JavaScript MIME type: browsers refuse module scripts othe
 ## Design system
 
 The [Refero design lock](DESIGN.md) documents the three supplied references and their roles.
-The shell is black and monochrome. Instrument Serif is used for editorial headlines, Inter
-for UI and prose, and IBM Plex Mono for code. Color belongs to rendered media, syntax and
+The shell follows the system light/dark preference. Inter is used for headlines,
+UI and prose, and IBM Plex Mono for code. Color belongs to rendered media, syntax and
 actual network status. Large media sections lead; product controls remain quiet.
 
-`src/css/custom.css` defines the shared tokens. The site uses dark mode throughout. Concept
+`src/css/custom.css` defines the shared tokens. The theme control cycles between system, light and dark. Media stages retain a dark canvas. Concept
 pages use technical diagrams; the original illustration primitives remain in the source
 archive but are not the active visual system. Three.js renders pause off screen and respect
 reduced motion. The hero has a pause control and a static fallback when WebGL is unavailable.

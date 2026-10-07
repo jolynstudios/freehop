@@ -5,7 +5,7 @@ const sidebars: SidebarsConfig = {
     'intro',
     'quickstart',
     'use-cases',
-    {type: 'category', label: 'Integration guides', items: ['games', 'build-with-ai']},
+    {type: 'category', label: 'Integration guides', items: ['typescript', 'games', 'build-with-ai']},
     'comparison',
     {
       type: 'category',

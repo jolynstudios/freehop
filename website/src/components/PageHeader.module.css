@@ -99,7 +99,7 @@
   background: var(--fh-paper);
 }
 .title {
-  font: 400 clamp(52px, 6vw, 84px)/1.03 var(--fh-editorial);
+  font: 500 clamp(42px, 5.4vw, 76px)/1.08 var(--fh-display);
   letter-spacing: -0.025em;
   max-width: 20ch;
 }

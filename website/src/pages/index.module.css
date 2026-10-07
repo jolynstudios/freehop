@@ -42,11 +42,11 @@
   pointer-events: none;
 }
 .hero h1 {
-  font-family: var(--fh-editorial);
-  font-size: clamp(62px, 7.5vw, 116px);
-  font-weight: 400;
-  line-height: 0.98;
-  letter-spacing: -0.025em;
+  font-family: var(--fh-display);
+  font-size: clamp(46px, 6.6vw, 102px);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.055em;
   color: var(--fh-ink);
   margin: 0 0 28px;
   text-wrap: balance;
@@ -264,7 +264,7 @@
   gap: 18px;
   padding: 65px 0 50px;
   border-bottom: 1px solid var(--fh-lavender);
-  font: 400 clamp(20px, 3vw, 38px) var(--fh-editorial);
+  font: 500 clamp(20px, 3vw, 38px) var(--fh-display);
   color: var(--fh-ink);
 }
 .path i {
@@ -333,7 +333,7 @@
   margin-bottom: 30px;
 }
 .closing h2 {
-  font: 400 clamp(64px, 8vw, 110px)/1 var(--fh-editorial);
+  font: 500 clamp(56px, 7vw, 100px)/1.06 var(--fh-display);
   letter-spacing: -0.02em;
   color: var(--fh-ink);
   margin-bottom: 35px;
@@ -395,9 +395,9 @@
     bottom: 42px;
   }
   .hero h1 {
-    font-size: 60px;
-    line-height: 1;
-    letter-spacing: -0.02em;
+    font-size: clamp(36px, 9.5vw, 54px);
+    line-height: 1.06;
+    letter-spacing: -0.045em;
     margin-bottom: 22px;
   }
   .heroBottom {
@@ -500,4 +500,13 @@
 .codeNote a {
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.buildIntro .typesNote {
+  font-size: 13px;
+  margin-top: 22px;
+}
+.buildIntro .typesNote a {
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
 }

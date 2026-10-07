@@ -119,3 +119,28 @@ separators and neutral themes. Use cases are readable rows rather than fabricate
 screens or more demos. README, introduction, AI build brief, navigation, footer and social
 preview carry the same broader positioning. Desktop/mobile checks in both themes pass with
 five valid recipe anchors, no overflow, runtime errors or automated WCAG A/AA violations.
+
+
+## Typography refinement — 7 October 2026
+
+The user questioned the serif display face. Re-read Refero's Resend treatment and retrieved
+full Linear changelog (`11d3e58a-87d7-4a9a-bbf5-720f4fd3ffc6`) and shadcn/UI
+(`c14c0a94-1037-449e-bf5b-4cb972656ac7`) style records through Refero MCP.
+The current page remains the build target: preserve the monochrome canvas, uninterrupted
+media, thin rules, logo and section order. Borrow only typography guidance here.
+
+| Decision | Source / role | Reason |
+|---|---|---|
+| Inter throughout headlines and UI; medium display weight | Linear, type only | Calling SDK and documentation share one visual voice |
+| Tight headline tracking, clear scale | shadcn/UI, type only | Hierarchy without a decorative font switch |
+| Keep IBM Plex Mono for code and technical labels | Existing reference lock | Distinguishes code from prose |
+| Remove Instrument Serif import and dependency | User feedback / typography craft | Reduces font payload and visual mismatch |
+
+No new imagery or layout direction is introduced. The three original references still
+own composition, media and the restrained shell; these references resolve the font question.
+
+Validation: visually checked the homepage and docs after the type change. Homepage/use-case
+checks passed in light and dark at 1440px and 390px; additional typography, overflow and
+WCAG AA checks passed at 320px, 768px and 1440px across the homepage, TypeScript guide,
+use-case guide and Hopper. Existing stats/calculator contrast checks and system/manual
+preference persistence passed. Social preview recaptured from the actual page.

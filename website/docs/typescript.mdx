@@ -1,0 +1,93 @@
+---
+title: TypeScript
+sidebar_label: TypeScript
+description: Typed options, sessions, events and backend APIs for Freehop, with no separate community typings package.
+---
+
+Freehop includes declarations for all public package entry points starting with **0.1.0-alpha.4**.
+Your editor can complete options, infer event payloads and catch invalid calls. The runtime
+is still JavaScript, so existing JavaScript integrations keep working.
+
+## Install the typed release
+
+The typed alpha is available from [GitHub Releases](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.4).
+It has not yet been published to npm; the npm `alpha` tag currently provides 0.1.0-alpha.3.
+Install the versioned package directly:
+
+```sh
+npm install https://github.com/jolynstudios/freehop/releases/download/v0.1.0-alpha.4/freehop-0.1.0-alpha.4.tgz
+```
+
+No separate `@types/freehop` package is needed. Use a current TypeScript compiler and
+`moduleResolution: "Bundler"` in a browser build or `"NodeNext"` in an ESM Node project.
+Browser code needs the `DOM` library. Backend entry points work without it.
+
+## Connect with inferred types
+
+```ts title="call.ts"
+import { connect, type ConnectOptions, type Session, type Ticket } from 'freehop';
+
+const options = {
+  media: { audio: true, video: true },
+  adaptiveVideo: true,
+} satisfies ConnectOptions;
+
+export async function joinCall(ticket: Ticket, video: HTMLVideoElement): Promise<Session> {
+  const session = await connect(ticket, options);
+
+  session.on('track', ({ track }) => {
+    // track is a MediaStreamTrack, inferred from the event name.
+    session.attach(track, video);
+  });
+
+  await session.send({ type: 'ready', ready: true });
+  return session;
+}
+```
+
+Explicit annotations are optional. `connect()` already returns `Promise<Session>`;
+`type Ticket`, `ConnectOptions`, `RoomEvents` and the stats types are available when you
+need them for your application's own interfaces.
+
+## Validate data at the boundary
+
+Types describe your code; they do not authenticate incoming data. Message payloads are
+`unknown` until your application validates them:
+
+```ts
+session.on('message', ({ from, data }) => {
+  if (typeof data === 'string') {
+    console.log(from, data);
+  }
+});
+```
+
+Outgoing `send()` payloads must be JSON-compatible. Plain application interfaces are
+supported; functions and `bigint` values are rejected by the compiler. Your app should
+still validate message shape and enforce its own permissions.
+
+Use `validTicket(value)` to narrow an unknown value, or `decodeTicket(text)` to decode and
+validate a ticket string. Ticket handling is separate from authenticating the user.
+
+## Backend and Electron
+
+All the backend entry points are typed: `freehop/authority`, `/gate`, `/host`, `/relay`,
+`/member`, `/turn`, `/port-mapper`, `/stun` and `/tokens`. The `/ticket` entry point is
+also usable without browser APIs. `/electron` describes the main-process helper;
+`/electron/preload` is a side-effect-only preload.
+
+`hostSession()` returns a union. Check `hosted.available` before accessing
+`hosted.gateway` or calling `hosted.drop()`. Gate authorization callbacks receive
+untrusted hello fields; narrow `hello.auth` before using it.
+
+The optional `DesktopGateway` type describes the preload bridge. Freehop discovers
+`window.freehopGateway` at runtime; importing the SDK does not add global declarations
+to your application.
+
+## Checks in this repository
+
+`npm run typesgate` compiles strict browser consumers with both Bundler and NodeNext
+resolution, then a Node-only consumer without DOM types. It also compares declared
+value exports with the actual runtime exports. Invalid-use assertions ensure that
+unknown events, invalid media options and incompatible messages remain compiler errors.
+These checks run in CI and in `npm run ship`.

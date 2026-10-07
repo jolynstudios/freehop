@@ -18,17 +18,23 @@ const check = (name, ok, detail = '') => {
 };
 
 const targets = [];
-for (const [name, file] of Object.entries(pkg.exports ?? {})) {
-  const path = resolve(root, file);
-  check(`exports["${name}"] -> ${file}`, existsSync(path) && statSync(path).isFile());
+function exportTargets(name, target) {
+  if (typeof target === 'object' && target !== null) {
+    for (const [condition, file] of Object.entries(target)) exportTargets(`${name}.${condition}`, file);
+    return;
+  }
+  const path = resolve(root, target);
+  check(`exports["${name}"] -> ${target}`, existsSync(path) && statSync(path).isFile());
   targets.push(path);
 }
+for (const [name, target] of Object.entries(pkg.exports ?? {})) exportTargets(name, target);
 for (const [name, file] of Object.entries(pkg.bin ?? {})) {
   const path = resolve(root, file);
   check(`bin["${name}"] -> ${file}`, existsSync(path) && statSync(path).isFile());
   targets.push(path);
 }
-for (const path of targets) {
+for (const path of new Set(targets)) {
+  if (/\.d\.[cm]ts$/.test(path)) continue; // checked by typesgate with skipLibCheck:false
   const run = spawnSync(process.execPath, ['--check', path]);
   check(`syntax ${relative(root, path)}`, run.status === 0, run.stderr?.toString());
 }

@@ -1035,7 +1035,7 @@
   max-width: 900px;
 }
 .homeTitle {
-  font: 400 clamp(60px, 7vw, 94px)/1.02 var(--fh-editorial);
+  font: 500 clamp(48px, 6vw, 84px)/1.08 var(--fh-display);
   letter-spacing: -0.02em;
 }
 .homeLede {

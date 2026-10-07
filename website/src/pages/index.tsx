@@ -49,7 +49,7 @@ export default function Home() {
             <span>
               Browser / Desktop
               <br />
-              JavaScript SDK · Alpha
+              JavaScript / TypeScript · Alpha
             </span>
           </div>
           <div className={s.heroCopy}>
@@ -108,6 +108,9 @@ export default function Home() {
             <Link className={s.textLink} to="/docs/sdk/client">
               Explore the client API <span aria-hidden="true">→</span>
             </Link>
+            <p className={s.typesNote}>
+              Typed options, sessions and events. <Link to="/docs/typescript">Get the TypeScript release →</Link>
+            </p>
           </div>
           <div className={s.codeColumn}>
             <button

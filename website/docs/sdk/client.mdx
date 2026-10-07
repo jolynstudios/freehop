@@ -24,6 +24,8 @@ reportPeerIdToBackend(session.id);   // lets your backend name this peer in a ki
 
 This is browser code: bundle the package import with your frontend build tool and call it from your Join control. Serve the page over HTTPS (localhost works for development). The browser client has no runtime dependencies; it needs WebRTC, WebSocket and Web Crypto. `tileFor` and `reportPeerIdToBackend` are helpers supplied by your application.
 
+TypeScript consumers get inferred session and event types. See the [TypeScript guide](../typescript.mdx) for the typed release and setup.
+
 ## connect(ticket, options)
 
 `ticket` is a ticket object or the string from `encodeTicket()`. An invalid ticket throws a `TypeError`.

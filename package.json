@@ -1,6 +1,6 @@
 {
   "name": "freehop",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "description": "Open-source peer-to-peer voice, video and data SDK for browser and desktop apps, with signalling gates and session-member media gateways.",
   "license": "Apache-2.0",
   "type": "module",
@@ -8,21 +8,66 @@
     "node": ">=22"
   },
   "exports": {
-    ".": "./src/sdk/client.mjs",
-    "./client": "./src/client/peerlane.mjs",
-    "./gate": "./src/gate/gate.mjs",
-    "./relay": "./src/relay/agent.mjs",
-    "./turn": "./src/relay/turn-server.mjs",
-    "./port-mapper": "./src/relay/port-mapper.mjs",
-    "./member": "./src/relay/member.mjs",
-    "./stun": "./src/shared/stun.mjs",
-    "./sdk": "./src/sdk/client.mjs",
-    "./authority": "./src/sdk/authority.mjs",
-    "./host": "./src/sdk/host.mjs",
-    "./ticket": "./src/sdk/ticket.mjs",
-    "./electron": "./src/electron/main.mjs",
-    "./electron/preload": "./src/electron/preload.cjs",
-    "./tokens": "./src/shared/tokens.mjs"
+    ".": {
+      "types": "./src/sdk/client.d.mts",
+      "default": "./src/sdk/client.mjs"
+    },
+    "./client": {
+      "types": "./src/client/peerlane.d.mts",
+      "default": "./src/client/peerlane.mjs"
+    },
+    "./gate": {
+      "types": "./src/gate/gate.d.mts",
+      "default": "./src/gate/gate.mjs"
+    },
+    "./relay": {
+      "types": "./src/relay/agent.d.mts",
+      "default": "./src/relay/agent.mjs"
+    },
+    "./turn": {
+      "types": "./src/relay/turn-server.d.mts",
+      "default": "./src/relay/turn-server.mjs"
+    },
+    "./port-mapper": {
+      "types": "./src/relay/port-mapper.d.mts",
+      "default": "./src/relay/port-mapper.mjs"
+    },
+    "./member": {
+      "types": "./src/relay/member.d.mts",
+      "default": "./src/relay/member.mjs"
+    },
+    "./stun": {
+      "types": "./src/shared/stun.d.mts",
+      "default": "./src/shared/stun.mjs"
+    },
+    "./sdk": {
+      "types": "./src/sdk/client.d.mts",
+      "default": "./src/sdk/client.mjs"
+    },
+    "./authority": {
+      "types": "./src/sdk/authority.d.mts",
+      "default": "./src/sdk/authority.mjs"
+    },
+    "./host": {
+      "types": "./src/sdk/host.d.mts",
+      "default": "./src/sdk/host.mjs"
+    },
+    "./ticket": {
+      "types": "./src/sdk/ticket.d.mts",
+      "default": "./src/sdk/ticket.mjs"
+    },
+    "./electron": {
+      "types": "./src/electron/main.d.mts",
+      "default": "./src/electron/main.mjs"
+    },
+    "./electron/preload": {
+      "types": "./src/electron/preload.d.cts",
+      "default": "./src/electron/preload.cjs"
+    },
+    "./tokens": {
+      "types": "./src/shared/tokens.d.mts",
+      "default": "./src/shared/tokens.mjs"
+    }
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",
@@ -32,7 +77,8 @@
     "docsyncgate": "node tools/docsyncgate.mjs",
     "ship": "node tools/ship.mjs",
     "gate": "node bin/freehop-gate.mjs",
-    "example": "node examples/minimal/server.mjs"
+    "example": "node examples/minimal/server.mjs",
+    "typesgate": "node tools/typesgate.mjs"
   },
   "author": "Jolyn Studios",
   "homepage": "https://jolynstudios.github.io/freehop/",
@@ -75,9 +121,12 @@
     "NOTICE"
   ],
   "dependencies": {
+    "@types/node": "22.20.5",
     "ws": "^8.21.3"
   },
   "devDependencies": {
-    "playwright": "1.62.0"
-  }
+    "playwright": "1.62.0",
+    "typescript": "7.0.2"
+  },
+  "types": "./src/sdk/client.d.mts"
 }

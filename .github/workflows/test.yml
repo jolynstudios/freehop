@@ -16,3 +16,6 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm audit --audit-level=moderate
       - run: npm test
+      - run: npm run exportsgate
+      - run: npm run typesgate
+      - run: npm run docsyncgate

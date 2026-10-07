@@ -9,14 +9,16 @@
 // Steps (each gates the next):
 //   1. unitgate      — full Node unit suite (test/*.test.mjs)
 //   2. exportsgate   — package.json exports/bin resolve and parse
-//   3. docsyncgate   — docs only reference APIs that exist
-//   4. test:browsers — Playwright smoke over Chromium/Firefox/WebKit (skipped with --fast)
+//   3. typesgate     — strict browser/Node consumer contracts
+//   4. docsyncgate   — docs only reference APIs that exist
+//   5. test:browsers — Playwright smoke over Chromium/Firefox/WebKit (skipped with --fast)
 import { spawnSync } from 'node:child_process';
 
 const fast = process.argv.includes('--fast');
 const steps = [
   ['unitgate', ['run', 'test']],
   ['exportsgate', ['run', 'exportsgate']],
+  ['typesgate', ['run', 'typesgate']],
   ['docsyncgate', ['run', 'docsyncgate']],
 ];
 if (!fast) steps.push(['test:browsers', ['run', 'test:browsers']]);

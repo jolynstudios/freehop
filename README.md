@@ -12,9 +12,20 @@ Open-source calling for small meeting rooms, in-app conversations, shared worksp
 
 ![Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-ffffff?labelColor=000000)
 ![Status: alpha](https://img.shields.io/badge/status-alpha-b0a2d4?labelColor=000000)
-![JavaScript](https://img.shields.io/badge/JavaScript-browser_%2B_Electron-ffffff?labelColor=000000)
+![JavaScript and TypeScript](https://img.shields.io/badge/JavaScript_%2B_TypeScript-browser_%2B_Electron-ffffff?labelColor=000000)
 
 </div>
+
+**Typed SDK:** declarations for all 15 public entry points are included in **0.1.0-alpha.4**.
+This version is available as a [GitHub release](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.4);
+npm publication is pending (the npm `alpha` tag still points to alpha.3).
+
+```sh
+npm install https://github.com/jolynstudios/freehop/releases/download/v0.1.0-alpha.4/freehop-0.1.0-alpha.4.tgz
+```
+
+See the [TypeScript guide](https://jolynstudios.github.io/freehop/docs/typescript) for typed sessions,
+events and backend APIs. JavaScript usage is unchanged.
 
 ## Add a call to what you’re building
 
