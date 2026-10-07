@@ -1,5 +1,5 @@
 .section {
-  padding: 50px 0 0;
+  padding: 100px 0 0;
   background: #000;
 }
 .heading {
@@ -28,71 +28,6 @@
   line-height: 1.8;
   color: #a1a4a5;
 }
-.feature {
-  max-width: 1440px;
-  margin: 0 auto 110px;
-  padding: 0 4%;
-}
-.media {
-  position: relative;
-  overflow: hidden;
-  border-radius: 20px;
-  border: 1px solid #1b1b1d;
-}
-.media :global([class*='viewport']) {
-  height: clamp(360px, 50vw, 710px);
-}
-.mediaLabel {
-  position: absolute;
-  left: 30px;
-  right: 30px;
-  bottom: 24px;
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  font: 10px var(--fh-mono);
-  color: #999;
-  pointer-events: none;
-}
-.detail {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 80px;
-  padding: 42px 4% 0;
-}
-.type {
-  font: 10px var(--fh-mono);
-  color: #a1a4a5;
-  margin: 0 0 18px;
-}
-.detail h3 {
-  font: 400 clamp(32px, 3.1vw, 45px)/1.09 var(--fh-display);
-  letter-spacing: -0.04em;
-  margin: 0;
-  color: #fff;
-}
-.detail > div > p:not(.type) {
-  font-size: 14px;
-  line-height: 1.8;
-  color: #a1a4a5;
-  max-width: 450px;
-  margin-bottom: 25px;
-}
-.detail a {
-  font-size: 13px;
-  color: #eee;
-  display: inline-flex;
-  gap: 25px;
-  align-items: center;
-}
-.detail .source {
-  font-size: 12px;
-  color: #999;
-  margin-left: 30px;
-}
-.second .media {
-  background: #030304;
-}
 .more {
   max-width: 1320px;
   padding: 20px 6% 90px;
@@ -114,6 +49,7 @@
   font: 11px var(--fh-mono);
   color: #a1a4a5;
 }
+.more h2,
 .more h3 {
   font: 400 27px var(--fh-display);
   letter-spacing: -0.035em;
@@ -135,32 +71,15 @@
   text-decoration: underline;
   text-underline-offset: 5px;
 }
-.fallback {
-  height: 550px;
-  background: #030304;
-}
 @media (max-width: 900px) {
   .heading {
     column-gap: 35px;
   }
-  .detail {
-    gap: 35px;
-  }
-  .detail .source {
-    margin: 20px 0 0;
-    display: flex;
-  }
   .more {
     gap: 35px;
   }
-  .feature {
-    margin-bottom: 80px;
-  }
 }
 @media (max-width: 650px) {
-  .section {
-    padding-top: 0;
-  }
   .heading {
     grid-template-columns: 1fr;
     margin-bottom: 35px;
@@ -170,47 +89,20 @@
     grid-column: 1;
   }
   .heading h2 {
-    font-size: 48px;
+    font-size: 44px;
     margin: 0;
-  }
-  .media {
-    border-radius: 12px;
-  }
-  .media :global([class*='viewport']) {
-    height: 360px;
-  }
-  .mediaLabel {
-    left: 16px;
-    right: 16px;
-    bottom: 18px;
-    font-size: 8px;
-  }
-  .mediaLabel > span:last-child {
-    max-width: 100px;
-    text-align: right;
-  }
-  .detail {
-    grid-template-columns: 1fr;
-    gap: 25px;
-    padding: 30px 3% 0;
-  }
-  .detail h3 {
-    font-size: 37px;
-  }
-  .detail .source {
-    display: inline-flex;
-    margin: 0 0 0 25px;
-    font-size: 11px;
   }
   .more {
     grid-template-columns: 1fr;
     padding-bottom: 50px;
     gap: 5px;
   }
-  .feature {
-    margin-bottom: 65px;
-  }
+  .more h2,
   .more h3 {
     font-size: 26px;
   }
+}
+
+.compact {
+  padding-top: 40px;
 }

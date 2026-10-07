@@ -19,7 +19,7 @@ npm start          # http://localhost:3000/freehop/
 
 `npm start` and `npm run build` first run `scripts/copy-lib.mjs`, which copies Freehop's own
 browser modules (`../src/client/*.mjs`, `../src/sdk/client.mjs`, `../src/sdk/ticket.mjs`) into
-`static/lib/`. The live call (`/demo`), Hopper, games and "what the gate sees" demo load that real code at
+`static/lib/`. The live call (`/demo`), Hopper and "what the gate sees" demo load that real code at
 runtime with `import(/* webpackIgnore: true */ url)`, so the site always runs the SDK it
 documents. `static/lib/` is generated and git-ignored; run `npm run copy-lib` after changing
 the SDK while the dev server is running.
@@ -46,15 +46,14 @@ node test/browser/demo-playback.mjs http://localhost:3000/freehop/ second
 
 These checks use fake capture devices and public trackers with normal Chromium autoplay policy. They inject a playback denial on each joiner, verify the recovery button, and check that camera changes preserve playing audio. They require internet access; reports and screenshots go to ignored `test/evidence/`.
 
-For a deterministic local-gate check of the games and Hopper (two real browser peers, fake
+For a deterministic local-gate check of Hopper and the live demo (two real browser peers, fake
 capture devices), start the built site and run from the repository root:
 
 ```sh
 node test/browser/site-smoke.mjs http://localhost:3000/freehop/
 ```
 
-This substitutes the signalling endpoint only inside Playwright. It checks movement, wall
-collision, player messages, remote video, controls, Orbital collection, Hopper chat and leaving.
+This substitutes the signalling endpoint only inside Playwright. It checks two-peer calls, remote media, microphone/camera controls, Hopper chat and leaving.
 Production demos keep their public tracker configuration. Evidence goes to ignored `test/evidence/`.
 
 ## Deploy
@@ -76,13 +75,13 @@ files in `lib/` with a JavaScript MIME type: browsers refuse module scripts othe
 |---|---|
 | `docs/` | Documentation pages (MDX). Sidebar order: `sidebars.ts` |
 | `src/pages/index.tsx` | Home page, assembled from `src/components/home/` |
-| `src/pages/demos.tsx` | All interactive demos on one page |
+| `src/pages/demos.tsx` | Hopper and live demo entry points |
 | `src/pages/demo.tsx` | The live call, rendered only in the browser |
-| `src/components/world/` | Three.js signal field and playable game renderer |
+| `src/components/world/` | Three.js hero signal field |
 | `src/components/scenes/` | Technical diagrams for concept pages |
-| `src/components/demos/` | Network tools, Signal Run / Orbital controls, live call |
+| `src/components/demos/` | Network tools and the live call |
 | `src/components/hopper/` | Hopper room, device preview and chat |
-| `src/components/home/` | Large game showcases |
+| `src/components/home/` | Hopper and live demo showcase |
 | `src/theme/Footer/` | The site footer (replaces the classic theme's footer) |
 | `src/css/custom.css` | Design tokens and global styles |
 | `scripts/copy-lib.mjs` | Copies the SDK's browser modules into `static/lib/` |
@@ -97,7 +96,7 @@ actual network status. Large media sections lead; product controls remain quiet.
 `src/css/custom.css` defines the shared tokens. The site uses dark mode throughout. Concept
 pages use technical diagrams; the original illustration primitives remain in the source
 archive but are not the active visual system. Three.js renders pause off screen and respect
-reduced motion. The hero has a pause control; games provide a map view when WebGL is unavailable.
+reduced motion. The hero has a pause control and a static fallback when WebGL is unavailable.
 No participant portraits, peer counts or integration claims are fabricated for presentation.
 
 ## Keeping documentation in sync

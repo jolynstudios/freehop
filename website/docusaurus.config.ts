@@ -111,7 +111,7 @@ const config: Config = {
       items: [
         {type: 'docSidebar', sidebarId: 'docs', position: 'left', label: 'Docs'},
 
-        {to: '/demos', label: 'Playground', position: 'left'},
+        {to: '/demos', label: 'Demos', position: 'left'},
         {to: '/docs/sdk/desktop', label: 'Electron', position: 'left'},
         {to: '/docs/quickstart', label: 'Start building', position: 'right', className: 'navbar-live-call'},
         {href: GITHUB, label: 'GitHub', position: 'right', className: 'navbar-github'},

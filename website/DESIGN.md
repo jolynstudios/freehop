@@ -65,3 +65,14 @@ dark-canvas / luminous-graphic direction. No circular sculpture, particle cloud,
 call activity or new interface decoration. Update the social preview to match the hero.
 
 Revision checks passed: desktop/mobile render without overflow or browser errors; active motion, pause, pointer interaction, reduced-motion freeze, and non-WebGL fallback; TypeScript and production build. Logo assets are unchanged.
+
+## SDK-first showcase revision
+
+The user rejected the game demos as distractions from Freehop. Remove Signal Run and Orbital,
+including routes, renderer, controls and promotional links. Keep Hopper and the live call as
+the two demo choices. Place the concrete SDK code example immediately below the connection
+hero, followed by the two calling demos. Keep the approved typography, hero, logo and colors.
+The network tools remain embedded in their concept documentation; the Three.js guide explains
+integration into the reader's own app without claiming supplied game examples.
+
+Revision verification: production build and TypeScript passed; desktop/mobile layouts show the SDK immediately after the hero and no game links. The two-peer smoke test passes for live audio/video, media controls, messages, Hopper chat and leave/rejoin.

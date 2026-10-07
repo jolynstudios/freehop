@@ -8,7 +8,7 @@
 
 Open-source voice, video and data for browser games, Electron apps and the platforms you build next.
 
-**[Play the demos](https://jolynstudios.github.io/freehop/demos)** · **[Documentation](https://jolynstudios.github.io/freehop/docs)** · **[Quickstart](#quickstart)** · **[Protocol](PROTOCOL.md)**
+**[Try the demos](https://jolynstudios.github.io/freehop/demos)** · **[Documentation](https://jolynstudios.github.io/freehop/docs)** · **[Quickstart](#quickstart)** · **[Protocol](PROTOCOL.md)**
 
 ![Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-ffffff?labelColor=000000)
 ![Status: alpha](https://img.shields.io/badge/status-alpha-b0a2d4?labelColor=000000)
@@ -24,13 +24,10 @@ Build a co-op browser game, a shared 3D workspace, a community platform, or an E
 
 | Start here | What you can try |
 |---|---|
-| [Signal Run](https://jolynstudios.github.io/freehop/maze) | A Three.js co-op maze with shared movement, voice and video. |
-| [Orbital](https://jolynstudios.github.io/freehop/orbital) | A Three.js arena with local beacon collection and connected player positions. |
 | [Hopper](https://jolynstudios.github.io/freehop/hopper) | Squad rooms with device preview, video, voice and chat. |
-| [Comms lab](https://jolynstudios.github.io/freehop/demo) | A real browser call with connection-path and playback inspection. |
-| [Network lab](https://jolynstudios.github.io/freehop/demos#path-finder) | Path simulation, escalation timers, sealed messages and editable cost estimates. |
+| [Live demo](https://jolynstudios.github.io/freehop/demo) | A real browser call with connection-path and playback inspection. |
 
-Play solo immediately in the games. To connect another player, join a room and share its invite link. Camera and microphone start off in the games. These are small-room alpha examples, not authoritative multiplayer game servers.
+Open Hopper or the live demo in two browsers, or share a room link with someone. Both run the real Freehop client and demonstrate voice, video and session connections.
 
 Read the [Three.js integration guide](https://jolynstudios.github.io/freehop/docs/games), [Electron reference](https://jolynstudios.github.io/freehop/docs/sdk/desktop), or [AI build brief](https://jolynstudios.github.io/freehop/docs/build-with-ai).
 

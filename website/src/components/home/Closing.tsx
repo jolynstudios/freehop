@@ -20,14 +20,14 @@ export function FinalCta() {
           Add a real call to your app.
         </Title>
         <p className={styles.finalLede}>
-          Keep your own screens, users and room flow. Freehop handles the peer connection, media paths and optional quality adjustment. Start with the developer quickstart, or try the game overlay in your browser.
+          Keep your own screens, users and room flow. Freehop handles the peer connection, media paths and optional quality adjustment. Start with the developer quickstart, or try a live call in your browser.
         </p>
         <div className={styles.finalCtas}>
           <Link className={styles.primary} to="/docs/quickstart">
             <Chevron>Start building</Chevron>
           </Link>
-          <Link className={styles.secondary} to="/maze">
-            <Chevron>Try the game overlay</Chevron>
+          <Link className={styles.secondary} to="/demo">
+            <Chevron>Try the live demo</Chevron>
           </Link>
         </div>
       </div>

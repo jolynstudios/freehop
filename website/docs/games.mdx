@@ -1,6 +1,6 @@
 ---
 title: Games with Three.js
-sidebar_label: Browser games
+sidebar_label: Three.js integration
 description: Add Freehop voice, video and small shared events to a Three.js browser game.
 ---
 
@@ -8,7 +8,7 @@ description: Add Freehop voice, video and small shared events to a Three.js brow
 
 Three.js draws your world. Freehop connects the people in it. Your application controls gameplay, player identity, camera permissions and the interface.
 
-Try [Signal Run](/maze), a co-op maze, or [Orbital](/orbital), a beacon-collection arena. Both render a real Three.js scene, share player positions through Freehop, and keep voice and video controls beside the world. You can explore solo before joining a room. The map toggle provides a 2D view, and directional buttons support touch input.
+This guide describes how to add comms to your own Three.js scene. For working examples of the calling layer, try [Hopper](/hopper) or the [live demo](/demo).
 
 ## Divide the responsibilities
 
@@ -19,7 +19,7 @@ Try [Signal Run](/maze), a co-op maze, or [Orbital](/orbital), a beacon-collecti
 | Freehop | Session membership, peer connections, media controls and small messages |
 | Your backend | Authentication, ticket delivery and authoritative state where needed |
 
-The demos use public tracker introductions and a secret in the invite URL fragment. Anyone with that link can join. A production platform should use its own authenticated ticket flow; see [Quickstart](./quickstart.mdx).
+The calling demos use public tracker introductions and a secret in the invite URL fragment. Anyone with that link can join. A production platform should use its own authenticated ticket flow; see [Quickstart](./quickstart.mdx).
 
 ## Add comms to your scene
 
@@ -45,7 +45,7 @@ session.on('path', ({ peer, kind }) => {
 });
 ```
 
-`mediaElementFor` and `showConnectionPath` are your application’s helpers. Attach audio tracks to audible media elements and handle browsers that require a user gesture to start playback. Camera textures inside a 3D scene are an optional Three.js integration; the supplied demos use accessible HTML video panels.
+`mediaElementFor` and `showConnectionPath` are your application’s helpers. Attach audio tracks to audible media elements and handle browsers that require a user gesture to start playback. Camera textures inside a 3D scene are an optional Three.js integration; the calling demos use HTML video panels.
 
 ## Send small game events
 
@@ -63,10 +63,10 @@ await session.leave();
 
 Messages accept JSON values up to 4096 characters, with a receiver limit of 20 messages per second per sender. Throttle movement updates and validate all received data. This is suitable for a prototype’s positions, ready states and small interactions. Competitive games need their own authoritative simulation, anti-cheat and reconciliation; Freehop does not provide them.
 
-## Inspect and remix the demos
+## Build on the SDK
 
-- [`MazeGame.tsx`](https://github.com/jolynstudios/freehop/blob/main/website/src/components/demos/MazeGame.tsx): input, collisions, room lifecycle, messages, voice/video and adaptive quality.
-- [`WorldView.tsx`](https://github.com/jolynstudios/freehop/blob/main/website/src/components/world/WorldView.tsx): Three.js rendering, responsive sizing and GPU resource cleanup.
+- [Client reference](./sdk/client.mdx): session lifecycle, media controls, messages and events.
+- [Hopper source](https://github.com/jolynstudios/freehop/tree/main/website/src/components/hopper): a complete calling interface to adapt to your application.
 - [Three.js documentation](https://threejs.org/docs/): the rendering API.
 - [Desktop SDK](./sdk/desktop.mdx): use the same client in Electron and optionally offer a participant gateway.
 

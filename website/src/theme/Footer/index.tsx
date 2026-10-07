@@ -16,11 +16,9 @@ const COLUMNS = [
   {
     title: 'Try',
     links: [
-      {label: 'Signal Run · Three.js', to: '/maze'},
-      {label: 'Orbital · Three.js', to: '/orbital'},
       {label: 'Hopper squad rooms', to: '/hopper'},
-      {label: 'Comms lab', to: '/demo'},
-      {label: 'Interactive demos', to: '/demos'},
+      {label: 'Live demo', to: '/demo'},
+      {label: 'Demos', to: '/demos'},
       {label: 'Cost model', to: '/docs/concepts/cost'},
       {label: 'SDK reference', to: '/docs/sdk/client'},
     ],

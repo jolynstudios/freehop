@@ -65,8 +65,8 @@ export default function Home() {
                   Your interface. Your community. Your code.
                 </p>
                 <div className={s.actions}>
-                  <Link className={s.primary} to="/demos">
-                    Explore the playground <span aria-hidden="true">↗</span>
+                  <Link className={s.primary} to="/demo">
+                    Try a live call <span aria-hidden="true">↗</span>
                   </Link>
                   <Link className={s.textLink} to="/docs/quickstart">
                     Start building <span aria-hidden="true">→</span>
@@ -91,40 +91,21 @@ export default function Home() {
             </div>
           </div>
         </section>
-        <section className={s.statement}>
-          <p className={s.label}>The Freehop SDK</p>
-          <div>
-            <h2>
-              People belong inside
-              <br />
-              the experience.
-            </h2>
-            <p>
-              Add a voice to the character. A face to the teammate. A conversation to the canvas. Freehop connects people inside the things you build, from a
-              browser tab to an Electron app.
-            </p>
-            <p>Open source. Peer to peer. Yours to make something of.</p>
-            <Link className={s.textLink} to="/docs">
-              Meet the SDK <span aria-hidden="true">→</span>
-            </Link>
-          </div>
-        </section>
-        <AppShowcase />
         <section className={s.build} id="build">
           <div className={s.buildIntro}>
-            <p className={s.label}>For the next generation of builders</p>
+            <p className={s.label}>The Freehop SDK</p>
             <h2>
-              From an idea
+              Voice, video, data.
               <br />
-              to a shared world.
+              Inside your app.
             </h2>
             <p>
-              Pair with a coding agent, or start with a blank editor. The API is the same. Freehop gives your platform voice, video and small session messages;
-              you decide what happens around them.
+              Connect a session, attach incoming media to your own interface, and send small messages between participants. The same JavaScript API works in the
+              browser and Electron.
             </p>
-            <p>Bring your own AI models, game logic and backend. Keep control of your users, your data and your experience.</p>
-            <Link className={s.textLink} to="/docs/build-with-ai">
-              Read the AI build brief <span aria-hidden="true">→</span>
+            <p>Control microphones, cameras and adaptive video. Your backend handles identity and session tickets; Freehop handles the connections.</p>
+            <Link className={s.textLink} to="/docs/sdk/client">
+              Explore the client API <span aria-hidden="true">→</span>
             </Link>
           </div>
           <div className={s.codeColumn}>
@@ -156,6 +137,7 @@ export default function Home() {
             </p>
           </div>
         </section>
+        <AppShowcase />
         <section className={s.network}>
           <p className={s.label}>How the connection works</p>
           <h2>
