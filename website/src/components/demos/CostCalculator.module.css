@@ -93,7 +93,7 @@
 .range {
   flex: 1 1 10rem;
   min-width: 8rem;
-  accent-color: var(--fh-charcoal);
+  accent-color: var(--fh-ink);
   height: 1.6rem;
   cursor: pointer;
 }
@@ -108,7 +108,7 @@
   border: 2px solid var(--fh-charcoal);
   border-radius: 8px;
   padding: 0.3rem 0.5rem;
-  background: #fffef2;
+  background: #141416;
 }
 
 .number:focus {
@@ -136,16 +136,18 @@
   font-weight: 500;
   border: 2px solid var(--fh-charcoal);
   border-radius: var(--fh-round);
-  background: #ffffff;
-  color: var(--fh-charcoal);
+  background: #0b0b0c;
+  color: var(--fh-ink);
   padding: 0.32rem 0.75rem;
   cursor: pointer;
-  transition: transform 0.16s var(--fh-ease), background-color 0.16s var(--fh-ease);
+  transition:
+    transform 0.16s var(--fh-ease),
+    background-color 0.16s var(--fh-ease);
 }
 
 .preset:hover {
   transform: translateY(-2px);
-  background: #fffbd1;
+  background: #1c1c1f;
 }
 
 .presetOn,
@@ -166,7 +168,7 @@
 }
 
 .classic {
-  background: #ffffff;
+  background: #0b0b0c;
 }
 
 .freehop {
@@ -179,7 +181,7 @@
   font-weight: 600;
   letter-spacing: 0.056em;
   text-transform: uppercase;
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
 }
 
 .big {
@@ -187,7 +189,7 @@
   font-family: var(--fh-display);
   font-size: clamp(2.6rem, 6cqi, 3.6rem);
   line-height: 0.95;
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
@@ -203,7 +205,7 @@
 }
 
 .freehop .unit {
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
 }
 
 .bill {
@@ -211,7 +213,7 @@
   font-family: var(--fh-display);
   font-size: 1.6rem;
   line-height: 1.1;
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
 }
 
 .bill span {
@@ -221,14 +223,14 @@
 }
 
 .freehop .bill span {
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
 }
 
 .bar {
   height: 14px;
   border-radius: var(--fh-round);
   border: 2px solid var(--fh-charcoal);
-  background: #ffffff;
+  background: #0b0b0c;
   overflow: hidden;
 }
 
@@ -248,7 +250,7 @@
 .gateLine {
   margin: 0.6rem 0 0;
   font-size: 0.875rem;
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   line-height: 1.5;
 }
 
@@ -277,7 +279,7 @@
 
 .sources {
   border-top: 1px solid var(--fh-lavender);
-  background: #fbfbfe;
+  background: #141416;
   padding: 0.85rem 1.25rem 1rem;
   font-size: 0.8125rem;
 }

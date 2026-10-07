@@ -9,22 +9,22 @@ const GITHUB = 'https://github.com/jolynstudios/freehop';
 // Code colours from the documentation palette: plum, cobalt, teal and rust on a pale
 // lavender surface. Every token colour keeps at least 4.5:1 contrast on the code surface.
 const codeTheme: PrismTheme = {
-  plain: {color: '#303055', backgroundColor: '#f6f6fb'},
+  plain: {color: '#f0f0f0', backgroundColor: '#0b0b0c'},
   styles: [
-    {types: ['comment', 'prolog', 'doctype', 'cdata'], style: {color: '#62627a', fontStyle: 'italic'}},
-    {types: ['keyword', 'atrule', 'important', 'selector'], style: {color: '#8844ae'}},
-    {types: ['string', 'char', 'template-string', 'attr-value', 'regex', 'url'], style: {color: '#3b61b0'}},
-    {types: ['function', 'class-name', 'builtin', 'tag'], style: {color: '#096e72'}},
-    {types: ['number', 'boolean', 'constant', 'symbol', 'inserted'], style: {color: '#984e4d'}},
-    {types: ['property', 'attr-name', 'variable', 'parameter'], style: {color: '#303055'}},
-    {types: ['punctuation', 'operator'], style: {color: '#55556b'}},
-    {types: ['deleted'], style: {color: '#984e4d', textDecorationLine: 'line-through'}},
+    {types: ['comment', 'prolog', 'doctype', 'cdata'], style: {color: '#a1a4a5', fontStyle: 'italic'}},
+    {types: ['keyword', 'atrule', 'important', 'selector'], style: {color: '#c4bddb'}},
+    {types: ['string', 'char', 'template-string', 'attr-value', 'regex', 'url'], style: {color: '#c6c6c6'}},
+    {types: ['function', 'class-name', 'builtin', 'tag'], style: {color: '#85d9ca'}},
+    {types: ['number', 'boolean', 'constant', 'symbol', 'inserted'], style: {color: '#f398ac'}},
+    {types: ['property', 'attr-name', 'variable', 'parameter'], style: {color: '#f0f0f0'}},
+    {types: ['punctuation', 'operator'], style: {color: '#c6c6c6'}},
+    {types: ['deleted'], style: {color: '#f398ac', textDecorationLine: 'line-through'}},
   ],
 };
 
 const config: Config = {
-  title: 'Freehop',
-  tagline: 'Add peer-to-peer voice, video and data to your app or game.',
+  title: 'freehop',
+  tagline: 'Build worlds. Bring people. Open-source voice, video and data for games and platforms.',
   favicon: 'img/favicon.svg',
 
   future: {
@@ -55,15 +55,7 @@ const config: Config = {
 
   clientModules: ['./src/clientModules/pauseOffscreen.ts'],
 
-  headTags: [
-    {tagName: 'link', attributes: {rel: 'preconnect', href: 'https://fonts.googleapis.com'}},
-    {tagName: 'link', attributes: {rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: 'anonymous'}},
-    {tagName: 'meta', attributes: {name: 'theme-color', content: '#ffe600'}},
-  ],
-  stylesheets: [
-    'https://fonts.googleapis.com/css2?family=Changa+One&family=IBM+Plex+Mono:wght@400;500;600&family=Rubik:wght@400;500;600;700&display=swap',
-  ],
-
+  headTags: [{tagName: 'meta', attributes: {name: 'theme-color', content: '#000000'}}],
   presets: [
     [
       'classic',
@@ -94,7 +86,7 @@ const config: Config = {
       {name: 'twitter:card', content: 'summary_large_image'},
     ],
     colorMode: {
-      defaultMode: 'light',
+      defaultMode: 'dark',
       disableSwitch: true,
       respectPrefersColorScheme: false,
     },
@@ -109,18 +101,18 @@ const config: Config = {
       maxHeadingLevel: 3,
     },
     navbar: {
-      title: 'Freehop',
+      title: 'freehop',
       logo: {
-        alt: 'Freehop logo: a paper plane crossing a blue globe',
+        alt: 'Freehop: two connected paths',
         src: 'img/logo.svg',
         width: 32,
         height: 32,
       },
       items: [
         {type: 'docSidebar', sidebarId: 'docs', position: 'left', label: 'Docs'},
-        {to: '/docs/concepts/paths', label: 'How it works', position: 'left'},
-        {to: '/demos', label: 'Demos', position: 'left'},
-        {to: '/docs/protocol', label: 'Protocol', position: 'left'},
+
+        {to: '/demos', label: 'Playground', position: 'left'},
+        {to: '/docs/sdk/desktop', label: 'Electron', position: 'left'},
         {to: '/docs/quickstart', label: 'Start building', position: 'right', className: 'navbar-live-call'},
         {href: GITHUB, label: 'GitHub', position: 'right', className: 'navbar-github'},
       ],

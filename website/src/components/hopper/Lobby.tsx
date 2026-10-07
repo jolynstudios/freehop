@@ -83,53 +83,50 @@ function usePreview() {
         return;
       }
       for (const track of tracks) if (track.kind === 'audio') track.enabled = mic;
-      publish(new MediaStream(tracks.filter(t => t.readyState === 'live')));
+      publish(new MediaStream(tracks.filter((t) => t.readyState === 'live')));
       setErrors(problems);
       setState('on');
     },
     [stop],
   );
 
-  const setEnabled = useCallback(
-    async (kind: Kind, on: boolean, deviceId: string | null) => {
-      const live = current.current;
-      if (!live) return;
-      const existing = live.getTracks().find(t => t.kind === kind);
-      if (kind === 'audio' && existing) {
-        existing.enabled = on;
+  const setEnabled = useCallback(async (kind: Kind, on: boolean, deviceId: string | null) => {
+    const live = current.current;
+    if (!live) return;
+    const existing = live.getTracks().find((t) => t.kind === kind);
+    if (kind === 'audio' && existing) {
+      existing.enabled = on;
+      publish(live);
+      return;
+    }
+    if (!on) {
+      if (existing) {
+        existing.stop();
+        live.removeTrack(existing);
         publish(live);
+      }
+      return;
+    }
+    if (existing) return;
+    const g = generation.current;
+    try {
+      const captured = await navigator.mediaDevices.getUserMedia({[kind]: constraints(kind, deviceId)});
+      const track = captured.getTracks()[0];
+      if (g !== generation.current || current.current !== live) {
+        track?.stop();
         return;
       }
-      if (!on) {
-        if (existing) {
-          existing.stop();
-          live.removeTrack(existing);
-          publish(live);
-        }
-        return;
-      }
-      if (existing) return;
-      const g = generation.current;
-      try {
-        const captured = await navigator.mediaDevices.getUserMedia({[kind]: constraints(kind, deviceId)});
-        const track = captured.getTracks()[0];
-        if (g !== generation.current || current.current !== live) {
-          track?.stop();
-          return;
-        }
-        if (track) live.addTrack(track);
-        publish(live);
-        setErrors(e => ({...e, [kind]: null}));
-      } catch (e) {
-        setErrors(prev => ({...prev, [kind]: kind === 'audio' ? micProblem(e as Error) : cameraProblem(e as Error)}));
-      }
-    },
-    [],
-  );
+      if (track) live.addTrack(track);
+      publish(live);
+      setErrors((e) => ({...e, [kind]: null}));
+    } catch (e) {
+      setErrors((prev) => ({...prev, [kind]: kind === 'audio' ? micProblem(e as Error) : cameraProblem(e as Error)}));
+    }
+  }, []);
 
   const swap = useCallback(async (kind: Kind, deviceId: string | null, enabled: boolean) => {
     const live = current.current;
-    const old = live?.getTracks().find(t => t.kind === kind);
+    const old = live?.getTracks().find((t) => t.kind === kind);
     if (!live || !old) return;
     const g = generation.current;
     try {
@@ -146,9 +143,9 @@ function usePreview() {
         live.addTrack(track);
       }
       publish(live);
-      setErrors(e => ({...e, [kind]: null}));
+      setErrors((e) => ({...e, [kind]: null}));
     } catch (e) {
-      setErrors(prev => ({...prev, [kind]: kind === 'audio' ? micProblem(e as Error) : cameraProblem(e as Error)}));
+      setErrors((prev) => ({...prev, [kind]: kind === 'audio' ? micProblem(e as Error) : cameraProblem(e as Error)}));
     }
   }, []);
 
@@ -198,7 +195,7 @@ export default function Lobby({code, invite, name, onName, devices, onDevices, j
     if (preview.state !== 'on') return;
     let live = true;
     const refresh = () =>
-      void listDevices().then(next => {
+      void listDevices().then((next) => {
         if (live) setLists(next);
       });
     refresh();
@@ -234,17 +231,19 @@ export default function Lobby({code, invite, name, onName, devices, onDevices, j
     void preview.swap(kind, id, kind === 'audio' ? mic : true);
   };
 
-  const join = (listenOnly = false) => (event?: FormEvent) => {
-    event?.preventDefault();
-    if (!cleanName(name)) {
-      setNameError(true);
-      nameInput.current?.focus();
-      return;
-    }
-    // Freehop captures its own devices: release the preview first so a camera is never held twice.
-    preview.stop();
-    onJoin({mic: listenOnly ? false : mic, cam, listenOnly});
-  };
+  const join =
+    (listenOnly = false) =>
+    (event?: FormEvent) => {
+      event?.preventDefault();
+      if (!cleanName(name)) {
+        setNameError(true);
+        nameInput.current?.focus();
+        return;
+      }
+      // Freehop captures its own devices: release the preview first so a camera is never held twice.
+      preview.stop();
+      onJoin({mic: listenOnly ? false : mic, cam, listenOnly});
+    };
 
   const copy = async () => {
     try {
@@ -293,16 +292,15 @@ export default function Lobby({code, invite, name, onName, devices, onDevices, j
                 )}
               </div>
             )}
-            {preview.state === 'on' && (
-              <span className={s.previewName}>{displayName}</span>
-            )}
+            {preview.state === 'on' && <span className={s.previewName}>{displayName}</span>}
             <div className={s.previewControls}>
               <button
                 type="button"
                 className={clsx(s.roundButton, !mic && s.roundOff)}
                 onClick={toggleMic}
                 aria-label={mic ? 'Turn off microphone' : 'Turn on microphone'}
-                data-tip={mic ? 'Turn off microphone' : 'Turn on microphone'}>
+                data-tip={mic ? 'Turn off microphone' : 'Turn on microphone'}
+              >
                 {mic ? <MicIcon /> : <MicOffIcon />}
               </button>
               <button
@@ -310,12 +308,13 @@ export default function Lobby({code, invite, name, onName, devices, onDevices, j
                 className={clsx(s.roundButton, !cam && s.roundOff)}
                 onClick={toggleCam}
                 aria-label={cam ? 'Turn off camera' : 'Turn on camera'}
-                data-tip={cam ? 'Turn off camera' : 'Turn on camera'}>
+                data-tip={cam ? 'Turn off camera' : 'Turn on camera'}
+              >
                 {cam ? <CamIcon /> : <CamOffIcon />}
               </button>
               {preview.state === 'on' && audioTrack && (
                 <span className={s.meter} role="img" aria-label={mic ? 'Microphone level' : 'Microphone off'}>
-                  {[0, 1, 2, 3, 4].map(i => (
+                  {[0, 1, 2, 3, 4].map((i) => (
                     <i key={i} className={clsx(mic && level > i / 5 + 0.04 && s.meterOn)} />
                   ))}
                 </span>
@@ -332,8 +331,24 @@ export default function Lobby({code, invite, name, onName, devices, onDevices, j
 
           {preview.state === 'on' && lists ? (
             <div className={s.pickers}>
-              <DeviceSelect id="lobby-mic" label="Microphone" value={devices.audio} options={lists.audio} fallback="Microphone" onChange={pick('audio')} className={s.picker} />
-              <DeviceSelect id="lobby-cam" label="Camera" value={devices.video} options={lists.video} fallback="Camera" onChange={pick('video')} className={s.picker} />
+              <DeviceSelect
+                id="lobby-mic"
+                label="Microphone"
+                value={devices.audio}
+                options={lists.audio}
+                fallback="Microphone"
+                onChange={pick('audio')}
+                className={s.picker}
+              />
+              <DeviceSelect
+                id="lobby-cam"
+                label="Camera"
+                value={devices.video}
+                options={lists.video}
+                fallback="Camera"
+                onChange={pick('video')}
+                className={s.picker}
+              />
               {canPickSpeaker() && (
                 <DeviceSelect
                   id="lobby-speaker"
@@ -341,7 +356,7 @@ export default function Lobby({code, invite, name, onName, devices, onDevices, j
                   value={devices.speaker}
                   options={lists.speaker}
                   fallback="Speaker"
-                  onChange={e => onDevices({...devices, speaker: e.target.value || null})}
+                  onChange={(e) => onDevices({...devices, speaker: e.target.value || null})}
                   className={s.picker}
                 />
               )}
@@ -370,13 +385,13 @@ export default function Lobby({code, invite, name, onName, devices, onDevices, j
             placeholder="What should people call you?"
             aria-invalid={nameError ? true : undefined}
             aria-describedby="hopper-name-help"
-            onChange={e => {
+            onChange={(e) => {
               onName(cleanName(e.target.value, {trim: false}));
               setNameError(false);
             }}
           />
           <p id="hopper-name-help" className={clsx(s.fieldHelp, nameError && s.fieldHelpError)}>
-            {nameError ? 'Add your name so the others know who joined.' : 'Shown to the others in this meeting and remembered on this device.'}
+            {nameError ? 'Add your name so the others know who joined.' : 'Shown to the others in this room and remembered on this device.'}
           </p>
 
           {error && (
@@ -396,7 +411,7 @@ export default function Lobby({code, invite, name, onName, devices, onDevices, j
 
           <div className={s.codeBox}>
             <span className={s.codeText}>
-              <span className={s.codeLabel}>Meeting code</span>
+              <span className={s.codeLabel}>Room code</span>
               <code className={s.codeValue}>{code}</code>
             </span>
             <button type="button" className={s.copyButton} onClick={() => void copy()}>
@@ -406,7 +421,7 @@ export default function Lobby({code, invite, name, onName, devices, onDevices, j
           </div>
 
           <p className={s.lobbyFoot}>
-            Share the joining link with the people you want here. Not your meeting?{' '}
+            Share the joining link with the people you want here. Not your room?{' '}
             <button type="button" className={s.inlineLink} onClick={onHome}>
               Back to the start
             </button>

@@ -4,12 +4,12 @@
  */
 
 .stage {
-  --hp-stage: #1e1e1e;
-  --hp-tile: #333333;
-  --hp-raise: #3a3a3a;
-  --hp-raise-hover: #4b4b4b;
-  --hp-split: #2c2c2c;
-  --hp-line: #4a4a4a;
+  --hp-stage: #000000;
+  --hp-tile: #151516;
+  --hp-raise: #1c1c1f;
+  --hp-raise-hover: #242426;
+  --hp-split: #0b0b0c;
+  --hp-line: #414145;
   --hp-soft: #d4d4dc;
   --hp-gap: 12px;
   position: relative;
@@ -616,7 +616,9 @@
   background: var(--hp-raise);
   color: #ffffff;
   cursor: pointer;
-  transition: background-color 0.15s var(--fh-ease), transform 0.15s var(--fh-ease);
+  transition:
+    background-color 0.15s var(--fh-ease),
+    transform 0.15s var(--fh-ease);
 }
 
 .btn:hover:not(:disabled) {
@@ -643,7 +645,7 @@
 }
 
 .btnOff:hover:not(:disabled) {
-  background: #fff176;
+  background: #dcdcdc;
 }
 
 .btnActive {
@@ -729,7 +731,9 @@
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.12s var(--fh-ease), transform 0.12s var(--fh-ease);
+  transition:
+    opacity 0.12s var(--fh-ease),
+    transform 0.12s var(--fh-ease);
   z-index: 20;
 }
 
@@ -1334,4 +1338,38 @@
   .inviteCopy:hover {
     transform: none;
   }
+}
+
+.brandName {
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+.markTile {
+  background: var(--fh-surface);
+  border: var(--fh-hairline);
+}
+
+.panel {
+  background: var(--fh-surface);
+  color: var(--fh-ink);
+  border: 1px solid var(--fh-lavender);
+  border-radius: 8px;
+}
+.panelClose {
+  color: var(--fh-ink);
+}
+.deviceSelect,
+.renameInput {
+  background: #141416;
+  color: var(--fh-ink);
+  border-color: var(--fh-lavender);
+}
+.tone_azure,
+.tone_coral,
+.micStateOff,
+.leave {
+  color: #000;
+}
+.chatForm:focus-within {
+  border-color: #999;
 }

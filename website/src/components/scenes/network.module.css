@@ -1,0 +1,81 @@
+.figure {
+  margin: 2rem 0;
+  border: var(--fh-hairline);
+  border-radius: 6px;
+  background: var(--fh-surface);
+  overflow: hidden;
+}
+.top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 22px;
+  border-bottom: var(--fh-hairline);
+  font: 0.61rem var(--fh-mono);
+  color: var(--fh-fog);
+}
+.top strong {
+  color: var(--fh-ink);
+  font-weight: 500;
+}
+.nodes {
+  display: flex;
+  justify-content: center;
+  padding: 34px 20px;
+  gap: 14px;
+}
+.step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.node {
+  display: grid;
+  gap: 12px;
+  text-align: center;
+  border: 1px solid #414145;
+  background: #141416;
+  padding: 17px 22px;
+  color: var(--fh-ink);
+  font: 0.72rem var(--fh-mono);
+  border-radius: 4px;
+}
+.node > span {
+  font-size: 1.4rem;
+  color: var(--fh-yellow);
+}
+.arrow {
+  color: var(--fh-fog);
+}
+.route {
+  padding: 0 22px;
+  text-align: center;
+  color: var(--fh-azure) !important;
+  font: 0.72rem/1.6 var(--fh-mono);
+}
+.figure figcaption {
+  padding: 16px 22px;
+  border-top: var(--fh-hairline);
+  font-size: 0.78rem;
+  color: var(--fh-fog);
+}
+@media (max-width: 600px) {
+  .top {
+    flex-direction: column;
+  }
+  .nodes {
+    gap: 7px;
+    padding: 24px 10px;
+  }
+  .step {
+    gap: 7px;
+  }
+  .node {
+    padding: 12px 8px;
+    font-size: 0.6rem;
+  }
+  .arrow {
+    font-size: 0.7rem;
+  }
+}

@@ -1,4 +1,16 @@
-import {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent, type MouseEvent, type ReactNode} from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+} from 'react';
 import clsx from 'clsx';
 import PathBadge from '../PathBadge';
 import HopperMark, {HopperFigure} from './Mark';
@@ -26,7 +38,14 @@ import s from './Call.module.css';
 
 type PanelKind = 'people' | 'chat' | 'info' | 'devices';
 
-const GATE_STATE: Record<string, string> = {joined: 'connected', connecting: 'connecting', reconnecting: 'reconnecting', idle: 'retrying', error: 'unreachable', closed: 'closed'};
+const GATE_STATE: Record<string, string> = {
+  joined: 'connected',
+  connecting: 'connecting',
+  reconnecting: 'reconnecting',
+  idle: 'retrying',
+  error: 'unreachable',
+  closed: 'closed',
+};
 const timeFormat = new Intl.DateTimeFormat(undefined, {hour: 'numeric', minute: '2-digit'});
 
 function useClock() {
@@ -56,7 +75,18 @@ function useCopy() {
   return {state, copy};
 }
 
-function DockButton({label, tip, onClick, className, children, expanded, controls, disabled, badge, buttonRef}: {
+function DockButton({
+  label,
+  tip,
+  onClick,
+  className,
+  children,
+  expanded,
+  controls,
+  disabled,
+  badge,
+  buttonRef,
+}: {
   label: string;
   tip?: string;
   onClick(event: MouseEvent<HTMLButtonElement>): void;
@@ -78,7 +108,8 @@ function DockButton({label, tip, onClick, className, children, expanded, control
       aria-controls={expanded ? controls : undefined}
       data-tip={tip ?? label}
       disabled={disabled}
-      onClick={onClick}>
+      onClick={onClick}
+    >
       {children}
       {badge}
     </button>
@@ -96,7 +127,7 @@ type CallProps = {
   onLeave(): void;
 };
 
-/** The meeting itself: a dark stage with the video grid, a control dock and side panels. */
+/** The room itself: a dark stage with the video grid, a control dock and side panels. */
 export default function Call({call, code, invite, name, onRename, devices, onDevices, onLeave}: CallProps) {
   const [panel, setPanel] = useState<PanelKind | null>(null);
   const [deviceFocus, setDeviceFocus] = useState<{kind: 'audio' | 'video'; n: number}>({kind: 'audio', n: 0});
@@ -109,7 +140,7 @@ export default function Call({call, code, invite, name, onRename, devices, onDev
     else players.current.delete(peer);
   }, []);
   const onPlayback = useCallback((peer: string, state: Playback) => {
-    setPlayback(p => (p[peer] === state ? p : {...p, [peer]: state}));
+    setPlayback((p) => (p[peer] === state ? p : {...p, [peer]: state}));
   }, []);
   const [seenChat, setSeenChat] = useState(0);
   const [toast, setToast] = useState<ChatLine | null>(null);
@@ -137,18 +168,16 @@ export default function Call({call, code, invite, name, onRename, devices, onDev
   const count = alone ? 2 : pip ? 1 : peerList.length + 1;
   const layout = useTileLayout(count, 12);
   // With one other person they fill the stage (capped for very wide screens) and your view floats on top.
-  const size = pip
-    ? {width: Math.floor(Math.min(layout.box.w, layout.box.h * 2.2)), height: Math.floor(layout.box.h)}
-    : {width: layout.w, height: layout.h};
+  const size = pip ? {width: Math.floor(Math.min(layout.box.w, layout.box.h * 2.2)), height: Math.floor(layout.box.h)} : {width: layout.w, height: layout.h};
 
   // Focus returns to whatever opened a panel when it closes.
   const openPanel = useCallback((kind: PanelKind, from: HTMLElement | null) => {
     opener.current = from;
-    setPanel(current => (current === kind ? null : kind));
+    setPanel((current) => (current === kind ? null : kind));
   }, []);
   const showDevices = useCallback((kind: 'audio' | 'video', from: HTMLElement) => {
     opener.current = from;
-    setDeviceFocus(f => ({kind, n: f.n + 1}));
+    setDeviceFocus((f) => ({kind, n: f.n + 1}));
     setPanel('devices');
   }, []);
   const restoreFocus = useRef(false);
@@ -162,7 +191,7 @@ export default function Call({call, code, invite, name, onRename, devices, onDev
     opener.current?.focus();
   }, [panel]);
 
-  const unread = call.chat.filter(line => !line.mine && line.key > seenChat).length;
+  const unread = call.chat.filter((line) => !line.mine && line.key > seenChat).length;
   const lastChat = call.chat[call.chat.length - 1];
   useEffect(() => {
     if (panel === 'chat' && lastChat) setSeenChat(lastChat.key);
@@ -184,11 +213,11 @@ export default function Call({call, code, invite, name, onRename, devices, onDev
   const known = useRef(new Map<string, string>());
   useEffect(() => {
     const before = known.current;
-    const after = new Map(peerList.map(p => [p.id, p.name ?? 'Someone']));
+    const after = new Map(peerList.map((p) => [p.id, p.name ?? 'Someone']));
     const joined = [...after].filter(([id]) => !before.has(id)).map(([, n]) => n);
     const left = [...before].filter(([id]) => !after.has(id)).map(([, n]) => n);
     known.current = after;
-    const parts = [...joined.map(n => `${n} joined.`), ...left.map(n => `${n} left.`)];
+    const parts = [...joined.map((n) => `${n} joined.`), ...left.map((n) => `${n} left.`)];
     if (parts.length) setAnnounce(parts.join(' '));
   }, [peerList]);
 
@@ -207,10 +236,10 @@ export default function Call({call, code, invite, name, onRename, devices, onDev
   const peerStatus = (peer: Peer) =>
     peer.connected ? null : peer.path === 'unreachable' ? `Can't reach ${peer.name ?? 'them'} yet. Hopper keeps trying.` : 'Connecting…';
 
-  const anyGate = Object.values(call.gates).some(state => state === 'joined');
+  const anyGate = Object.values(call.gates).some((state) => state === 'joined');
 
   return (
-    <section className={s.stage} aria-label="Meeting">
+    <section className={s.stage} aria-label="Room">
       <header className={s.topbar}>
         <div className={s.brand}>
           <span className={s.markTile}>
@@ -224,8 +253,8 @@ export default function Call({call, code, invite, name, onRename, devices, onDev
         <div className={s.banners}>
           {call.trackersDown && (
             <p className={clsx(s.banner, s.bannerWarn)} role="alert">
-              Hopper can't reach the public trackers that introduce people, so nobody can find you yet. It keeps trying. A VPN,
-              firewall or school network can block them.
+              Hopper can't reach the public trackers that introduce people, so nobody can find you yet. It keeps trying. A VPN, firewall or school network can
+              block them.
             </p>
           )}
           {call.notice && (
@@ -250,10 +279,8 @@ export default function Call({call, code, invite, name, onRename, devices, onDev
       <div className={s.body}>
         <div className={s.tilesArea} ref={layout.ref}>
           <div className={s.tiles}>
-            {alone && (
-              <InviteCard style={size} code={code} invite={invite} lonely={call.lonely} reaching={!anyGate} />
-            )}
-            {peerList.map(peer => (
+            {alone && <InviteCard style={size} code={code} invite={invite} lonely={call.lonely} reaching={!anyGate} />}
+            {peerList.map((peer) => (
               <Tile
                 key={peer.id}
                 id={peer.id}
@@ -265,7 +292,8 @@ export default function Call({call, code, invite, name, onRename, devices, onDev
                 path={peer.path}
                 via={peer.via}
                 status={peerStatus(peer)}
-                style={size}>
+                style={size}
+              >
                 {(playback[peer.id] === 'blocked' || playback[peer.id] === 'error') && (
                   <button type="button" className={s.soundButton} onClick={() => players.current.get(peer.id)?.()}>
                     {playback[peer.id] === 'blocked' ? 'Enable sound' : 'Retry sound'}
@@ -318,13 +346,15 @@ export default function Call({call, code, invite, name, onRename, devices, onDev
               className={s.caret}
               expanded={panel === 'devices'}
               controls="hopper-panel"
-              onClick={e => showDevices('audio', e.currentTarget)}>
+              onClick={(e) => showDevices('audio', e.currentTarget)}
+            >
               <CaretIcon width={18} height={18} />
             </DockButton>
             <DockButton
               label={call.mic ? 'Turn off microphone' : 'Turn on microphone'}
               className={clsx(!call.mic && s.btnOff)}
-              onClick={() => void call.toggleMic()}>
+              onClick={() => void call.toggleMic()}
+            >
               {call.mic ? <MicIcon /> : <MicOffIcon />}
             </DockButton>
           </div>
@@ -334,28 +364,31 @@ export default function Call({call, code, invite, name, onRename, devices, onDev
               className={s.caret}
               expanded={panel === 'devices'}
               controls="hopper-panel"
-              onClick={e => showDevices('video', e.currentTarget)}>
+              onClick={(e) => showDevices('video', e.currentTarget)}
+            >
               <CaretIcon width={18} height={18} />
             </DockButton>
             <DockButton
               label={call.camBusy ? 'Starting camera' : call.cam ? 'Turn off camera' : 'Turn on camera'}
               className={clsx(!call.cam && s.btnOff)}
               disabled={call.camBusy}
-              onClick={() => void call.toggleCam()}>
+              onClick={() => void call.toggleCam()}
+            >
               {call.cam ? <CamIcon /> : <CamOffIcon />}
             </DockButton>
           </div>
-          <DockButton label="Leave the meeting" tip="Leave" className={s.leave} onClick={onLeave}>
+          <DockButton label="Leave the room" tip="Leave" className={s.leave} onClick={onLeave}>
             <LeaveIcon width={26} height={26} />
           </DockButton>
         </div>
-        <div className={s.side} role="group" aria-label="Meeting panels">
+        <div className={s.side} role="group" aria-label="Room panels">
           <DockButton
-            label="Meeting details"
+            label="Room details"
             className={clsx(panel === 'info' && s.btnActive)}
             expanded={panel === 'info'}
             controls="hopper-panel"
-            onClick={e => openPanel('info', e.currentTarget)}>
+            onClick={(e) => openPanel('info', e.currentTarget)}
+          >
             <InfoIcon />
           </DockButton>
           <DockButton
@@ -364,8 +397,13 @@ export default function Call({call, code, invite, name, onRename, devices, onDev
             className={clsx(panel === 'people' && s.btnActive)}
             expanded={panel === 'people'}
             controls="hopper-panel"
-            onClick={e => openPanel('people', e.currentTarget)}
-            badge={<span className={s.count} aria-hidden="true">{peerList.length + 1}</span>}>
+            onClick={(e) => openPanel('people', e.currentTarget)}
+            badge={
+              <span className={s.count} aria-hidden="true">
+                {peerList.length + 1}
+              </span>
+            }
+          >
             <PeopleIcon />
           </DockButton>
           <DockButton
@@ -374,16 +412,17 @@ export default function Call({call, code, invite, name, onRename, devices, onDev
             className={clsx(panel === 'chat' && s.btnActive)}
             expanded={panel === 'chat'}
             controls="hopper-panel"
-            onClick={e => openPanel('chat', e.currentTarget)}
+            onClick={(e) => openPanel('chat', e.currentTarget)}
             buttonRef={chatButton}
-            badge={unread > 0 ? <span className={s.unread} aria-hidden="true" /> : null}>
+            badge={unread > 0 ? <span className={s.unread} aria-hidden="true" /> : null}
+          >
             <ChatIcon />
           </DockButton>
         </div>
       </div>
 
       <div hidden>
-        {peerList.map(peer => (
+        {peerList.map((peer) => (
           <RemoteAudio
             key={peer.id}
             peer={peer.id}
@@ -401,7 +440,19 @@ export default function Call({call, code, invite, name, onRename, devices, onDev
   );
 }
 
-function InviteCard({style, code, invite, lonely, reaching}: {style: {width: number; height: number}; code: string; invite: string; lonely: boolean; reaching: boolean}) {
+function InviteCard({
+  style,
+  code,
+  invite,
+  lonely,
+  reaching,
+}: {
+  style: {width: number; height: number};
+  code: string;
+  invite: string;
+  lonely: boolean;
+  reaching: boolean;
+}) {
   const {state, copy} = useCopy();
   return (
     <div className={s.invite} style={style}>
@@ -423,13 +474,13 @@ function InviteCard({style, code, invite, lonely, reaching}: {style: {width: num
       <p className={s.inviteCode}>{code}</p>
       <button type="button" className={s.inviteCopy} onClick={() => void copy(invite)}>
         {state === 'copied' ? <CheckIcon width={20} height={20} /> : <CopyIcon width={20} height={20} />}
-        {state === 'copied' ? 'Link copied' : state === 'failed' ? 'Copy failed: use Meeting details' : 'Copy joining link'}
+        {state === 'copied' ? 'Link copied' : state === 'failed' ? 'Copy failed: use Room details' : 'Copy joining link'}
       </button>
     </div>
   );
 }
 
-const PANEL_TITLE: Record<PanelKind, string> = {people: 'People', chat: 'In-call messages', info: 'Meeting details', devices: 'Audio and video'};
+const PANEL_TITLE: Record<PanelKind, string> = {people: 'People', chat: 'In-call messages', info: 'Room details', devices: 'Audio and video'};
 
 function SidePanel({kind, onClose, children}: {kind: PanelKind; onClose(): void; children: ReactNode}) {
   const heading = useRef<HTMLHeadingElement>(null);
@@ -476,7 +527,7 @@ function PeoplePanel({call, name, onRename, speaking}: {call: CallState; name: s
   const peers = Object.values(call.peers);
   return (
     <>
-      <p className={s.panelLead}>In this meeting: {peers.length + 1}</p>
+      <p className={s.panelLead}>In this room: {peers.length + 1}</p>
       <ul className={s.people}>
         <li className={s.person}>
           <span className={clsx(s.miniAvatar, s[`tone_${avatarTone(call.room?.id ?? 'self')}`])} aria-hidden="true">
@@ -495,8 +546,8 @@ function PeoplePanel({call, name, onRename, speaking}: {call: CallState; name: s
                   value={draft}
                   maxLength={NAME_MAX}
                   autoComplete="nickname"
-                  onChange={e => setDraft(cleanName(e.target.value, {trim: false}))}
-                  onKeyDown={e => {
+                  onChange={(e) => setDraft(cleanName(e.target.value, {trim: false}))}
+                  onKeyDown={(e) => {
                     if (e.key === 'Escape') {
                       e.stopPropagation();
                       setEditing(false);
@@ -520,7 +571,8 @@ function PeoplePanel({call, name, onRename, speaking}: {call: CallState; name: s
                   onClick={() => {
                     setDraft(name);
                     setEditing(true);
-                  }}>
+                  }}
+                >
                   Rename
                 </button>
               </>
@@ -528,7 +580,7 @@ function PeoplePanel({call, name, onRename, speaking}: {call: CallState; name: s
           </span>
           <MicState on={call.mic} speaking={speaking.has('self')} />
         </li>
-        {peers.map(peer => (
+        {peers.map((peer) => (
           <li key={peer.id} className={s.person}>
             <span className={clsx(s.miniAvatar, s[`tone_${avatarTone(peer.id)}`])} aria-hidden="true">
               {initials(peer.name ?? 'Guest')}
@@ -541,7 +593,7 @@ function PeoplePanel({call, name, onRename, speaking}: {call: CallState; name: s
           </li>
         ))}
       </ul>
-      {peers.length === 0 && <p className={s.panelHint}>Nobody else yet. Share the link from Meeting details.</p>}
+      {peers.length === 0 && <p className={s.panelHint}>Nobody else yet. Share the link from Room details.</p>}
     </>
   );
 }
@@ -573,7 +625,7 @@ function ChatPanel({call}: {call: CallState}) {
     if (!blockedUntil) return;
     const timer = window.setInterval(() => {
       if (Date.now() >= blockedUntil) setBlockedUntil(0);
-      else tick(n => n + 1);
+      else tick((n) => n + 1);
     }, 250);
     return () => window.clearInterval(timer);
   }, [blockedUntil]);
@@ -590,13 +642,13 @@ function ChatPanel({call}: {call: CallState}) {
   const lines = call.chat;
   return (
     <div className={s.chat}>
-      <p className={s.chatNote}>Messages go straight to the people in this meeting. Nothing is stored, and they disappear when you leave.</p>
+      <p className={s.chatNote}>Messages go straight to the people in this room. Nothing is stored, and they disappear when you leave.</p>
       <ol className={s.messages} ref={list} aria-live="polite" aria-label="Messages">
         {lines.length === 0 && <li className={s.noMessages}>No messages yet. Say hello.</li>}
         {lines.map((line, i) => {
           const previous = lines[i - 1];
           const grouped = previous && previous.from === line.from && line.at - previous.at < 120000;
-          const who = line.mine ? 'You' : call.peers[line.from]?.name ?? line.name;
+          const who = line.mine ? 'You' : (call.peers[line.from]?.name ?? line.name);
           return (
             <li key={line.key} className={clsx(s.message, grouped && s.messageGrouped)} data-mine={line.mine ? 'true' : undefined}>
               {!grouped && (
@@ -622,8 +674,8 @@ function ChatPanel({call}: {call: CallState}) {
           rows={2}
           maxLength={CHAT_MAX}
           placeholder="Send a message"
-          onChange={e => setDraft(e.target.value.slice(0, CHAT_MAX))}
-          onKeyDown={e => {
+          onChange={(e) => setDraft(e.target.value.slice(0, CHAT_MAX))}
+          onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
               e.preventDefault();
               send();
@@ -650,31 +702,29 @@ function InfoPanel({code, invite, gates}: {code: string; invite: string; gates: 
   return (
     <div className={s.info}>
       <h3 className={s.infoHeading}>Joining link</h3>
-      <input className={s.linkField} readOnly value={invite} aria-label="Joining link" onFocus={e => e.currentTarget.select()} />
+      <input className={s.linkField} readOnly value={invite} aria-label="Joining link" onFocus={(e) => e.currentTarget.select()} />
       <button type="button" className={s.primarySmall} onClick={() => void copy(invite)}>
         {state === 'copied' ? <CheckIcon width={18} height={18} /> : <CopyIcon width={18} height={18} />}
         {state === 'copied' ? 'Link copied' : state === 'failed' ? 'Copy failed: select the link above' : 'Copy joining link'}
       </button>
       <p className={s.infoCode}>
-        Meeting code <code>{code}</code>
+        Room code <code>{code}</code>
       </p>
       <h3 className={s.infoHeading}>How Hopper works</h3>
       <ol className={s.steps}>
         <li>
-          <strong>Find each other.</strong> Your browsers meet through two public trackers. They pass sealed introductions and never see
-          your audio or video.
+          <strong>Find each other.</strong> Your browsers meet through two public trackers. They pass sealed introductions and never see your audio or video.
         </li>
         <li>
-          <strong>Connect.</strong> Freehop opens a link between the browsers: direct when it can, the next best path when networks get in
-          the way.
+          <strong>Connect.</strong> Freehop opens a link between the browsers: direct when it can, the next best path when networks get in the way.
         </li>
         <li>
-          <strong>Talk.</strong> Audio, video and chat travel between the browsers in this meeting. No server of ours carries the call.
+          <strong>Talk.</strong> Audio, video and chat travel between the browsers in this room. No server of ours carries the call.
         </li>
       </ol>
       <h3 className={s.infoHeading}>Trackers</h3>
       <ul className={s.trackers}>
-        {TRACKERS.map(url => {
+        {TRACKERS.map((url) => {
           const state = gates[url] ?? 'idle';
           return (
             <li key={url} className={clsx(s.tracker, s[`gate_${state}`])}>
@@ -689,7 +739,12 @@ function InfoPanel({code, invite, gates}: {code: string; invite: string; gates: 
   );
 }
 
-function DevicesPanel({call, devices, onDevices, focus}: {
+function DevicesPanel({
+  call,
+  devices,
+  onDevices,
+  focus,
+}: {
   call: CallState;
   devices: DeviceChoice;
   onDevices(next: DeviceChoice): void;
@@ -702,7 +757,7 @@ function DevicesPanel({call, devices, onDevices, focus}: {
   useEffect(() => {
     let live = true;
     const refresh = () =>
-      void listDevices().then(next => {
+      void listDevices().then((next) => {
         if (live) setLists(next);
       });
     refresh();
@@ -728,7 +783,7 @@ function DevicesPanel({call, devices, onDevices, focus}: {
           value={devices.speaker}
           options={lists.speaker}
           fallback="Speaker"
-          onChange={e => onDevices({...devices, speaker: e.target.value || null})}
+          onChange={(e) => onDevices({...devices, speaker: e.target.value || null})}
         />
       )}
       <p className={s.panelHint}>
@@ -738,7 +793,15 @@ function DevicesPanel({call, devices, onDevices, focus}: {
   );
 }
 
-export function DeviceSelect({id, label, value, options, fallback, onChange, className}: {
+export function DeviceSelect({
+  id,
+  label,
+  value,
+  options,
+  fallback,
+  onChange,
+  className,
+}: {
   id: string;
   label: string;
   value: string | null;
@@ -747,14 +810,14 @@ export function DeviceSelect({id, label, value, options, fallback, onChange, cla
   onChange(event: ChangeEvent<HTMLSelectElement>): void;
   className?: string;
 }) {
-  const known = !value || options.some(o => o.deviceId === value);
+  const known = !value || options.some((o) => o.deviceId === value);
   return (
     <label className={clsx(s.deviceField, className)} htmlFor={id}>
       <span className={s.deviceLabel}>{label}</span>
-      <select id={id} className={s.deviceSelect} value={known ? value ?? '' : ''} onChange={onChange}>
+      <select id={id} className={s.deviceSelect} value={known ? (value ?? '') : ''} onChange={onChange}>
         <option value="">System default</option>
         {options
-          .filter(o => o.deviceId !== 'default')
+          .filter((o) => o.deviceId !== 'default')
           .map((o, i) => (
             <option key={o.deviceId} value={o.deviceId}>
               {o.label || `${fallback} ${i + 1}`}

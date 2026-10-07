@@ -15,9 +15,7 @@ function Loading() {
 /** Hopper's meeting home, waiting room, and call. */
 export default function HopperPage() {
   return (
-    <Layout
-      title="Hopper"
-      description="Start a video meeting in Hopper, share the link, and get together in your browser. No account needed.">
+    <Layout title="Hopper · Squad comms" description="Your squad, one frequency. Open a Freehop room for voice, video and chat in the browser.">
       <main className={styles.page}>
         <BrowserOnly fallback={<Loading />}>
           {() => {

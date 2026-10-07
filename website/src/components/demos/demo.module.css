@@ -1,10 +1,10 @@
-/* Shared look for the interactive demos: SST paper cards with Karl-style toys inside. */
+/* Shared controls and surfaces for the network experiments. */
 
 .card {
   position: relative;
   border: 1px solid var(--fh-lavender);
   border-radius: 14px;
-  background: #ffffff;
+  background: #0b0b0c;
   margin: 1.5rem 0 2.5rem;
   overflow: hidden;
   font-size: 1rem;
@@ -18,7 +18,7 @@
   gap: 1rem;
   padding: 0.85rem 1.1rem 0.85rem 1.25rem;
   border-bottom: 1px solid var(--fh-lavender);
-  background: #fbfbfe;
+  background: #141416;
 }
 
 .cardTitle {
@@ -52,12 +52,15 @@
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--fh-slate);
-  background: #ffffff;
+  background: #0b0b0c;
   border: 1px solid var(--fh-lavender);
   border-radius: var(--fh-r-xs);
   padding: 0.3rem 0.7rem;
   cursor: pointer;
-  transition: border-color 0.15s var(--fh-ease), color 0.15s var(--fh-ease), transform 0.15s var(--fh-ease);
+  transition:
+    border-color 0.15s var(--fh-ease),
+    color 0.15s var(--fh-ease),
+    transform 0.15s var(--fh-ease);
 }
 
 .ghostButton:hover {
@@ -120,19 +123,22 @@
   padding: 0.42rem 0.8rem;
   border-radius: var(--fh-round);
   border: 2px solid var(--fh-charcoal);
-  background: #ffffff;
-  color: var(--fh-charcoal);
+  background: #0b0b0c;
+  color: var(--fh-ink);
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1.2;
   cursor: pointer;
   user-select: none;
-  transition: transform 0.16s var(--fh-ease), background-color 0.16s var(--fh-ease), color 0.16s var(--fh-ease);
+  transition:
+    transform 0.16s var(--fh-ease),
+    background-color 0.16s var(--fh-ease),
+    color 0.16s var(--fh-ease);
 }
 
 .chip span:hover {
   transform: translateY(-2px);
-  background: #fffbd1;
+  background: #1c1c1f;
 }
 
 .chip input:active + span {
@@ -180,7 +186,7 @@
   height: 1.5rem;
   border-radius: var(--fh-round);
   border: 2px solid var(--fh-charcoal);
-  background: #ffffff;
+  background: #0b0b0c;
   flex: none;
   transition: background-color 0.18s var(--fh-ease);
 }
@@ -194,7 +200,9 @@
   height: calc(1.5rem - 8px);
   border-radius: 50%;
   background: var(--fh-charcoal);
-  transition: transform 0.22s cubic-bezier(0.3, 1.5, 0.5, 1), background-color 0.18s var(--fh-ease);
+  transition:
+    transform 0.22s cubic-bezier(0.3, 1.5, 0.5, 1),
+    background-color 0.18s var(--fh-ease);
 }
 
 .switch input:checked + .track {
@@ -211,7 +219,7 @@
 }
 
 .switch:hover .track {
-  background: #fffbd1;
+  background: #1c1c1f;
 }
 
 .switch input:checked:hover + .track {
@@ -289,4 +297,20 @@
   .track::after {
     transition: none;
   }
+}
+
+.stage {
+  background: var(--fh-surface);
+  border: var(--fh-hairline);
+}
+.card {
+  border: var(--fh-hairline);
+  border-radius: 6px;
+}
+.cardTitle {
+  font-weight: 600;
+}
+.button {
+  background: #1c1c1f;
+  color: var(--fh-ink);
 }

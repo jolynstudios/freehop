@@ -1,15 +1,17 @@
 <!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Freehop example</title>
+<title>Freehop · Platform starter</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
 <style>
-  :root { color-scheme: light dark; font: 15px/1.4 system-ui, sans-serif; }
-  body { margin: 16px; } form, .bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  :root { color-scheme: dark; font: 15px/1.6 system-ui, sans-serif; background:#000000; color:#c6c6c6; }
+  body { margin: 0 auto; max-width:1080px; padding:48px 24px; } form, .bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
   #peers { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
   .tile { border: 1px solid #8884; border-radius: 8px; padding: 8px; } video { width: 100%; background: #000; border-radius: 4px; }
   .path { font-size: 12px; opacity: .75; } .level { height: 4px; background: #3a7; width: 0; transition: width .2s; }
+h1{font-size:clamp(2rem,5vw,4rem);letter-spacing:-.06em;color:#f0f0f0;margin:0 0 12px}header{margin-bottom:36px;border-bottom:1px solid #292d30;padding-bottom:28px}header p:first-child{font:12px monospace;letter-spacing:.1em;color:#f0f0f0}button,input{padding:10px 14px;border:1px solid #414145;border-radius:5px;background:#141416;color:#f0f0f0;font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:default}button:hover:not(:disabled){background:#292d30}:focus-visible{outline:3px solid #f0f0f0;outline-offset:3px}form button{background:#f0f0f0;color:#000000}.tile{background:#0b0b0c}.bar{align-items:center}
 </style>
+<header><p>FREEHOP / PLATFORM STARTER</p><h1>Your room. Your rules.</h1><p>A minimal ticket-based voice and video integration. Join the same room in another browser to connect. Built for remixing into your game or platform.</p></header>
 <form id="join"><input id="room" value="lobby" aria-label="Room"><button>Join with mic + camera</button></form>
 <div class="bar"><button id="mic" disabled>Mute</button><button id="cam" disabled>Camera off</button><button id="leave" disabled>Leave</button><span id="state"></span></div>
 <div id="peers"></div>

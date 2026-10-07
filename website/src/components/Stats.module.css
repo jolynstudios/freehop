@@ -10,7 +10,7 @@
 }
 
 .stat {
-  background: #ffffff;
+  background: #171e2d;
   padding: 1.25rem 1.3rem 1.2rem;
   display: flex;
   flex-direction: column;
@@ -23,7 +23,7 @@
   white-space: nowrap;
   font-size: clamp(1.9rem, 2.9vw, 2.6rem);
   line-height: 0.9;
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   letter-spacing: 0.01em;
 }
 

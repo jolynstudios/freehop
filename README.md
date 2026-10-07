@@ -1,22 +1,38 @@
 <div align="center">
 
-# Freehop
+<img src="website/static/img/logo.svg" alt="Freehop" width="76" />
 
-### An open-source SDK for voice and video inside your app or game.
+# freehop
 
-**[Live demo](https://jolynstudios.github.io/freehop/demo)** ·
-**[Documentation](https://jolynstudios.github.io/freehop/)** ·
-**[Quickstart](#quickstart)** ·
-**[Architecture](ARCHITECTURE.md)** ·
-**[Protocol](PROTOCOL.md)**
+### A human connection. In any world.
 
-![License: Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-303055)
-![Docs: CC BY 4.0](https://img.shields.io/badge/docs-CC%20BY%204.0-303055)
-![Home-built network test matrix: 40/40](https://img.shields.io/badge/home%E2%80%91built%20network%20tests-40%2F40-096e72)
-![Unit tests: 173/173](https://img.shields.io/badge/unit%20tests-173%2F173-096e72)
-![Status: alpha](https://img.shields.io/badge/status-alpha-ef3b2c)
+Open-source voice, video and data for browser games, Electron apps and the platforms you build next.
+
+**[Play the demos](https://jolynstudios.github.io/freehop/demos)** · **[Documentation](https://jolynstudios.github.io/freehop/docs)** · **[Quickstart](#quickstart)** · **[Protocol](PROTOCOL.md)**
+
+![Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-ffffff?labelColor=000000)
+![Status: alpha](https://img.shields.io/badge/status-alpha-b0a2d4?labelColor=000000)
+![JavaScript](https://img.shields.io/badge/JavaScript-browser_%2B_Electron-ffffff?labelColor=000000)
 
 </div>
+
+## Put people inside your world
+
+Build a co-op browser game, a shared 3D workspace, a community platform, or an Electron app. Freehop adds the human layer: voice, optional video, and small session messages inside your own interface.
+
+**Build with AI. Build without it. Own the result.** Use an AI coding agent to scaffold an integration or write it yourself. Freehop has an inspectable JavaScript API and source; bring your own models, NPC logic, authentication and backend. It does not include an AI model, transcription service, or agent runtime.
+
+| Start here | What you can try |
+|---|---|
+| [Signal Run](https://jolynstudios.github.io/freehop/maze) | A Three.js co-op maze with shared movement, voice and video. |
+| [Orbital](https://jolynstudios.github.io/freehop/orbital) | A Three.js arena with local beacon collection and connected player positions. |
+| [Hopper](https://jolynstudios.github.io/freehop/hopper) | Squad rooms with device preview, video, voice and chat. |
+| [Comms lab](https://jolynstudios.github.io/freehop/demo) | A real browser call with connection-path and playback inspection. |
+| [Network lab](https://jolynstudios.github.io/freehop/demos#path-finder) | Path simulation, escalation timers, sealed messages and editable cost estimates. |
+
+Play solo immediately in the games. To connect another player, join a room and share its invite link. Camera and microphone start off in the games. These are small-room alpha examples, not authoritative multiplayer game servers.
+
+Read the [Three.js integration guide](https://jolynstudios.github.io/freehop/docs/games), [Electron reference](https://jolynstudios.github.io/freehop/docs/sdk/desktop), or [AI build brief](https://jolynstudios.github.io/freehop/docs/build-with-ai).
 
 ---
 
@@ -35,23 +51,23 @@ works, Freehop reports `unreachable` instead of sending media through an operato
 
 | | |
 |---|---|
-| 💸 **No media through your gate** | Gates carry sealed signalling only. In every home-lab network test, gate traffic for an entire scenario stayed between 30 and 210 KB. A session gateway you run can still carry media on your bill. |
-| 🧱 **Connects the "impossible" pairs** | Two strict (symmetric) NATs, or a network that blocks UDP, can't connect directly. Freehop routes them through a session member's gateway or the session host, still with no operator relay. |
-| 🛰️ **No single point of failure** | Run one gate or many, operated by you, your community, or public WebTorrent trackers. Peers on different gates still find each other. **Calls keep running when every gate is down.** |
-| 🔐 **Private by construction** | Signalling is sealed (HKDF + AES-256-GCM), so gates can't read or forge envelopes. Direct and gateway paths preserve end-to-end DTLS-SRTP; a forwarding participant decodes and re-encodes media. |
-| ⚙️ **Automatic** | No manual room link is required in a ticket-based integration. Your backend issues a ticket, and the SDK takes the cheapest path that works: direct, then gateway, then relay, then bridge. |
-| 📦 **Small and open** | Zero-dependency browser client; a gate with one dependency (`ws`); TURN gateway and PCP / NAT-PMP / UPnP port mapping in plain Node. Apache-2.0. |
+| **No media through your gate** | Gates carry sealed signalling only. In every home-lab network test, gate traffic for an entire scenario stayed between 30 and 210 KB. A session gateway you run can still carry media on your bill. |
+| **Routes through the session** | Two strict (symmetric) NATs, or a network that blocks UDP, can't connect directly. Freehop routes them through a session member's gateway or the session host, still with no operator relay. |
+| **Multiple signalling gates** | Run one gate or many, operated by you, your community, or public WebTorrent trackers. Peers on different gates still find each other. **Calls keep running when every gate is down.** |
+| **Private by construction** | Signalling is sealed (HKDF + AES-256-GCM), so gates can't read or forge envelopes. Direct and gateway paths preserve end-to-end DTLS-SRTP; a forwarding participant decodes and re-encodes media. |
+| **Automatic** | No manual room link is required in a ticket-based integration. Your backend issues a ticket, and the SDK takes the cheapest path that works: direct, then gateway, then relay, then bridge. |
+| **Small and open** | Zero-dependency browser client; a gate with one dependency (`ws`); TURN gateway and PCP / NAT-PMP / UPnP port mapping in plain Node. Apache-2.0. |
 
 ## How it works
 
 ```mermaid
 flowchart LR
   subgraph session["One session (a call)"]
-    A["🏠 Participant A<br/>(browser)"]
-    B["🏠 Participant B<br/>(phone, strict NAT)"]
-    H["🗼 Host node or<br/>desktop gateway"]
+    A["Participant A<br/>(browser)"]
+    B["Participant B<br/>(phone, strict NAT)"]
+    H["Host node or<br/>desktop gateway"]
   end
-  G["📮 Gate<br/>(your server)"]
+  G["Gate<br/>(your server)"]
   A -. "sealed envelopes (KB)" .-> G
   B -. "sealed envelopes (KB)" .-> G
   A == "media: direct when possible" ==> B
@@ -64,7 +80,7 @@ flowchart LR
 3. **The path ladder finds a route.** Freehop tries direct first (LAN, IPv6, STUN). If that fails it uses an endpoint's own gateway, then a gateway of another session member, then forwarding through a participant. A failure is reported honestly as `unreachable`.
 4. **Kicks rotate keys.** `authority.kick()` issues a new room secret; remaining members `update()` and drop the kicked peer.
 
-## Proof, not promises
+## Published network evidence
 
 These results come from Freehop's own home-built, isolated Linux network test environment—not
 an independent testing laboratory or tests on live ISP, mobile or corporate networks. Real

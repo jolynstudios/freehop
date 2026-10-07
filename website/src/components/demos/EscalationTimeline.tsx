@@ -34,7 +34,8 @@ const PHASES = [
     budget: '7 s',
     servers: 'Adds up to two gateways of other members: a desktop participant or the host node.',
     routes: 'Relay through a session gateway, still encrypted end to end.',
-    leaves: 'Only the impolite peer restarts ICE; the polite one takes over after 2.5 s. Not connected after 7 s, plus one 7 s grace period if checks get answers.',
+    leaves:
+      'Only the impolite peer restarts ICE; the polite one takes over after 2.5 s. Not connected after 7 s, plus one 7 s grace period if checks get answers.',
   },
   {
     name: 'Phase 2: bridging',
@@ -76,7 +77,7 @@ export default function EscalationTimeline() {
 
   // Track geometry: the first 16 seconds are linear, the retry area is compressed.
   const span = marks.p2 + 3;
-  const pos = (sec: number) => Math.min(sec, span) / span * 82;
+  const pos = (sec: number) => (Math.min(sec, span) / span) * 82;
 
   const stop = useCallback(() => {
     cancelAnimationFrame(frame.current);
@@ -95,7 +96,7 @@ export default function EscalationTimeline() {
     const tick = (now: number) => {
       const dt = (now - last.current) / 1000;
       last.current = now;
-      setT(prev => {
+      setT((prev) => {
         const next = Math.min(prev + dt * 3.2, marks.end);
         if (next >= marks.end) setPlaying(false);
         return next;
@@ -112,7 +113,7 @@ export default function EscalationTimeline() {
   };
   const step = () => {
     stop();
-    const stops = [marks.p0, marks.p1, marks.p2, marks.end].filter(v => v > t + 0.01).sort((a, b) => a - b);
+    const stops = [marks.p0, marks.p1, marks.p2, marks.end].filter((v) => v > t + 0.01).sort((a, b) => a - b);
     setT(Math.min(stops[0] ?? marks.end, marks.end));
   };
   const reset = () => {
@@ -147,7 +148,7 @@ export default function EscalationTimeline() {
       <div className={d.cardBody}>
         <div className={s.controls}>
           <div className={d.chips} role="radiogroup" aria-label="What works for this pair">
-            {SCENARIOS.map(sc => (
+            {SCENARIOS.map((sc) => (
               <label key={sc.id} className={d.chip}>
                 <input type="radio" name="fh-escalation" checked={scenario.id === sc.id} onChange={() => choose(sc)} />
                 <span>{sc.label}</span>
@@ -155,7 +156,15 @@ export default function EscalationTimeline() {
             ))}
           </div>
           <label className={d.switch}>
-            <input type="checkbox" checked={grace} onChange={() => { setGrace(g => !g); setT(0); stop(); }} />
+            <input
+              type="checkbox"
+              checked={grace}
+              onChange={() => {
+                setGrace((g) => !g);
+                setT(0);
+                stop();
+              }}
+            />
             <span className={d.track} aria-hidden="true" />
             Checks get answers (grace period)
           </label>
@@ -169,17 +178,22 @@ export default function EscalationTimeline() {
             <span className={clsx(s.seg, s.seg2)} style={{left: `${pos(marks.p1)}%`, width: `${82 - pos(marks.p1)}%`}} />
             <span className={clsx(s.seg, s.seg3)} style={{left: '84%', width: '16%'}} />
             <span className={s.break} style={{left: '82.4%'}} />
-            {[0, ENDPOINT, ...(grace ? [marks.p0] : []), marks.p1].map(sec => (
+            {[0, ENDPOINT, ...(grace ? [marks.p0] : []), marks.p1].map((sec) => (
               <span key={sec} className={s.tick} style={{left: `${pos(sec)}%`}}>
                 {sec} s
               </span>
             ))}
             {RETRIES.map((sec, i) => (
-              <span key={sec} className={clsx(s.retry, phase === 3 && done && s.retryOn)} style={{left: `${85 + i * 3.4}%`, animationDelay: `${i * 0.25}s`}} title={`retry after ${sec} s`} />
+              <span
+                key={sec}
+                className={clsx(s.retry, phase === 3 && done && s.retryOn)}
+                style={{left: `${85 + i * 3.4}%`, animationDelay: `${i * 0.25}s`}}
+                title={`retry after ${sec} s`}
+              />
             ))}
             <span className={clsx(s.marker, playing && s.markerMoving)} style={{left: `${markerLeft}%`}}>
               <svg viewBox="-26 -18 52 36" width="40" height="28">
-                <PaperPlane fill={C.white} fold={C.yellow} />
+                <path d="M-16 0 0-10 16 0 0 10Z" fill="#9fbcff" stroke="#101522" strokeWidth={2} />
               </svg>
             </span>
           </div>
@@ -193,7 +207,14 @@ export default function EscalationTimeline() {
 
         <ol className={s.phases}>
           {PHASES.map((p, i) => {
-            const state = i < active || (i === active && done && scenario.kind === 'unreachable' && i < 3) ? 'past' : i === active ? 'now' : i > scenario.ends ? 'skipped' : 'next';
+            const state =
+              i < active || (i === active && done && scenario.kind === 'unreachable' && i < 3)
+                ? 'past'
+                : i === active
+                  ? 'now'
+                  : i > scenario.ends
+                    ? 'skipped'
+                    : 'next';
             return (
               <li key={p.name} className={clsx(s.phase, s[state])}>
                 <div className={s.phaseHead}>
@@ -213,8 +234,8 @@ export default function EscalationTimeline() {
           })}
         </ol>
         <p className={s.note}>
-          Phase budgets come from the client's defaults; connection times here are illustrative. The 4-second bridge wait is an
-          initiator fallback, not a deadline that proves a pair unreachable. A phase with no eligible gateway or bridge can be skipped. Working routes are used as soon as they connect.
+          Phase budgets come from the client's defaults; connection times here are illustrative. The 4-second bridge wait is an initiator fallback, not a
+          deadline that proves a pair unreachable. A phase with no eligible gateway or bridge can be skipped. Working routes are used as soon as they connect.
         </p>
       </div>
     </div>

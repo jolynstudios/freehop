@@ -31,8 +31,8 @@
 }
 
 .playing {
-  background: #ffffff;
-  color: var(--fh-charcoal);
+  background: #0b0b0c;
+  color: var(--fh-ink);
 }
 
 .controls {
@@ -70,7 +70,7 @@
 }
 
 .segGrace {
-  background: repeating-linear-gradient(-45deg, #ffffff 0 6px, #9cd3cf 6px 12px);
+  background: repeating-linear-gradient(-45deg, #0b0b0c 0 6px, #9cd3cf 6px 12px);
 }
 
 .seg1 {
@@ -82,7 +82,7 @@
 }
 
 .seg3 {
-  background: #ffffff;
+  background: #0b0b0c;
   border-style: dashed;
 }
 
@@ -104,7 +104,7 @@
   font-family: var(--fh-mono);
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   white-space: nowrap;
 }
 
@@ -115,7 +115,7 @@
   height: 12px;
   border-radius: 50%;
   border: 2.5px solid var(--fh-charcoal);
-  background: #ffffff;
+  background: #0b0b0c;
 }
 
 .retryOn {
@@ -125,14 +125,14 @@
 
 @keyframes retryPulse {
   50% {
-    background: #ffffff;
+    background: #0b0b0c;
   }
 }
 
 .retryLabel {
   font-family: var(--fh-mono);
   font-size: 0.72rem;
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   text-align: right;
 }
 
@@ -165,7 +165,7 @@
   font-family: var(--fh-display);
   font-size: 1.55rem;
   line-height: 1;
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
 }
 
 .timeline ol.phases {
@@ -199,7 +199,10 @@
   padding: 0.8rem 0.9rem;
   font-size: 0.8125rem;
   line-height: 1.5;
-  transition: background-color 0.3s var(--fh-ease), border-color 0.3s var(--fh-ease), opacity 0.3s var(--fh-ease);
+  transition:
+    background-color 0.3s var(--fh-ease),
+    border-color 0.3s var(--fh-ease),
+    opacity 0.3s var(--fh-ease);
 }
 
 .phase dl {
@@ -238,13 +241,13 @@
 }
 
 .now {
-  border-color: var(--fh-charcoal);
-  background: #fffbd1;
+  border-color: var(--fh-ink);
+  background: #1c1c1f;
 }
 
 .past {
   border-color: var(--fh-lavender);
-  background: #ffffff;
+  background: #0b0b0c;
 }
 
 .past .phaseName::after {
@@ -254,11 +257,11 @@
 }
 
 .next {
-  background: #ffffff;
+  background: #0b0b0c;
 }
 
 .skipped {
-  opacity: 0.55;
+  opacity: 0.85;
   border-style: dashed;
 }
 

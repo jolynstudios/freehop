@@ -1,27 +1,6 @@
 import {useId, useMemo, useState} from 'react';
 import clsx from 'clsx';
 import PathBadge from '../PathBadge';
-import {
-  Bubble,
-  C,
-  Cloud,
-  Envelope,
-  HopArc,
-  House,
-  Lighthouse,
-  Mailbox,
-  Mover,
-  NameTag,
-  PaperPlane,
-  Person,
-  Wall,
-  arc,
-  line,
-  motion as m,
-  useMotionAllowed,
-  type Arc,
-  type Pt,
-} from '../illustrations';
 import {NETS, decide, type Extras, type Net, type Verdict} from './pathRules';
 import d from './demo.module.css';
 import s from './PathFinder.module.css';
@@ -36,111 +15,42 @@ const PHASE_LABEL: Record<string, string> = {
   null: 'Retries: every 30 s, backing off to 5 min',
 };
 
-/** The first part of a quadratic arc, up to parameter t (de Casteljau). */
-function head(a: Arc, t: number): Arc {
-  const c: Pt = [a.a[0] + (a.c[0] - a.a[0]) * t, a.a[1] + (a.c[1] - a.a[1]) * t];
-  const u = 1 - t;
-  const b: Pt = [u * u * a.a[0] + 2 * u * t * a.c[0] + t * t * a.b[0], u * u * a.a[1] + 2 * u * t * a.c[1] + t * t * a.b[1]];
-  return {a: a.a, b, c, d: `M${a.a[0]} ${a.a[1]} Q${c[0]} ${c[1]} ${b[0]} ${b[1]}`};
-}
-
-function Home({net, x, flip, name}: {net: Net; x: number; flip?: boolean; name: string}) {
-  const y = 290;
-  return (
-    <g>
-      {net === 'udp' || net === 'gateonly' ? (
-        <House x={x} y={y} scale={0.86} variant="tall" flip={flip} />
-      ) : (
-        <House
-          x={x}
-          y={y}
-          scale={0.95}
-          flip={flip}
-          door={net === 'upnp' ? 'swing' : 'closed'}
-          waves={net === 'upnp'}
-          flag={net === 'v6' ? C.azure : undefined}
-        />
-      )}
-      {net === 'gateonly' && <Wall x={x - 62} y={196} width={124} height={96} slot={[x, 244]} course={16} brick={34} />}
-      <Bubble x={x + (flip ? -8 : 8)} y={net === 'udp' || net === 'gateonly' ? 140 : 162} text={NETS[net].tag} size={14} fill={net === 'upnp' ? C.azure : C.white} color={net === 'upnp' ? C.white : C.ink} />
-      <NameTag x={x} y={311} text={name} size={15} />
-    </g>
-  );
-}
-
 function Scene({a, b, x, v}: {a: Net; b: Net; x: Extras; v: Verdict}) {
-  const motion = useMotionAllowed();
-  const A: Pt = [118, 226];
-  const B: Pt = [642, 226];
-  const anaDoor: Pt = [100, 270];
-  const benDoor: Pt = [660, 270];
-  const lamp: Pt = [226, 196];
-  const daniDoor: Pt = [548, 270];
-  const cleoL: Pt = [354, 206];
-  const cleoR: Pt = [406, 206];
-
-  let legs: Arc[] = [];
-  let broken: Arc | null = null;
-  if (v.kind === 'direct') legs = [arc(A, B, 124)];
-  else if (v.kind === 'gateway') legs = [v.via === 'Ben' ? arc(A, benDoor, 112) : arc(B, anaDoor, -112)];
-  else if (v.kind === 'relay' && v.via === 'host node') legs = [arc(A, lamp, 34), arc(lamp, B, 92)];
-  else if (v.kind === 'relay') legs = [arc(A, daniDoor, 86), arc(daniDoor, B, 40)];
-  else if (v.kind === 'bridged') legs = [arc(A, cleoL, 52), arc(cleoR, B, 52)];
-  else broken = head(arc(A, B, 124), 0.4);
-
-  const mail = [arc([132, 196], [366, 52], 56), arc([628, 196], [394, 52], -56)];
-  const key = `${a}-${b}-${v.kind}-${v.via ?? ''}`;
-
+  const connected = v.kind !== 'unreachable';
+  const via = v.via ?? (connected ? 'Direct peer connection' : 'No available session route');
   return (
-    <svg className={d.stageSvg} viewBox="0 0 760 330" role="img" aria-label={`${NETS[a].label} to ${NETS[b].label}: ${v.kind}${v.via ? ' via ' + v.via : ''}.`}>
-      <path d="M-10 300 Q380 246 770 300 V340 H-10 Z" fill={C.azure} stroke={C.ink} strokeWidth={5} strokeLinejoin="round" />
-      <Cloud x={380} y={130} scale={1.15} />
-      <Mailbox x={380} y={104} scale={0.56} flag="anim" />
-      {mail.map((h, i) => (
-        <HopArc key={i} arc={h} pattern="dashes" slow />
+    <svg className={d.stageSvg} viewBox="0 0 760 330" role="img" aria-label={`${NETS[a].label} to ${NETS[b].label}: ${v.kind}`}>
+      <rect width="760" height="330" fill="#0b0b0c" />
+      <path d="M160 182 380 68 600 182" fill="none" stroke="#777777" strokeDasharray="5 7" />
+      <rect x="324" y="42" width="112" height="48" rx="4" fill="#141416" stroke="#777777" />
+      <text x="380" y="71" textAnchor="middle" fill="#c6c6c6" fontFamily="monospace" fontSize="14">
+        GATE
+      </text>
+      <path d="M195 197H565" stroke={connected ? '#c6c6c6' : '#f398ac'} strokeWidth="2" strokeDasharray={connected ? undefined : '5 8'} />
+      {[
+        {x: 75, name: 'ANA', net: a},
+        {x: 565, name: 'BEN', net: b},
+      ].map((n) => (
+        <g key={n.name}>
+          <rect x={n.x} y="144" width="120" height="104" rx="5" fill="#202024" stroke="#c6c6c6" />
+          <text x={n.x + 60} y="183" textAnchor="middle" fill="#f0f0f0" fontFamily="monospace" fontSize="17">
+            {n.name}
+          </text>
+          <text x={n.x + 60} y="219" textAnchor="middle" fill="#c6c6c6" fontFamily="monospace" fontSize="12">
+            {NETS[n.net].tag}
+          </text>
+        </g>
       ))}
-      <Mover arc={mail[0]} dur={6} travel={0.35} rest={0.6} orient={false} motion={motion}>
-        <Envelope scale={0.55} />
-      </Mover>
-      <Mover arc={mail[1]} dur={6} begin={3} travel={0.35} rest={0.6} orient={false} motion={motion}>
-        <Envelope scale={0.55} />
-      </Mover>
-
-      <g className={clsx(s.extra, x.host ? s.on : s.off)}>
-        <Lighthouse x={226} y={288} scale={0.62} beams={false} />
-        <NameTag x={226} y={311} text="HOST" size={14} />
-      </g>
-      <g className={clsx(s.extra, x.desktop ? s.on : s.off)}>
-        <House x={548} y={286} scale={0.78} door="open" waves flip />
-        <NameTag x={548} y={311} text="DANI" size={14} />
-      </g>
-      <g className={clsx(s.extra, x.third ? s.on : s.off)}>
-        <Person x={380} y={282} scale={0.88} arms="up" />
-        <NameTag x={380} y={311} text="CLEO" size={14} />
-      </g>
-
-      <Home net={a} x={82} name="ANA" />
-      <Home net={b} x={678} name="BEN" flip />
-
-      <g key={key} className={s.route}>
-        {legs.map((leg, i) => (
-          <HopArc key={i} arc={leg} width={5} />
-        ))}
-        {legs.map((leg, i) => (
-          <Mover key={`p${i}`} arc={leg} dur={legs.length > 1 ? 4 : 3.2} begin={i * 2} travel={legs.length > 1 ? 0.5 : 1} rest={0.55} motion={motion}>
-            {v.kind === 'bridged' ? <circle r={9} fill={C.coral} {...line} strokeWidth={3} /> : <PaperPlane scale={0.9} />}
-          </Mover>
-        ))}
-        {broken && (
-          <g>
-            <HopArc arc={broken} width={5} />
-            <g transform={`translate(${broken.b[0]} ${broken.b[1]})`}>
-              <circle r={17} fill={C.white} {...line} strokeWidth={3.5} />
-              <path d="M-7 -7 L7 7 M7 -7 L-7 7" {...line} stroke={C.coral} strokeWidth={5} />
-            </g>
-          </g>
-        )}
-      </g>
+      <rect x="258" y="166" width="244" height="62" rx="4" fill="#0b0b0c" stroke="#414145" />
+      <text x="380" y="190" textAnchor="middle" fill={connected ? '#85d9ca' : '#f398ac'} fontFamily="monospace" fontSize="14">
+        {v.kind.toUpperCase()}
+      </text>
+      <text x="380" y="212" textAnchor="middle" fill="#c6c6c6" fontFamily="monospace" fontSize="11">
+        {via}
+      </text>
+      <text x="380" y="295" textAnchor="middle" fill="#a1a4a5" fontFamily="monospace" fontSize="11">
+        HOST {x.host ? 'ON' : 'OFF'} / DESKTOP {x.desktop ? 'ON' : 'OFF'} / THIRD PEER {x.third ? 'ON' : 'OFF'}
+      </text>
     </svg>
   );
 }
@@ -152,7 +62,7 @@ export default function PathFinder() {
   const [b, setB] = useState<Net>(DEFAULTS.b);
   const [x, setX] = useState<Extras>(DEFAULTS.x);
   const v = useMemo(() => decide(a, b, x), [a, b, x]);
-  const toggle = (k: keyof Extras) => setX(prev => ({...prev, [k]: !prev[k]}));
+  const toggle = (k: keyof Extras) => setX((prev) => ({...prev, [k]: !prev[k]}));
   const reset = () => {
     setA(DEFAULTS.a);
     setB(DEFAULTS.b);
@@ -165,7 +75,7 @@ export default function PathFinder() {
         {who}'s network <span className={d.legendNote}>{NETS[value].hint}</span>
       </legend>
       <div className={d.chips} role="radiogroup">
-        {ORDER.map(n => (
+        {ORDER.map((n) => (
           <label key={n} className={d.chip}>
             <input type="radio" name={`${id}-${who}`} value={n} checked={value === n} onChange={() => set(n)} />
             <span>{NETS[n].label}</span>
@@ -184,7 +94,10 @@ export default function PathFinder() {
         </button>
       </div>
       <div className={clsx(d.cardBody, s.body)}>
-        <p>Illustrative network model, not a test of your connection. Figures below come from Freehop's original home-lab network tests, before the later security fixes.</p>
+        <p>
+          Illustrative network model, not a test of your connection. Figures below come from Freehop's original home-lab network tests, before the later
+          security fixes.
+        </p>
         <div className={s.controls}>
           {group('Ana', a, setA)}
           {group('Ben', b, setB)}

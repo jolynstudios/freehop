@@ -13,7 +13,7 @@ import s from './Hopper.module.css';
 type View = 'home' | 'lobby' | 'call' | 'left';
 
 /**
- * Hopper: a Meet(up)-like meeting app on top of Freehop. The meeting code lives in the URL
+ * Hopper: a Meet(up)-like room app on top of Freehop. The room code lives in the URL
  * fragment (/hopper#code), which browsers never send to a web server.
  */
 export default function Hopper() {
@@ -33,7 +33,7 @@ export default function Hopper() {
   // A broken code in the link: say so on the home screen and clear the fragment.
   useEffect(() => {
     if (!malformed) return;
-    setNotice('That meeting link is incomplete or mistyped. Ask for the link again, or start a new meeting.');
+    setNotice('That room link is incomplete or mistyped. Ask for the link again, or start a new room.');
     history.replace({pathname: location.pathname, search: location.search, hash: ''});
   }, [malformed, history, location.pathname, location.search]);
 
@@ -42,7 +42,7 @@ export default function Hopper() {
     if (code && location.hash !== `#${code}`) history.replace({pathname: location.pathname, search: location.search, hash: code});
   }, [code, location.hash, location.pathname, location.search, history]);
 
-  // The address no longer names the meeting you are in (Back, an edited link): leave it.
+  // The address no longer names the room you are in (Back, an edited link): leave it.
   useEffect(() => {
     if (call.code && call.code !== code) {
       setLeftCode(null);
@@ -118,9 +118,7 @@ export default function Hopper() {
   }, [view, call.phase, code, call.room, call.peers, call.gates, call.mic, call.cam, call.chat.length]);
 
   if (view === 'call' && code) {
-    return (
-      <Call call={call} code={code} invite={invite} name={name} onRename={rename} devices={devices} onDevices={setDevices} onLeave={leave} />
-    );
+    return <Call call={call} code={code} invite={invite} name={name} onRename={rename} devices={devices} onDevices={setDevices} onLeave={leave} />;
   }
 
   if (view === 'left' && code) {
@@ -133,8 +131,8 @@ export default function Hopper() {
               <HopperFigure scale={0.8} />
             </g>
           </svg>
-          <h1 className={s.leftTitle}>You left the meeting.</h1>
-          <p className={s.leftText}>Your camera and microphone are off. The meeting carries on for anyone still in it.</p>
+          <h1 className={s.leftTitle}>You left the room.</h1>
+          <p className={s.leftText}>Your camera and microphone are off. The room carries on for anyone still in it.</p>
           <div className={s.leftActions}>
             <button type="button" className={s.primary} onClick={() => void join(lastJoin)}>
               Rejoin
@@ -146,7 +144,8 @@ export default function Hopper() {
                 setLeftCode(null);
                 setNotice(null);
                 goTo('');
-              }}>
+              }}
+            >
               Return to home screen
             </button>
           </div>
@@ -167,7 +166,7 @@ export default function Hopper() {
         joining={call.phase === 'joining'}
         error={joinError?.error ?? null}
         micFailed={joinError?.micFailed ?? false}
-        onJoin={options => void join(options)}
+        onJoin={(options) => void join(options)}
         onHome={() => {
           setJoinError(null);
           goTo('');
@@ -184,7 +183,7 @@ export default function Hopper() {
         setJoinError(null);
         goTo(newCode());
       }}
-      onJoin={next => {
+      onJoin={(next) => {
         setNotice(null);
         setJoinError(null);
         goTo(next);

@@ -1,0 +1,495 @@
+.hero {
+  position: relative;
+  min-height: 850px;
+  height: calc(100svh - 70px);
+  max-height: 1150px;
+  overflow: hidden;
+  background: #000;
+  border-bottom: 1px solid #292d30;
+}
+.heroMedia {
+  position: absolute;
+  inset: -6% -7% 8% 23%;
+}
+.heroTop {
+  position: absolute;
+  top: 36px;
+  left: 5.2%;
+  right: 5.2%;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  font: 11px/1.55 var(--fh-mono);
+  color: #a1a4a5;
+  pointer-events: none;
+}
+.heroTop > span:last-child {
+  text-align: right;
+}
+.heroCopy {
+  position: absolute;
+  left: 8%;
+  right: 5.2%;
+  bottom: 60px;
+  pointer-events: none;
+}
+.hero h1 {
+  font-family: var(--fh-editorial);
+  font-size: clamp(62px, 7.5vw, 116px);
+  font-weight: 400;
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  color: #fff;
+  margin: 0 0 28px;
+  text-wrap: balance;
+  max-width: 1000px;
+}
+.heroBottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 28px;
+  align-items: end;
+}
+.heroBottom p {
+  color: #c6c6c6;
+  font-size: 15px;
+  line-height: 1.65;
+  margin: 0 0 25px;
+  max-width: 450px;
+}
+.actions {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+  flex-wrap: wrap;
+  pointer-events: auto;
+}
+.primary {
+  display: inline-flex;
+  gap: 25px;
+  align-items: center;
+  border: 1px solid #777;
+  background: #0008;
+  backdrop-filter: blur(4px);
+  border-radius: 500px;
+  padding: 13px 22px;
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  transition:
+    border-color 0.18s,
+    background 0.18s;
+}
+.primary:hover {
+  border-color: white;
+  background: #151515;
+  color: white;
+  text-decoration: none;
+}
+.textLink {
+  display: inline-flex;
+  gap: 18px;
+  align-items: center;
+  color: #ddd;
+  font-size: 13px;
+}
+.textLink:hover {
+  color: white;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+.sceneControls {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  pointer-events: auto;
+  color: #a1a4a5;
+  font: 10px/1.6 var(--fh-mono);
+}
+.sceneControls button {
+  border: 1px solid #4d4d4d;
+  background: #0008;
+  backdrop-filter: blur(4px);
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  color: #c6c6c6;
+  font: 11px var(--fh-sans);
+  cursor: pointer;
+}
+.sceneControls button:hover {
+  border-color: #fff;
+  color: #fff;
+}
+.label {
+  font: 11px/1.6 var(--fh-mono);
+  color: #a1a4a5;
+  margin: 0;
+}
+.statement {
+  max-width: 1320px;
+  margin: auto;
+  padding: 150px 6%;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 70px;
+}
+.statement h2,
+.build h2,
+.network h2,
+.evidence h2 {
+  font: 400 clamp(38px, 4.2vw, 62px)/1.07 var(--fh-display);
+  letter-spacing: -0.055em;
+  margin: 0 0 32px;
+  color: white;
+}
+.statement > div > p {
+  max-width: 570px;
+  font-size: 18px;
+  line-height: 1.75;
+  color: #a1a4a5;
+}
+.statement > div > p:nth-of-type(2) {
+  font-size: 14px;
+  color: #c6c6c6;
+  margin-top: 28px;
+}
+.statement .textLink {
+  margin-top: 18px;
+}
+.build {
+  max-width: 1320px;
+  margin: auto;
+  padding: 150px 6%;
+  display: grid;
+  grid-template-columns: 1fr 1.14fr;
+  gap: 90px;
+  border-bottom: 1px solid #292d30;
+}
+.build .label {
+  margin-bottom: 35px;
+}
+.buildIntro > p:not(.label) {
+  font-size: 15px;
+  color: #a1a4a5;
+  line-height: 1.8;
+  max-width: 420px;
+}
+.buildIntro .textLink {
+  margin-top: 20px;
+}
+.codeColumn {
+  min-width: 0;
+  align-self: center;
+}
+.install {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 15px;
+  padding: 18px 0;
+  border: 0;
+  border-bottom: 1px solid #292d30;
+  background: transparent;
+  cursor: pointer;
+  color: #a1a4a5;
+  font: 11px var(--fh-mono);
+  margin-bottom: 25px;
+}
+.install code {
+  border: 0;
+  background: transparent;
+  font: 12px var(--fh-mono);
+  padding: 0;
+  color: #ddd;
+}
+.install code span {
+  color: #777;
+  margin-right: 8px;
+}
+.code {
+  border: 1px solid #292d30;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #080808;
+}
+.codeLabel {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #292d30;
+  padding: 17px 23px;
+  color: #999;
+  font: 11px var(--fh-mono);
+}
+.code :global(.theme-code-block) {
+  border: 0;
+  margin: 0;
+  background: #080808;
+}
+.code :global(pre) {
+  font-size: 12px;
+  line-height: 1.8;
+  background: #080808 !important;
+}
+.codeNote {
+  font-size: 11px;
+  line-height: 1.75;
+  color: #999;
+  margin-top: 20px;
+}
+.codeNote a {
+  color: #ddd;
+}
+.network {
+  padding: 140px 6%;
+  max-width: 1320px;
+  margin: auto;
+}
+.network .label {
+  margin-bottom: 35px;
+}
+.path {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 65px 0 50px;
+  border-bottom: 1px solid #292d30;
+  font: 400 clamp(20px, 3vw, 38px) var(--fh-editorial);
+  color: #eee;
+}
+.path i {
+  font: 20px var(--fh-sans);
+  color: #666;
+}
+.networkCopy {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 70px;
+  padding-top: 36px;
+  max-width: 1000px;
+}
+.networkCopy p {
+  font-size: 14px;
+  line-height: 1.85;
+  color: #a1a4a5;
+}
+.networkCopy a {
+  display: inline-block;
+  margin-top: 12px;
+  color: #ddd;
+}
+.networkCopy code {
+  font-size: 12px;
+}
+.evidence {
+  max-width: 1320px;
+  margin: auto;
+  padding: 70px 6% 140px;
+}
+.evidenceHead {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 70px;
+  align-items: end;
+  margin-bottom: 40px;
+}
+.evidenceHead h2 {
+  font-size: 42px;
+  margin: 0;
+}
+.evidenceHead p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #a1a4a5;
+  margin: 0;
+}
+.evidenceLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  font-size: 12px;
+  margin-top: 27px;
+}
+.evidenceLinks a {
+  color: #aaa;
+}
+.closing {
+  border-top: 1px solid #292d30;
+  padding: 140px 8% 150px;
+  max-width: 1600px;
+  margin: auto;
+}
+.closing .label {
+  margin-bottom: 30px;
+}
+.closing h2 {
+  font: 400 clamp(64px, 8vw, 110px)/1 var(--fh-editorial);
+  letter-spacing: -0.02em;
+  color: white;
+  margin-bottom: 35px;
+}
+@media (min-width: 1600px) {
+  .heroCopy {
+    left: calc((100vw - 1340px) / 2);
+  }
+}
+@media (max-width: 1000px) {
+  .hero {
+    min-height: 800px;
+  }
+  .heroMedia {
+    inset: 0 -25% 26% 8%;
+  }
+  .heroCopy {
+    left: 6%;
+    bottom: 45px;
+  }
+  .hero h1 {
+    font-size: 80px;
+  }
+  .statement {
+    gap: 35px;
+  }
+  .build {
+    gap: 40px;
+    padding-block: 100px;
+  }
+  .networkCopy {
+    gap: 35px;
+  }
+  .sceneControls > span {
+    display: none;
+  }
+}
+@media (max-width: 650px) {
+  .hero {
+    height: 900px;
+    min-height: 0;
+    max-height: none;
+  }
+  .heroMedia {
+    inset: 4% -28% 35% -28%;
+  }
+  .heroTop {
+    top: 24px;
+    font-size: 9px;
+    left: 6%;
+    right: 6%;
+  }
+  .heroTop > span:last-child {
+    max-width: 145px;
+  }
+  .heroCopy {
+    left: 6%;
+    right: 6%;
+    bottom: 42px;
+  }
+  .hero h1 {
+    font-size: 60px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 22px;
+  }
+  .heroBottom {
+    display: block;
+  }
+  .heroBottom p {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .actions {
+    gap: 22px;
+  }
+  .primary {
+    font-size: 12px;
+    padding: 12px 18px;
+    gap: 18px;
+  }
+  .textLink {
+    font-size: 12px;
+    gap: 10px;
+  }
+  .sceneControls {
+    position: absolute;
+    right: 0;
+    top: -80px;
+  }
+  .sceneControls button {
+    width: 44px;
+    height: 44px;
+    font-size: 10px;
+  }
+  .statement {
+    grid-template-columns: 1fr;
+    padding: 90px 6%;
+    gap: 30px;
+  }
+  .statement > div > p {
+    font-size: 16px;
+  }
+  .statement h2,
+  .build h2,
+  .network h2 {
+    font-size: 42px;
+  }
+  .build {
+    grid-template-columns: 1fr;
+    padding: 90px 6%;
+    gap: 45px;
+  }
+  .build .label {
+    margin-bottom: 25px;
+  }
+  .install code {
+    font-size: 10px;
+  }
+  .install {
+    font-size: 10px;
+  }
+  .code :global(pre) {
+    font-size: 10px;
+  }
+  .network {
+    padding: 90px 6% 50px;
+  }
+  .path {
+    gap: 10px;
+    font-size: 21px;
+    flex-wrap: wrap;
+    padding-top: 30px;
+  }
+  .path i {
+    font-size: 13px;
+  }
+  .networkCopy,
+  .evidenceHead {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .evidence {
+    padding: 50px 6% 90px;
+  }
+  .evidenceHead h2 {
+    font-size: 38px;
+  }
+  .evidenceLinks {
+    gap: 20px;
+  }
+  .closing {
+    padding: 90px 6%;
+  }
+  .closing h2 {
+    font-size: 72px;
+  }
+}
+
+.heroCopy h1 {
+  text-shadow: 0 2px 30px #000a;
+}
+
+.codeNote a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

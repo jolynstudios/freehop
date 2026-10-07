@@ -1,12 +1,12 @@
 .header {
-  background: var(--fh-yellow);
-  color: var(--fh-charcoal);
+  background: var(--fh-paper);
+  color: var(--fh-ink);
   padding: clamp(2.5rem, 5vw, 4rem) var(--fh-gutter) clamp(2.5rem, 5vw, 3.5rem);
   overflow: hidden;
 }
 
 .header :focus-visible {
-  outline-color: var(--fh-charcoal);
+  outline-color: var(--fh-ink);
 }
 
 .inner {
@@ -35,17 +35,17 @@
   height: 0.7rem;
   border-radius: 50%;
   background: var(--fh-azure);
-  border: 2px solid var(--fh-charcoal);
+  border: 2px solid var(--fh-ink);
 }
 
 .title {
   font-family: var(--fh-display);
-  font-weight: 400;
-  font-size: clamp(3rem, 7vw, 6rem);
-  line-height: 0.84;
+  font-weight: 600;
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  line-height: 1.02;
   margin: 0 0 1.25rem;
-  color: var(--fh-charcoal);
-  max-width: 11ch;
+  color: var(--fh-ink);
+  max-width: 18ch;
 }
 
 .copy p:not(.eyebrow) {
@@ -76,4 +76,47 @@
     max-width: 300px;
     margin: -0.5rem auto 0;
   }
+}
+
+.header {
+  border-bottom: var(--fh-hairline);
+}
+.title {
+  letter-spacing: -0.055em;
+}
+.eyebrow {
+  color: var(--fh-azure);
+  font-family: var(--fh-mono);
+}
+
+.inner {
+  display: block;
+  max-width: 1200px;
+}
+.header {
+  padding-top: 80px;
+  padding-bottom: 70px;
+  background: #000;
+}
+.title {
+  font: 400 clamp(52px, 6vw, 84px)/1.03 var(--fh-editorial);
+  letter-spacing: -0.025em;
+  max-width: 20ch;
+}
+.copy p:not(.eyebrow) {
+  color: #a1a4a5;
+  font-size: 16px;
+  max-width: 700px;
+}
+.eyebrow {
+  font-size: 10px;
+  font-weight: 400;
+  color: #999;
+  letter-spacing: 0.06em;
+}
+.eyebrow::before {
+  display: none;
+}
+.header :focus-visible {
+  outline-color: #fff;
 }

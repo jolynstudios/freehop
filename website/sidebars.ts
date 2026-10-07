@@ -4,6 +4,7 @@ const sidebars: SidebarsConfig = {
   docs: [
     'intro',
     'quickstart',
+    {type: 'category', label: 'Build a platform', items: ['games', 'build-with-ai']},
     'comparison',
     {
       type: 'category',

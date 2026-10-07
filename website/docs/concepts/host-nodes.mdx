@@ -6,7 +6,7 @@ description: A host node is the machine that hosts a session; it joins the room 
 
 import { HostNodeScene } from '@site/src/components/scenes';
 
-<HostNodeScene caption="The host node is the session's own lighthouse: it belongs to the session, and it lights the way for the participants who cannot see each other." />
+<HostNodeScene caption="A host joins the session and offers a gateway to participants that cannot connect directly." />
 
 Many sessions already have a machine that hosts them: an app server that runs the session, a community server, or the desktop app of the participant who started the session. Freehop can make that machine the session's gateway. It joins the room as a **gateway member**, sends no media of its own, and offers its gateway to the members who need it.
 

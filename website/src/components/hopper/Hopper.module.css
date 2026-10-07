@@ -1,21 +1,16 @@
-/*
- * Hopper's home, waiting room and goodbye screens. They live in Freehop's yellow scene:
- * Changa One headlines, Rubik copy, IBM Plex Mono for codes, chunky charcoal outlines.
- */
-
 .page {
   display: block;
 }
 
 .scene {
-  background: var(--fh-yellow);
-  color: var(--fh-charcoal);
+  background: #141416;
+  color: var(--fh-ink);
   padding: clamp(28px, 4.5vw, 60px) var(--fh-gutter) clamp(44px, 6vw, 84px);
   overflow: hidden;
 }
 
 .scene :focus-visible {
-  outline-color: var(--fh-charcoal);
+  outline-color: var(--fh-ink);
 }
 
 .eyebrow {
@@ -27,7 +22,7 @@
   font-weight: 600;
   letter-spacing: 0.056em;
   text-transform: uppercase;
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
 }
 
 .eyebrow::before {
@@ -36,7 +31,7 @@
   height: 0.7rem;
   border-radius: 50%;
   background: var(--fh-azure);
-  border: 2px solid var(--fh-charcoal);
+  border: 1px solid var(--fh-lavender);
 }
 
 /* ---------- Lockup ---------- */
@@ -57,7 +52,7 @@
   font-family: var(--fh-display);
   font-size: 2.5rem;
   line-height: 1;
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   transform: translateY(2px);
 }
 
@@ -69,21 +64,21 @@
   font-weight: 600;
   letter-spacing: 0.056em;
   text-transform: uppercase;
-  border: 2px solid var(--fh-charcoal);
+  border: 1px solid var(--fh-lavender);
   border-radius: var(--fh-round);
   padding: 0.18rem 0.65rem;
   background: var(--fh-white);
 }
 
 .lockupBy a {
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 2px;
 }
 
 .lockupBy a:hover {
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   text-decoration-color: var(--fh-azure);
 }
 
@@ -102,9 +97,11 @@
   font-size: 1.0625rem;
   line-height: 1.2;
   border-radius: var(--fh-round);
-  border: 3px solid var(--fh-charcoal);
+  border: 1px solid var(--fh-lavender);
   cursor: pointer;
-  transition: transform 0.18s var(--fh-ease), background-color 0.18s var(--fh-ease);
+  transition:
+    transform 0.18s var(--fh-ease),
+    background-color 0.18s var(--fh-ease);
 }
 
 .primary,
@@ -116,7 +113,7 @@
 
 .secondary {
   background: var(--fh-white);
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   padding: 0.8rem 1.4rem;
 }
 
@@ -164,7 +161,7 @@
   line-height: 0.86;
   letter-spacing: 0;
   margin: 0 0 1.35rem;
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   text-wrap: balance;
 }
 
@@ -223,7 +220,7 @@
   width: 20px;
   height: 20px;
   transform: translateY(-50%);
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   pointer-events: none;
 }
 
@@ -233,9 +230,9 @@
   font: inherit;
   font-size: 1rem;
   line-height: 1.2;
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   background: var(--fh-white);
-  border: 3px solid var(--fh-charcoal);
+  border: 1px solid var(--fh-lavender);
   border-radius: var(--fh-round);
   padding: 0.82rem 1rem 0.82rem 2.65rem;
 }
@@ -252,7 +249,7 @@
 .joinButton {
   flex: none;
   background: var(--fh-white);
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   padding: 0.8rem 1.15rem;
 }
 
@@ -428,8 +425,8 @@
   padding: 0.75rem 1.3rem;
   border: 0;
   border-radius: var(--fh-round);
-  background: var(--fh-yellow);
-  color: var(--fh-charcoal);
+  background: #141416;
+  color: var(--fh-ink);
   cursor: pointer;
   transition: transform 0.18s var(--fh-ease);
 }
@@ -449,8 +446,8 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--fh-yellow);
-  color: var(--fh-charcoal);
+  background: #141416;
+  color: var(--fh-ink);
   font-family: var(--fh-display);
   font-size: clamp(1.8rem, 5vw, 3rem);
   line-height: 1;
@@ -494,7 +491,9 @@
   background: rgba(24, 24, 24, 0.55);
   color: #ffffff;
   cursor: pointer;
-  transition: background-color 0.15s var(--fh-ease), transform 0.15s var(--fh-ease);
+  transition:
+    background-color 0.15s var(--fh-ease),
+    transform 0.15s var(--fh-ease);
 }
 
 .roundButton:hover {
@@ -507,9 +506,9 @@
 
 .roundOff,
 .roundOff:hover {
-  background: var(--fh-yellow);
+  background: #141416;
   border-color: var(--fh-yellow);
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
 }
 
 .roundButton[data-tip]::after {
@@ -520,14 +519,16 @@
   transform: translate(-50%, 4px);
   padding: 0.3rem 0.6rem;
   border-radius: 8px;
-  background: #ffffff;
-  color: var(--fh-charcoal);
+  background: var(--fh-surface);
+  color: var(--fh-ink);
   font-size: 0.8125rem;
   font-weight: 500;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.12s var(--fh-ease), transform 0.12s var(--fh-ease);
+  transition:
+    opacity 0.12s var(--fh-ease),
+    transform 0.12s var(--fh-ease);
 }
 
 @media (hover: hover) {
@@ -562,7 +563,7 @@
 }
 
 .meter i.meterOn {
-  background: var(--fh-yellow);
+  background: #141416;
 }
 
 .previewErrors,
@@ -591,7 +592,7 @@
 }
 
 .picker :global(select) {
-  border-color: var(--fh-charcoal);
+  border-color: var(--fh-ink);
 }
 
 .pickerHint {
@@ -606,7 +607,7 @@
   flex-direction: column;
   gap: 0.55rem;
   padding: clamp(1.25rem, 2.6vw, 2rem);
-  border: 3px solid var(--fh-charcoal);
+  border: 1px solid var(--fh-lavender);
   border-radius: 24px;
   background: var(--fh-white);
 }
@@ -630,7 +631,7 @@
   font-size: clamp(2.5rem, 4.4vw, 3.6rem);
   line-height: 0.9;
   margin: 0 0 0.3rem;
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   text-wrap: balance;
 }
 
@@ -644,16 +645,16 @@
 .fieldLabel {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
 }
 
 .nameInput {
   width: 100%;
   font: inherit;
   font-size: 1.0625rem;
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   padding: 0.75rem 0.95rem;
-  border: 3px solid var(--fh-charcoal);
+  border: 1px solid var(--fh-lavender);
   border-radius: 14px;
   background: var(--fh-white);
 }
@@ -699,16 +700,16 @@
   font-weight: 600;
   font-size: 0.875rem;
   padding: 0.45rem 0.95rem;
-  border: 2px solid var(--fh-charcoal);
+  border: 1px solid var(--fh-lavender);
   border-radius: var(--fh-round);
   background: var(--fh-white);
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   cursor: pointer;
 }
 
 .secondarySmall:hover,
 .copyButton:hover {
-  background: var(--fh-yellow);
+  background: #141416;
 }
 
 .joinNow {
@@ -746,7 +747,7 @@
 .codeValue {
   font-size: 1.05rem;
   font-weight: 500;
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   background: none;
   border: 0;
   padding: 0;
@@ -805,7 +806,7 @@
   font-size: clamp(2.8rem, 6vw, 4.8rem);
   line-height: 0.9;
   margin: 0 0 1rem;
-  color: var(--fh-charcoal);
+  color: var(--fh-ink);
   text-wrap: balance;
 }
 
@@ -831,8 +832,8 @@
   place-items: center;
   align-content: center;
   gap: 1rem;
-  background: var(--fh-yellow);
-  color: var(--fh-charcoal);
+  background: #141416;
+  color: var(--fh-ink);
   font-weight: 500;
 }
 
@@ -968,4 +969,107 @@
   .checkButton:hover {
     transform: none;
   }
+}
+
+.scene {
+  background: radial-gradient(ellipse at 90% 0%, #28355480, transparent 60%), var(--fh-paper);
+  border-bottom: var(--fh-hairline);
+}
+.homeTitle,
+.lobbyTitle,
+.leftTitle,
+.benefitsTitle {
+  font-family: var(--fh-display);
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -0.065em;
+}
+.homeTitle {
+  font-size: clamp(3rem, 5vw, 5rem);
+}
+.lockupName {
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+.lockupBy {
+  font: 0.6rem var(--fh-mono);
+  border-color: var(--fh-lavender);
+  color: var(--fh-fog);
+}
+.primary,
+.joinNow {
+  background: var(--fh-yellow);
+  color: var(--fh-charcoal);
+  border: 1px solid var(--fh-yellow);
+}
+.primary:hover,
+.joinNow:hover {
+  background: #ffffff;
+  color: var(--fh-charcoal);
+}
+.eyebrow {
+  font-family: var(--fh-mono);
+  font-size: 0.67rem;
+  color: var(--fh-azure);
+}
+.scene :focus-visible {
+  outline-color: var(--fh-azure);
+}
+
+.scene {
+  background: #000;
+  padding-top: 70px;
+}
+.homeInner {
+  display: block;
+  max-width: 1120px;
+}
+.homeCopy {
+  max-width: 900px;
+}
+.homeTitle {
+  font: 400 clamp(60px, 7vw, 94px)/1.02 var(--fh-editorial);
+  letter-spacing: -0.02em;
+}
+.homeLede {
+  font-size: 16px;
+  color: #a1a4a5;
+  max-width: 630px;
+}
+.lockupName {
+  font: 500 20px var(--fh-sans);
+}
+.lockupBy {
+  font-size: 9px;
+}
+.primary,
+.joinNow {
+  background: transparent;
+  color: #fff;
+  border: 1px solid #777;
+  font-size: 14px;
+  border-radius: 500px;
+}
+.secondary,
+.joinButton {
+  border-width: 1px;
+  font-size: 14px;
+}
+.primary:hover,
+.joinNow:hover {
+  background: #151515;
+  color: #fff;
+}
+.benefitsTitle {
+  font-weight: 400;
+  font-size: 40px;
+}
+.benefit h3 {
+  font-weight: 500;
+}
+.eyebrow::before {
+  display: none;
+}
+.titleLine {
+  display: block;
 }

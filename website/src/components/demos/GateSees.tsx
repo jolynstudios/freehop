@@ -27,11 +27,13 @@ const TAMPER: Record<Exclude<Tamper, 'none'>, {label: string; explain: string}> 
   },
   relabel: {
     label: 'Relabel the sender',
-    explain: 'The gate claims the envelope came from someone else. The sender id is part of the additional authenticated data, so the check fails. A gate cannot re-route or relabel envelopes without detection.',
+    explain:
+      'The gate claims the envelope came from someone else. The sender id is part of the additional authenticated data, so the check fails. A gate cannot re-route or relabel envelopes without detection.',
   },
   wrongkey: {
     label: "Give Ben another room's secret",
-    explain: "Ben's key comes from a different secret, for example the old one after a kick rotated the room. Without the current secret the envelope cannot be opened, and the room tag no longer matches either.",
+    explain:
+      "Ben's key comes from a different secret, for example the old one after a kick rotated the room. Without the current secret the envelope cannot be opened, and the room tag no longer matches either.",
   },
 };
 
@@ -125,7 +127,7 @@ export default function GateSees() {
   }, [mod, room, other, ids, message, tamper]);
 
   // Replay the envelope and the verdict stamp when the situation changes, not on every keystroke.
-  useEffect(() => setRound(n => n + 1), [tamper, secret]);
+  useEffect(() => setRound((n) => n + 1), [tamper, secret]);
 
   const newSecret = useCallback(() => {
     if (!mod) return;
@@ -175,14 +177,7 @@ export default function GateSees() {
           <label className={s.label} htmlFor="fh-gate-message">
             Message to Ben
           </label>
-          <textarea
-            id="fh-gate-message"
-            className={s.textarea}
-            value={message}
-            maxLength={400}
-            rows={4}
-            onChange={e => setMessage(e.target.value)}
-          />
+          <textarea id="fh-gate-message" className={s.textarea} value={message} maxLength={400} rows={4} onChange={(e) => setMessage(e.target.value)} />
           <div className={s.meta}>
             <div>
               <span className={s.metaLabel}>Room secret</span>
@@ -194,8 +189,7 @@ export default function GateSees() {
             </div>
           </div>
           <p className={s.small}>
-            Sealed in this page with Freehop's own <code>crypto.mjs</code>: HKDF-SHA256 derives the room tag and an AES-256-GCM key
-            from the secret.
+            Sealed in this page with Freehop's own <code>crypto.mjs</code>: HKDF-SHA256 derives the room tag and an AES-256-GCM key from the secret.
           </p>
         </section>
 
@@ -205,12 +199,15 @@ export default function GateSees() {
             <span className={clsx(s.keyBadge, s.noKey)}>no key</span>
           </header>
           <div className={s.mailStage} aria-hidden="true">
-            <svg viewBox="0 0 260 150" className={s.mailSvg} preserveAspectRatio="xMidYMax meet">
-              <path d="M-700 150 Q130 112 960 150 V170 H-700 Z" fill={C.azure} stroke={C.ink} strokeWidth={4} />
-              <Mailbox x={130} y={142} scale={0.9} flag={result ? 'up' : 'down'} />
-              <g key={round} className={s.envelopeIn}>
-                <Envelope x={130} y={52} scale={0.8} />
-              </g>
+            <svg viewBox="0 0 260 150" className={s.mailSvg}>
+              <path d="M12 75h236" stroke="#657893" strokeDasharray="5 7" />
+              <rect x="73" y="33" width="114" height="84" rx="5" fill="#202b40" stroke="#9fbcff" />
+              <text x="130" y="71" textAnchor="middle" fill="#9fbcff" fontFamily="monospace" fontSize="14">
+                SEALED
+              </text>
+              <text x="130" y="94" textAnchor="middle" fill="#bac5d8" fontFamily="monospace" fontSize="11">
+                AES-256-GCM
+              </text>
             </svg>
           </div>
           <p className={s.frameLabel}>Ana to gate</p>
@@ -222,16 +219,18 @@ export default function GateSees() {
             <code>{recvFrame ? <Diff prev={JSON.stringify({t: 'recv', room: room?.tag, from: ids.ana, box})} next={recvFrame} /> : '…'}</code>
           </pre>
           <p className={s.small}>
-            The gate also sees connecting IP addresses. This frame reveals a room tag, peer ids, {sendFrame.length} bytes and the time. Your {plainBytes}-byte message is inside the box.
+            The gate also sees connecting IP addresses. This frame reveals a room tag, peer ids, {sendFrame.length} bytes and the time. Your {plainBytes}-byte
+            message is inside the box.
           </p>
           <div className={s.tampers} role="group" aria-label="Tamper with the envelope">
-            {(Object.keys(TAMPER) as Exclude<Tamper, 'none'>[]).map(t => (
+            {(Object.keys(TAMPER) as Exclude<Tamper, 'none'>[]).map((t) => (
               <button
                 key={t}
                 type="button"
                 className={clsx(s.tamper, tamper === t && s.tamperOn)}
                 aria-pressed={tamper === t}
-                onClick={() => setTamper(tamper === t ? 'none' : t)}>
+                onClick={() => setTamper(tamper === t ? 'none' : t)}
+              >
                 {TAMPER[t].label}
               </button>
             ))}
@@ -275,7 +274,8 @@ box  = base64url(iv[12] || AES-GCM(key, iv, plaintext, aad))`}
               </code>
             </pre>
             <p className={s.small}>
-              Any room member holds this key and could claim another sender id. The envelope protects against outsiders, not impersonation by a member. Wire strings still say <code>peerlane</code>, Freehop's codename. The tag here is <code>{room ? short(room.tag) : '…'}</code>.
+              Any room member holds this key and could claim another sender id. The envelope protects against outsiders, not impersonation by a member. Wire
+              strings still say <code>peerlane</code>, Freehop's codename. The tag here is <code>{room ? short(room.tag) : '…'}</code>.
             </p>
           </details>
         </section>
