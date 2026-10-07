@@ -746,7 +746,9 @@ test('TCP pre-authentication deadline cannot be extended by dribbling a valid fr
   const socket = net.connect(listenerOf(server, 'tcp').port, '127.0.0.1');
   socket.on('error', () => {}); t.after(() => socket.destroy());
   await once(socket, 'connect');
-  const closed = once(socket, 'close'), start = Date.now();
+  // macOS may reset a socket with unread bytes. The close event and server counters,
+  // not graceful FIN delivery, establish that the pre-authentication deadline fired.
+  const closed = new Promise(resolve => socket.once('close', resolve)), start = Date.now();
   const frame = encode({method: METHOD.ALLOCATE, cls: CLASS.REQUEST, transactionId: randomBytes(12), attributes: [{type: ATTR.REQUESTED_TRANSPORT, value: UDP_TRANSPORT}]});
   let at = 0;
   const trickle = setInterval(() => {if (!socket.destroyed) socket.write(frame.subarray(at, ++at));}, 25);
