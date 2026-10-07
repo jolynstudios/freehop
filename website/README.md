@@ -6,7 +6,7 @@ https://jolynstudios.github.io/freehop/. It is a [Docusaurus 3](https://docusaur
 
 ## Requirements
 
-- Node.js 20 or newer
+- Node.js 22 or newer (also required by the SDK backend tools)
 - npm
 
 ## Develop
@@ -61,7 +61,7 @@ Production demos keep their public tracker configuration. Evidence goes to ignor
 The site is static. Deploy the contents of `build/` to GitHub Pages for the
 `jolynstudios/freehop` repository. The committed [Pages workflow](../.github/workflows/pages.yml) runs
 `npm ci --ignore-scripts`, the [audit gate](scripts/audit-gate.mjs) and `npm run build` in `website/`.
-The audit gate allows only two currently unpatched advisories in build-only dependencies; any new finding fails the build.
+The audit gate permits only explicitly reviewed, unpatched build-tool advisories. New findings and advisories with available fixes fail the build.
 The build has read-only permissions; only the separate deployment job gets Pages/OIDC write
 permissions. Actions are pinned to commit SHAs. The site expects to be served at
 `/freehop/` (`baseUrl` in `docusaurus.config.ts`). `static/.nojekyll` keeps GitHub Pages from
@@ -74,14 +74,15 @@ files in `lib/` with a JavaScript MIME type: browsers refuse module scripts othe
 | Path | What |
 |---|---|
 | `docs/` | Documentation pages (MDX). Sidebar order: `sidebars.ts` |
-| `src/pages/index.tsx` | Home page, assembled from `src/components/home/` |
+| `src/pages/index.tsx` | Home page, SDK example and calling showcase |
 | `src/pages/demos.tsx` | Hopper and live demo entry points |
 | `src/pages/demo.tsx` | The live call, rendered only in the browser |
 | `src/components/world/` | Three.js hero signal field |
 | `src/components/scenes/` | Technical diagrams for concept pages |
 | `src/components/demos/` | Network tools and the live call |
 | `src/components/hopper/` | Hopper room, device preview and chat |
-| `src/components/home/` | Hopper and live demo showcase |
+| `src/components/home/` | Hopper/live demo showcase and five use-case recipes |
+| `src/theme/MDXComponents/` | Keyboard access for horizontally scrollable documentation tables |
 | `src/theme/Footer/` | The site footer (replaces the classic theme's footer) |
 | `src/css/custom.css` | Design tokens and global styles |
 | `scripts/copy-lib.mjs` | Copies the SDK's browser modules into `static/lib/` |
@@ -104,6 +105,8 @@ No participant portraits, peer counts or integration claims are fabricated for p
 After SDK changes, update the root `SDK.md`, `ARCHITECTURE.md`, `PROTOCOL.md` and relevant
 `docs/sdk/` and `docs/concepts/` pages. `docs/protocol.md` is a maintained website version,
 not a generated copy. Keep quickstart snippets consistent with admission and STUN settings. Label the runtime of every example (browser, backend, gate, Electron main or session host), and distinguish complete runnable examples from application-specific snippets. Privacy claims must acknowledge connection metadata and the shared-key trust between room members.
+Run `npm run docsyncgate` at the repository root, plus `npm run typecheck` and `npm run build` in `website/`. Run `npm run typesgate` when changing public SDK types or typed examples.
+
 When verification changes, update root `README.md` and `RESULTS.md`, `docs/results.mdx`,
 `docs/intro.mdx` and the home page. Describe the 40-run NAT matrix as developer-run, home-lab testing with simulated networks, and
 keep it distinct from targeted re-tests or real-network evidence.

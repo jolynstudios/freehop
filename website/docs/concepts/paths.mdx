@@ -23,7 +23,7 @@ Every pair of peers in a call finds its own media route. Freehop tries the cheap
 | 4 | <PathBadge kind="bridged" /> | Another participant, forwarding the media | Ben and Kai cannot reach each other, but both reach Cleo, who is in the call anyway |
 | | <PathBadge kind="unreachable" /> | Nothing | No route exists inside the session; Freehop says so and keeps retrying slowly |
 
-The cost rule behind the ladder: **a byte of media only crosses machines that belong to the call.** Steps 2 to 4 use machines of the session itself (a participant's gateway, the host node, a participant), never a server of the operator.
+The cost rule behind the ladder: **a byte of media only crosses machines that belong to the call.** Steps 2 to 4 use machines of the session itself (a participant's gateway, the host node, a participant), never the signalling gate. If you operate the session gateway, its media bandwidth is your cost.
 
 ## When each step is tried
 
@@ -68,7 +68,7 @@ Each row below comes from the original [home-lab network tests](../results.mdx),
 | Omar and a colleague in a hosted session | Two UDP-blocking offices, a host node | Both reach the host node over TCP | <PathBadge kind="relay" via="host node" /> | `udpblock-pair-host-node` |
 | Gus with Ana and Cleo | A guest network that only reaches the gate host | Ana and Cleo connect directly. Gus can reach nothing but the gate | Gus <PathBadge kind="unreachable" />, Ana–Cleo <PathBadge kind="direct" /> | `gate-only` |
 
-The last row is the honest boundary. A network that can only reach the gate cannot carry media unless the gate operator carries it, and Freehop will not do that. See [Limits](../limits.mdx).
+The last row is the honest boundary. A network that can only reach the gate has no media route. A separately configured session gateway must be reachable over a transport the network permits; the gate cannot relay media. See [Limits](../limits.mdx).
 
 ## Find a path
 

@@ -17,7 +17,7 @@ const COLUMNS = [
   {
     title: 'Try',
     links: [
-      {label: 'Hopper squad rooms', to: '/hopper'},
+      {label: 'Hopper', to: '/hopper'},
       {label: 'Live demo', to: '/demo'},
       {label: 'Demos', to: '/demos'},
       {label: 'Cost model', to: '/docs/concepts/cost'},
@@ -28,8 +28,8 @@ const COLUMNS = [
     title: 'Project',
     links: [
       {label: 'Source on GitHub', href: 'https://github.com/jolynstudios/freehop'},
-      {label: 'Network test results', to: '/docs/results'},
-      {label: 'Use case: Redline Wars', to: '/docs/redline-wars'},
+      {label: 'Test results', to: '/docs/results'},
+      {label: 'TypeScript', to: '/docs/typescript'},
       {label: 'Limits', to: '/docs/limits'},
       {label: 'License and disclaimer', to: '/docs/license'},
     ],

@@ -38,7 +38,7 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Project',
       collapsed: false,
-      items: ['results', 'redline-wars', 'limits', 'license'],
+      items: ['results', 'limits', 'license'],
     },
   ],
 };

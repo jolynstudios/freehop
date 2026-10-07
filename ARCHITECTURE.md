@@ -7,7 +7,7 @@ This document explains how Freehop is put together and why. For the normative wi
 
 | Goal | Consequence |
 |---|---|
-| The operator's servers never carry media | Two separate planes: a **signalling plane** (gates) and a **media plane** (peer paths). Gates are bounded so that media cannot fit through them. |
+| Signalling gates never carry media | Two separate planes: a **signalling plane** (gates) and a **media plane** (peer paths). Gates are bounded so that media cannot fit through them. |
 | Media cost stays with the session | Fallback routes use only machines that belong to the session: endpoint gateways, the host node, participants. |
 | No single point of failure | Any number of interchangeable gates; signalling moves onto the mesh once peers are linked. |
 | Gates are untrusted | End-to-end sealed envelopes; membership only after authentication. |

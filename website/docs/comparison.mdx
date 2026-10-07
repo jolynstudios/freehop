@@ -12,7 +12,7 @@ Every option on this page can put people in a call. They differ in one question 
 - **Peer-to-peer libraries** (PeerJS, Trystero, plain WebRTC) send media directly when they can. When they can't, they need a TURN relay, and someone pays for every byte it carries.
 - **SFU servers** (LiveKit, Jitsi, mediasoup) route group media through a server. Jitsi also tries a direct route in two-person calls. Server forwarding makes large rooms, recording and livestreams possible, and makes the server's bandwidth a running cost.
 - **Hosted APIs** run those servers for you and charge per minute or per gigabyte.
-- **Freehop** keeps media between the people in the call. When a direct route fails, it uses machines that already belong to the session: a participant's desktop gateway, the host node, or a participant who forwards. Your servers only run [gates](./concepts/gates.mdx), which pass sealed signalling.
+- **Freehop** keeps media between the people in the call. When a direct route fails, it uses machines that already belong to the session: a participant's desktop gateway, the host node, or a participant who forwards. [Gates](./concepts/gates.mdx) pass sealed signalling only. You may also operate a session gateway and pay for its media traffic.
 
 ## At a glance
 
@@ -20,13 +20,13 @@ Every option on this page can put people in a call. They differ in one question 
 
 On a narrow screen, the table scrolls sideways.
 
-"No operator media bill" means Freehop's gates carry no media. Participants and session-owned gateways still use bandwidth and computing resources. The 2-to-8-person range is the intended use, not enforced room admission; see [room limits](./limits.mdx#small-rooms).
+Freehop’s gates carry no media. Participants and session gateways still use bandwidth and compute; a gateway you host can add those costs to your bill. The 2-to-8-person range is the intended use, not enforced room admission; see [room limits](./limits.mdx#small-rooms).
 
 ## Which one fits
 
 **Freehop fits when:**
 
-- calls are small groups of 2 to 8 people: games, communities, voice rooms, small video calls;
+- calls are small groups of 2 to 8 people: meeting rooms, in-app calls, shared workspaces, communities or games;
 - you don't want a relay bill that grows with every call, and you accept that a pair with no route inside the session is reported as `unreachable`;
 - people use your app in the browser and on the desktop, so desktop participants can open a front door for everyone.
 

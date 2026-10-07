@@ -1,8 +1,8 @@
 # Freehop SDK: integrating it into an application
 
-Freehop is built to be consumed. Any application uses the same five pieces. Redline Wars is
-a planned consumer and test environment, using the same public API. Nothing below is
-game-specific.
+Add calling to a small meeting room, an existing app or a shared workspace. The same SDK
+works in browsers and Electron. A ticket-based integration uses a backend authority, a gate
+and a client; desktop gateways and session hosts are optional.
 
 ## TypeScript support
 
@@ -44,11 +44,13 @@ room. Deliver it only to that member, over the application's own authenticated c
 `auth` maps exact gate URLs to audience-bound tokens; community gates without a configured signing key receive no token. `stun` lists approved STUN URLs: clients ignore gate-supplied STUN hints.
 `encodeTicket`/`decodeTicket` (`freehop/ticket`) turn it into a compact string.
 
-## 2. Gate: run the signalling service (`bin/freehop-gate.mjs`)
+## 2. Gate: run the signalling service
 ```sh
 FREEHOP_GATE_PORT=8787 FREEHOP_GATE_PUBLIC_HOST=example.com FREEHOP_GATE_STUN='0.0.0.0:3478,[::]:3478' \
-FREEHOP_GATE_TOKEN_SECRET=… FREEHOP_GATE_TOKEN_AUDIENCE=wss://example.com/freehop FREEHOP_GATE_TRUST_PROXY=1 node bin/freehop-gate.mjs
+FREEHOP_GATE_TOKEN_SECRET=… FREEHOP_GATE_TOKEN_AUDIENCE=wss://example.com/freehop FREEHOP_GATE_TRUST_PROXY=1 ./node_modules/.bin/freehop-gate
 ```
+This uses the binary installed by `npm install freehop@alpha`. From a repository checkout, use `node bin/freehop-gate.mjs`.
+
 Put it behind your TLS proxy (`deploy/Caddyfile.snippet`, `deploy/freehop-gate.service`). It
 carries sealed signalling only: about 15–35 KB per peer pair at setup, roughly zero
 afterwards. More gates mean more resilience. Clients use every gate in the ticket, and a call
@@ -67,7 +69,7 @@ session.on('path', ({ peer, kind, via }) => …);          // direct | gateway |
 session.on('peer-left', ({ id, reason }) => …);
 await session.setMicrophone(false); await session.setCamera(true);
 const levels = await session.levels();                   // speaking indicators
-await session.setPeerMuted(peerId, true);          // silence one member locally
+session.setPeerMuted(peerId, true);          // silence one member locally
 await session.update(newTicket, { dropped: [kickedPeerId] });   // after a kick
 await session.switchDevice('audio', deviceId);      // another microphone or camera, no renegotiation
 await session.send({ type: 'chat', text: 'hi' });   // app data to everyone (or { to: peerId })
@@ -89,13 +91,26 @@ name the peer the remaining clients must drop.
 Audio packets arriving does not guarantee sound playback. `attach()` attempts playback, but browsers may block it. Check `element.play()` and offer a button that retries it directly from a click; preserve an existing audio attachment when only video changes. See the [browser playback example](https://jolynstudios.github.io/freehop/docs/sdk/client#audio-playback-in-the-browser).
 
 ## 4. Desktop apps: become reachable (`freehop/electron`)
-Main process:
+Electron main process:
 ```js
+import { app, BrowserWindow, ipcMain } from 'electron';
+import { createRequire } from 'node:module';
 import { installFreehopGateway } from 'freehop/electron';
-const freehop = installFreehopGateway({ ipcMain, allowedOrigins: ['https://play.example.com'] });
+
+const require = createRequire(import.meta.url);
+const freehop = installFreehopGateway({ ipcMain, allowedOrigins: ['https://app.example.com'] });
 app.on('will-quit', () => freehop.close());
-new BrowserWindow({ webPreferences: { preload: require.resolve('freehop/electron/preload'),
-  additionalArguments: ['--freehop-origins=https://play.example.com'], contextIsolation: true } });
+
+app.whenReady().then(() => {
+  const win = new BrowserWindow({
+    webPreferences: {
+      preload: require.resolve('freehop/electron/preload'),
+      additionalArguments: ['--freehop-origins=https://app.example.com'],
+      contextIsolation: true
+    }
+  });
+  win.loadURL('https://app.example.com');
+});
 ```
 `connect()` finds `window.freehopGateway` automatically. It starts the gateway (TURN plus a
 PCP/NAT-PMP/UPnP router mapping) on first use, allows that room, and offers it to the room's
@@ -113,8 +128,9 @@ const host = await hostSession(hostTicket);         // host.available === false 
 await host.update(nextTicket, { dropped: [peerId] });
 await host.close();
 ```
-Never call this on infrastructure whose bandwidth you do not want to spend. The operator's own
-servers should not host sessions' media.
+Choose who supplies the gateway bandwidth. A participant can contribute their connection,
+or you can run the host on your own server and budget for its media traffic and compute.
+Signalling gates never carry media.
 
 ## Runnable reference
 `examples/minimal/` is a complete consumer: backend, gate on the same origin, and a page with

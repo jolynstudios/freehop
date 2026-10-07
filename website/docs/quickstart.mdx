@@ -28,6 +28,8 @@ Freehop alpha is published on npm. Install the current alpha with the command be
 npm install freehop@alpha
 ```
 
+All 15 public entry points include declarations. See the [TypeScript guide](./typescript.mdx) for typed sessions, events and backend configuration.
+
 The package has these entry points:
 
 | Import | Use it in | What it gives you |
@@ -39,6 +41,12 @@ The package has these entry points:
 | `freehop/electron` and `freehop/electron/preload` | Electron main process and preload | `installFreehopGateway()` and `window.freehopGateway` |
 | `freehop/gate` | A gate host (Node.js) | `createGate()`, also available as the `freehop-gate` command |
 | `freehop/client` | Browser, low level | `join()` with a raw secret instead of a ticket |
+| `freehop/relay` | Node.js or Electron main | `startGateway()` and gateway lifecycle |
+| `freehop/member` | Node.js | A gateway member that joins a room without media |
+| `freehop/turn` | Node.js | The TURN server |
+| `freehop/port-mapper` | Node.js or Electron main | PCP, NAT-PMP and UPnP router mapping |
+| `freehop/stun` | Node.js | STUN/TURN codec helpers |
+| `freehop/tokens` | Backend or gate (Node.js) | Gate token signing and verification |
 
 ## 1. Backend: decide who is in a room
 
@@ -76,7 +84,7 @@ FREEHOP_GATE_STUN='0.0.0.0:3478,[::]:3478' \
 FREEHOP_GATE_TOKEN_SECRET=… \
 FREEHOP_GATE_TOKEN_AUDIENCE=wss://gate.example.com/freehop \
 FREEHOP_GATE_TRUST_PROXY=1 \
-node bin/freehop-gate.mjs
+./node_modules/.bin/freehop-gate
 ```
 
 In a project that depends on `freehop`, `./node_modules/.bin/freehop-gate` runs the installed service. Avoid an unpinned `npx freehop-gate`, which can resolve a different package from the registry. From a checkout, use `node bin/freehop-gate.mjs`. Put the gate behind your TLS proxy so clients reach it as `wss://gate.example.com/freehop`. [Gate service](./sdk/gate-service.mdx) has a systemd unit and a Caddy snippet.
@@ -122,18 +130,18 @@ import { createRequire } from 'node:module';
 import { installFreehopGateway } from 'freehop/electron';
 
 const require = createRequire(import.meta.url);
-const freehop = installFreehopGateway({ ipcMain, allowedOrigins: ['https://play.example.com'] });
+const freehop = installFreehopGateway({ ipcMain, allowedOrigins: ['https://app.example.com'] });
 app.on('will-quit', () => freehop.close());
 
 app.whenReady().then(() => {
   const win = new BrowserWindow({
     webPreferences: {
       preload: require.resolve('freehop/electron/preload'),
-      additionalArguments: ['--freehop-origins=https://play.example.com'],
+      additionalArguments: ['--freehop-origins=https://app.example.com'],
       contextIsolation: true
     }
   });
-  win.loadURL('https://play.example.com');
+  win.loadURL('https://app.example.com');
 });
 ```
 
@@ -141,7 +149,7 @@ app.whenReady().then(() => {
 
 ## 5. Hosts: let the session's own host relay for it
 
-Whoever hosts a session (a community server, or a participant's desktop app that hosts) can make that machine the session's gateway. It joins the room without media and offers its gateway to the members.
+Whoever hosts a session (your application server, a community server or a participant's desktop app) can make that machine the session's gateway. It joins the room without media and offers its gateway to the members.
 
 ```js title="host.mjs"
 import { hostSession } from 'freehop/host';
@@ -154,9 +162,9 @@ await host.update(nextTicket, { dropped: [peerId] });
 await host.close();
 ```
 
-:::caution[Never on infrastructure you pay for]
+:::note[Budget for gateway traffic]
 
-Only call `hostSession()` on machines whose upload you are willing to spend. Your own operator servers should not host sessions' media, or the relay bill is back.
+A host node contributes upload when it relays media. If you run it on your own infrastructure, budget for that bandwidth and compute. A participant-owned host uses that participant’s connection. Gates remain signalling-only in either setup.
 
 :::
 
@@ -166,7 +174,8 @@ Only call `hostSession()` on machines whose upload you are willing to spend. You
 
 ```bash
 git clone https://github.com/jolynstudios/freehop
-cd freehop && npm install
+cd freehop
+npm ci --ignore-scripts
 node examples/minimal/server.mjs        # prints http://127.0.0.1:8790
 ```
 

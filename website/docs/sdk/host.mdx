@@ -4,7 +4,7 @@ sidebar_label: Host sessions
 description: Reference for hostSession, which makes the machine that hosts a session its gateway member, joining without media and relaying for members who need it.
 ---
 
-`hostSession()` makes the machine that hosts a session the session's gateway. It starts (or reuses) a gateway, joins the room through the gates as a **gateway member** without any media, and offers that gateway to the members with per-peer credentials. Use it on the machine that already hosts the session: a community server, or a participant's desktop app that hosts a lobby. The [host nodes concept page](../concepts/host-nodes.mdx) shows when it helps.
+`hostSession()` makes the machine that hosts a session the session's gateway. It starts (or reuses) a gateway, joins the room through the gates as a **gateway member** without any media, and offers that gateway to the members with per-peer credentials. Use it on the machine that already hosts the session: your application server, a community server or a participant's desktop app. The [host nodes concept page](../concepts/host-nodes.mdx) shows when it helps.
 
 ```js title="session-server.mjs"
 import { hostSession } from 'freehop/host';
@@ -22,7 +22,7 @@ await host.close();
 
 :::caution[Spend only bandwidth you chose to spend]
 
-A host node relays media for the pairs that need it. Run it only on machines whose upload you are willing to spend. Your own operator servers should not host sessions' media, or the relay bill is back.
+A host node relays media for the pairs that need it. A participant can contribute their connection, or you can host it on your infrastructure and pay for its bandwidth and compute. Gates carry signalling only.
 
 :::
 
@@ -38,7 +38,7 @@ A host node relays media for the pairs that need it. Run it only on machines who
 
 ## The host object
 
-When the machine cannot be reached from outside (no public address and no router mapping), `hostSession()` resolves to `{ available: false }` with no-op `update()` and `close()` methods. Otherwise:
+When the machine cannot be reached from outside (no public address and no router mapping), `hostSession()` resolves to `{ available: false }` with no-op `update()` and `close()` methods, `refresh()` resolving to `false`, and `stats()` returning `{ available: false }`. Otherwise:
 
 | Member | What it does |
 |---|---|
@@ -67,4 +67,4 @@ It joins every Freehop WebSocket gate in the ticket with an id that starts with 
 
 ## Next
 
-[Gate service](./gate-service.mdx) covers the one server you run yourself.
+[Gate service](./gate-service.mdx) covers deploying your own signalling service.

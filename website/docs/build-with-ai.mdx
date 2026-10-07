@@ -6,7 +6,7 @@ description: A practical build brief for adding Freehop calling to a small app o
 
 # Build calling into your app
 
-Use an AI coding agent to scaffold a small meeting room, add calling to an existing app, or prototype an Electron workspace. Freehop provides the same JavaScript API whether you write the code yourself or pair with an agent.
+Use an AI coding agent to scaffold a small meeting room, add calling to an existing app, or prototype an Electron workspace. Freehop provides the same JavaScript API and TypeScript declarations whether you write the code yourself or pair with an agent.
 
 Freehop does not ship an AI model, hosted assistant, transcription pipeline or agent runtime. If your platform needs summaries, a copilot or moderation, choose and connect those services in your own application. Keep provider secrets on your backend and make any sharing of voice, video or messages with an AI service explicit to participants.
 
@@ -15,9 +15,10 @@ Freehop does not ship an AI model, hosted assistant, transcription pipeline or a
 ```text
 Build a small browser meeting room using Freehop.
 
-Read Freehop's Quickstart and public client API before writing code.
+Read Freehop's Quickstart, TypeScript guide and public client API before writing code.
 Use freehop@alpha and keep the interface and connection layers separate.
 
+- Use the bundled types; narrow incoming message data before reading its fields.
 - My backend authenticates users and issues session tickets.
 - Start with microphone and camera off. Enable each only after a click.
 - Attach incoming media tracks to my own HTML call panel.
@@ -33,7 +34,7 @@ Do not put authority secrets, provider keys or gateway signing keys
 in the browser. Do not add an AI service or upload media by default.
 ```
 
-Start with the [Quickstart](./quickstart.mdx), [client reference](./sdk/client.mdx) and [use-case recipes](./use-cases.mdx). A build brief is a starting specification; review the resulting code and test it on your target devices and networks.
+Start with the [Quickstart](./quickstart.mdx), [TypeScript guide](./typescript.mdx), [client reference](./sdk/client.mdx) and [use-case recipes](./use-cases.mdx). A build brief is a starting specification; review the resulting code and test it on your target devices and networks.
 
 ## Build the platform you have in mind
 

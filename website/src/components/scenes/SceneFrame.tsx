@@ -14,7 +14,7 @@ export type SceneFrameProps = {
 };
 
 /**
- * A docs illustration: a flat yellow stage with rounded ends, the scene drawn inside, and an
+ * A docs illustration: a flat technical diagram stage with rounded ends, the scene drawn inside, and an
  * optional caption set like signage.
  */
 export default function SceneFrame({title, caption, width = 720, height = 300, className, children}: SceneFrameProps) {

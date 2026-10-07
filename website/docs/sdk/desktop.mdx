@@ -14,18 +14,18 @@ import { createRequire } from 'node:module';
 import { installFreehopGateway } from 'freehop/electron';
 
 const require = createRequire(import.meta.url);
-const freehop = installFreehopGateway({ ipcMain, allowedOrigins: ['https://play.example.com'] });
+const freehop = installFreehopGateway({ ipcMain, allowedOrigins: ['https://app.example.com'] });
 app.on('will-quit', () => freehop.close());
 
 app.whenReady().then(() => {
   const win = new BrowserWindow({
     webPreferences: {
       preload: require.resolve('freehop/electron/preload'),
-      additionalArguments: ['--freehop-origins=https://play.example.com'],
+      additionalArguments: ['--freehop-origins=https://app.example.com'],
       contextIsolation: true
     }
   });
-  win.loadURL('https://play.example.com');
+  win.loadURL('https://app.example.com');
 });
 ```
 

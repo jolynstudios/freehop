@@ -1,14 +1,12 @@
 # Freehop — Refero design lock
 
-Designing the Freehop developer site and demos for people building browser games, Electron apps and platforms. The primary action is to try a working demo, followed by the SDK quickstart. Existing API information, comparisons and limits stay available.
+Current design, 7 October 2026. Freehop is a calling SDK for small meeting rooms, in-app conversations, shared workspaces, Electron apps, communities and games. The homepage leads to the working demos and the SDK quickstart. The published package is `0.1.0-alpha.4`, with TypeScript declarations for all 15 public entry points.
 
-## Research, 7 October 2026
+## References
 
-Refero MCP was connected at `https://api.refero.design/mcp`. The project-local authenticated config is excluded from git. The `refero-design` skill is installed in `.agents/skills/refero-design`.
+The three user-supplied Refero references define the composition. Refero MCP research used `refero_search_styles`, `refero_get_style`, `refero_search_screens` and `refero_get_screen` at `https://api.refero.design/mcp`. The authenticated project-local config is excluded from git.
 
-Tools used: `refero_search_styles` (cinematic/WebGL, developer SDK and named-brand searches), `refero_get_style`, `refero_search_screens`, `refero_get_screen`.
-
-The public style UUIDs did not resolve through MCP (`INVALID_STYLE_UUIDS`). The supplied public pages and their screenshots were inspected directly. MCP searches resolved the corresponding Resend and Active Theory catalog records and an adjacent Apple AirPods Pro record; the user's AirPods 5 page remains the specific media-composition reference.
+The public style UUIDs did not resolve through MCP (`INVALID_STYLE_UUIDS`), so their public pages and screenshots were inspected directly. MCP resolved the Active Theory and Resend records and an adjacent AirPods Pro record. The supplied AirPods page contributes only the scale and continuity of media sections, not Apple branding.
 
 | Reference | Public reference | MCP catalog ID |
 |---|---|---|
@@ -17,130 +15,37 @@ The public style UUIDs did not resolve through MCP (`INVALID_STYLE_UUIDS`). The 
 | Apple AirPods 5 | https://styles.refero.design/style/cfcd001c-e812-4126-9bdf-1f16b68d182e | adjacent AirPods Pro: `bbb27bcc-7d86-402c-87bd-c44be626c8b5` |
 | Resend open source screen | https://refero.design/pages/2970b1e5-7926-4f3e-a7bd-cc9f81e011ad | `2970b1e5-7926-4f3e-a7bd-cc9f81e011ad` |
 
-## Build target
+## Current build target
 
-Direct build from the user's explicit references. Active Theory owns the full-bleed canvas and scene-first composition. Resend contributes only the editorial display / UI / code distinction and restrained code presentation. Apple contributes the scale of media chapters and quiet controls, not its white canvas or purchase colors.
+Preserve the approved logo, monochrome shell, large uninterrupted media, generous spacing and thin separators. Keep the SDK example immediately after the hero, followed by Hopper and the live calling demo, then practical use-case recipes.
 
-Preserve: pure black, monochromatic chrome, dominant dimensional scene, low density, generous spacing. The hero is a live Three.js woven signal field, not a simulated call or a claim about live users. Actual gameplay appears in the demo showcases.
-
-| Decision | Source and role | Implementation |
+| Decision | Reference and role | Implementation |
 |---|---|---|
-| Full-bleed `#000` canvas | Active Theory: scene owns the viewport | No blue page fill, ambient CSS wash or framed hero dashboard |
-| Large live 3D object | Active Theory: rendered media carries light/color | Fine illuminated strands forming an open waveform surface; bounded pointer rotation; pause and reduced motion |
-| White and gray shell | Active Theory | White text, `#a1a4a5` secondary copy, `#292d30` structural edges |
-| Editorial hero type | Resend: display only | Instrument Serif as an openly available high-contrast display substitute; UI remains sans |
-| Code is its own voice | Resend | IBM Plex Mono retained as the project's existing readable code face; syntax colors stay in code |
-| Large demo chapters | Apple: media first | A large actual game render, then sparse product details; no decorative feature-card grid |
-| Clear build entry | Resend open source screen | Short install command, real SDK sample, source and reference links |
-| Small-room honesty | Freehop implementation and user brief | No fabricated peers, benchmarks, shipped game integrations or built-in AI claims |
+| Large uninterrupted hero media | Active Theory: composition and lighting | A live Three.js woven signal field with bounded pointer rotation, pause control and static fallback |
+| Restrained interface | Resend: shell and code presentation | Flat neutral surfaces, thin rules, quiet controls and short install example |
+| Media scale | Supplied AirPods reference: composition only | Spacious sections without decorative feature-card grids |
+| Inter for headlines, UI and prose | Refero Linear changelog (`11d3e58a-87d7-4a9a-bbf5-720f4fd3ffc6`): typography only | Medium display weight, tight tracking and a clear heading scale |
+| IBM Plex Mono | Existing code typography | Code samples and technical labels; fonts are self-hosted |
+| System, Light and Dark | User request; Refero Ui (`c14c0a94-1037-449e-bf5b-4cb972656ac7`): neutral color roles | Follow the OS by default, persist explicit choice and allow return to System |
+| Practical positioning | SDK capabilities and user brief | “Voice and video, inside your app.” and “Build your first call.” |
+| Working demonstrations | Actual Freehop consumers | Hopper and the live call only; use-case recipes are integration ideas |
 
-Reject: colored headline words, generic blue cards, numbered decorative feature blocks, fake video participants, heavy shadows, repeated slogan sections and keyword strips.
+Dark mode uses a black canvas, near-black surfaces, pale type and neutral borders. Light mode uses white and near-white surfaces with dark text. Media stages remain dark. Status colors report actual network state; syntax colors stay in code. The calculator result owns its foreground/background palette, and result numbers have no decorative highlight.
 
-Tokens: black canvas; `#0b0b0c` raised surface; `#fff` headings; `#c6c6c6` body; `#a1a4a5` metadata; `#292d30` borders. Ghost actions use neutral borders and 5–6px radii. Fully rounded controls are reserved for the hero's compact actions. Status colors carry actual network state. Documentation remains comfortably readable.
+Avoid decorative font changes, colored headline words, generic blue cards, fake video participants, invented usage counts, repeated slogans and unverified integration or AI claims. Freehop has no built-in AI model, transcription service or agent runtime.
+
+## Motion and accessibility
+
+Hero animation is capped at 30 fps, pauses off screen, respects reduced motion and has a user pause control. Reduced-motion scenes render on demand. WebGL failure shows a static fallback. Product controls need visible keyboard focus, clear labels and usable mobile layouts.
 
 ## Verification
 
-Compare desktop and mobile renders to this lock. Check scene scale, typography, black canvas, limited chrome, product links, keyboard focus, reduced motion, canvas fallback, overflow and demo controls. A successful build alone is insufficient.
+Changes must pass the site TypeScript check and strict production build. Check desktop and mobile rendering, light/dark/system preferences, overflow, keyboard controls, reduced motion, pause and canvas fallback. Automated WCAG A/AA checks supplement visual inspection; they do not constitute full accessibility certification.
 
-## Release verification
+The current design was checked at 320, 390, 768 and 1440 px across representative homepage, documentation and Hopper views. Both themes, use-case anchors, readable results/calculator panels and theme persistence passed. Local-gate browser checks verified two-peer audio/video, controls, chat and Hopper leave/rejoin.
 
-- Production build and TypeScript check passed.
-- Desktop (1440 px) and mobile (390 px) route checks: no horizontal overflow or uncaught browser errors. Mobile navigation checked.
-- Automated WCAG A/AA checks on home, docs, games guide, playground, Hopper, Signal Run, Orbital and Comms lab: no violations found. This is an automated check, not a claim of complete accessibility certification.
-- Two real Chromium peers through a local gate: movement and collision, encrypted player messages, remote video, mic/camera and adaptive controls, departure, Orbital scoring, Hopper lobby/chat/leave/rejoin. The test also exercises the WebGL-unavailable map fallback.
-- `npm run ship`: all four gates passed, including 173 unit tests and Chromium/Firefox/WebKit media, multigate outage, key rotation and SDK example checks. A pre-existing macOS TCP-reset assumption in the timeout test was corrected; its deadline and server-counter assertions remain.
-- Website audit gate passed with the repository's existing build-tool advisory allowance. No new allowlist entry was added.
-- Fonts are self-hosted. Reduced-motion scenes render on demand; active scenes are capped at 30 fps and pause off screen. Game movement messages are coalesced below the receiver limit.
+## Maintenance and archive
 
-The original site is retained at git tag `archive/pre-rebrand-2026-10-07` and in a local archive outside the repository. This release changes the website, examples and documentation; the published SDK remains `0.1.0-alpha.3`.
+Use `src/css/custom.css` for shared design tokens. Keep the social preview consistent with the rendered homepage. Preserve protocol identifiers in code and examples; use Freehop in product prose.
 
-## Hero revision
-
-The user approved the site and logo but rejected the animated rings. Retain the logo and
-all page composition. Replace only the hero artwork with an open, folded signal field:
-fine luminous strands, restrained pearl / steel-blue / warm-white light, and slow motion.
-Active Theory remains the immersive-media reference; the existing Resend typography and
-large uninterrupted media treatment remain. A fresh Refero MCP style search confirmed the
-dark-canvas / luminous-graphic direction. No circular sculpture, particle cloud, fabricated
-call activity or new interface decoration. Update the social preview to match the hero.
-
-Revision checks passed: desktop/mobile render without overflow or browser errors; active motion, pause, pointer interaction, reduced-motion freeze, and non-WebGL fallback; TypeScript and production build. Logo assets are unchanged.
-
-## SDK-first showcase revision
-
-The user rejected the game demos as distractions from Freehop. Remove Signal Run and Orbital,
-including routes, renderer, controls and promotional links. Keep Hopper and the live call as
-the two demo choices. Place the concrete SDK code example immediately below the connection
-hero, followed by the two calling demos. Keep the approved typography, hero, logo and colors.
-The network tools remain embedded in their concept documentation; the Three.js guide explains
-integration into the reader's own app without claiming supplied game examples.
-
-Revision verification: production build and TypeScript passed; desktop/mobile layouts show the SDK immediately after the hero and no game links. The two-peer smoke test passes for live audio/video, media controls, messages, Hopper chat and leave/rejoin.
-
-## System theme and contrast correction
-
-User screenshots identified a legacy highlight crossing the result numbers and pale calculator
-text on a pale result panel. Remove the highlight; give the calculator result its own complete,
-contrasting foreground/background palette. Preserve the approved typography, layout and logo.
-
-Refero MCP research revisited Resend (`b2f7a9d7-ba46-4c00-bc73-426969097ff9`) and Ui
-(`c14c0a94-1037-449e-bf5b-4cb972656ac7`). Resend retains the dark theme's type roles and
-hairline surfaces. Ui contributes only the light theme's white canvas, neutral surface steps
-and dark text. The user explicitly requested a light theme; the approved dark media stage
-remains local to the hero and active video meeting. No new decorative colors or layout changes.
-
-| Decision | Source / role | Implementation |
-|---|---|---|
-| System, Light, Dark | User request, existing Docusaurus color-mode provider | Follow OS initially and on changes; persist explicit choice; allow return to System |
-| Light surfaces and dark text | Ui neutral roles; Refero color craft | White canvas, near-white panels, charcoal text, readable secondary gray |
-| Status and code colors | Existing semantic roles | Separate light/dark contrast pairs; no use as decorative fills |
-| Number legibility | User screenshot | Remove the old marker background entirely |
-| Calculator result | User screenshot | Dark text on its light result panel in either theme |
-| Favicon | User correction | Unchanged |
-
-Verification: TypeScript and strict production build passed. Desktop/mobile theme checks
-cover initial light/dark OS preferences, live OS changes, explicit override persistence and
-return to System. WCAG A/AA automated audits cover home, docs, results, cost, comparison,
-quickstart, demos, live call, paths, gates and Hopper in both themes. Screenshots confirm
-unobscured results and readable calculator panels. Real two-peer audio/video, controls,
-chat and Hopper leave/rejoin checks passed. Favicon files remain unchanged.
-
-## Practical use cases and plain copy
-
-User rejected abstract “world” slogans and asked to show more than games, keeping both demos.
-The hero now says “Voice and video, inside your app.”; the close says “Build your first call.”
-SDK code remains immediately below the hero. A new section shows five concrete integration
-ideas: small meeting rooms, in-app calls, shared workspaces, Electron collaboration and
-community/game rooms. Each links to a recipe grounded in the existing SDK API. These are
-clearly presented as things to build; Hopper and the live demo remain the working examples.
-
-The approved Refero layout remains the target: spacious type, flat surfaces, hairline row
-separators and neutral themes. Use cases are readable rows rather than fabricated product
-screens or more demos. README, introduction, AI build brief, navigation, footer and social
-preview carry the same broader positioning. Desktop/mobile checks in both themes pass with
-five valid recipe anchors, no overflow, runtime errors or automated WCAG A/AA violations.
-
-
-## Typography refinement — 7 October 2026
-
-The user questioned the serif display face. Re-read Refero's Resend treatment and retrieved
-full Linear changelog (`11d3e58a-87d7-4a9a-bbf5-720f4fd3ffc6`) and shadcn/UI
-(`c14c0a94-1037-449e-bf5b-4cb972656ac7`) style records through Refero MCP.
-The current page remains the build target: preserve the monochrome canvas, uninterrupted
-media, thin rules, logo and section order. Borrow only typography guidance here.
-
-| Decision | Source / role | Reason |
-|---|---|---|
-| Inter throughout headlines and UI; medium display weight | Linear, type only | Calling SDK and documentation share one visual voice |
-| Tight headline tracking, clear scale | shadcn/UI, type only | Hierarchy without a decorative font switch |
-| Keep IBM Plex Mono for code and technical labels | Existing reference lock | Distinguishes code from prose |
-| Remove Instrument Serif import and dependency | User feedback / typography craft | Reduces font payload and visual mismatch |
-
-No new imagery or layout direction is introduced. The three original references still
-own composition, media and the restrained shell; these references resolve the font question.
-
-Validation: visually checked the homepage and docs after the type change. Homepage/use-case
-checks passed in light and dark at 1440px and 390px; additional typography, overflow and
-WCAG AA checks passed at 320px, 768px and 1440px across the homepage, TypeScript guide,
-use-case guide and Hopper. Existing stats/calculator contrast checks and system/manual
-preference persistence passed. Social preview recaptured from the actual page.
+The original site is preserved at git tag `archive/pre-rebrand-2026-10-07` and in an external local archive. Git history retains superseded design iterations; this file describes the active site only.

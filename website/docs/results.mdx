@@ -1,24 +1,24 @@
 ---
-title: Network test results
-sidebar_label: Network test results
-description: "Results from Freehop's developer-run home-lab network tests on 2 October 2026: 40 of 40 simulated-network runs across 11 scenarios and three browser engines, plus unit, conformance and browser-suite evidence."
+title: Test results
+sidebar_label: Test results
+description: "Alpha.4 verification on 7 October 2026: 173 unit tests, browser suites and TypeScript consumers, alongside the dated 40-run home-lab network matrix."
 ---
 
 import PathBadge from '@site/src/components/PathBadge';
 import { StatGrid, Stat } from '@site/src/components/Stats';
 
-These are Freehop's own network-test results, produced by its developer in a home lab—not an independent testing laboratory or tests on live ISP, mobile, corporate or physical home-router networks. On 2 October 2026, the current code was run in an isolated Linux environment with simulated NAT profiles and real browser engines. Browser and desktop audio and video connected in every simulated network where a route exists inside the session, including cases direct-only WebRTC cannot connect.
+These are Freehop's own network-test results, produced by its developer in a home lab—not an independent testing laboratory or tests on live ISP, mobile, corporate or physical home-router networks. The revision tested on 2 October 2026 was run in an isolated Linux environment with simulated NAT profiles and real browser engines. Browser and desktop audio and video connected in every simulated network where a route exists inside the session, including cases direct-only WebRTC cannot connect.
 
 <StatGrid>
   <Stat value="40/40" label="home-lab network runs passed, 0 failed" note="11 simulated scenarios × 3 Chromium trials, plus 7 cross-engine runs" />
-  <Stat value="156/156" label="unit tests" note="STUN, TURN, port mapper, gate and gateway" />
+  <Stat value="173/173" label="unit tests" note="Alpha.4 release checks · 7 October 2026" />
   <Stat value="800/800" label="TURN messages over UDP" note="coturn's turnutils_uclient, 0 lost" />
   <Stat value="800/800" label="TURN messages over TCP" note="coturn's turnutils_uclient, 0 lost" />
 </StatGrid>
 
 :::note[Scope]
 
-This is a repeatable kernel-NAT test in Linux network namespaces, not a certification, independent evaluation or test on physical ISP, carrier or corporate networks. The 40-run matrix was run on 2 October 2026 on the current revision, after the security fixes: gateways and host nodes now relay only inside their session, and every simulated scenario still passed. See [Not yet verified](#not-yet-verified) below.
+This is a repeatable kernel-NAT test in Linux network namespaces, not a certification, independent evaluation or test on physical ISP, carrier or corporate networks. The 40-run matrix was run on 2 October 2026 after the security fixes: gateways and host nodes now relay only inside their session, and every simulated scenario still passed. It has not been rerun for alpha.4. Unit, local-browser and type checks below were run on 7 October 2026. See [Not yet verified](#not-yet-verified) below.
 
 :::
 
@@ -42,7 +42,7 @@ Real **Chromium 151**, **Firefox 153** and **WebKit 26.5** ran in separate Linux
 
 ## Scenario results
 
-Peers are named by letter: `a`, `b` and `c` are browser participants, `g` is a desktop participant running a gateway, and `h` is a host node (a gateway member without media). Gate traffic is the gate's total for the whole run, including retries of pairs that stay unreachable. It is signalling only.
+The measurements below are from the original 2 October run; all 40 scenarios also passed the security-hardening rerun that day. Peers are named by letter: `a`, `b` and `c` are browser participants, `g` is a desktop participant running a gateway, and `h` is a host node (a gateway member without media). Gate traffic is the gate's total for the whole run, including retries of pairs that stay unreachable. It is signalling only.
 
 | Scenario | Networks | Browsers | Passed | Paths per pair | Gate traffic per run |
 |---|---|---|---|---|---|
@@ -73,7 +73,9 @@ Earlier research that only tried direct routes proved its own boundary: two full
 
 ## Other evidence
 
-### Unit tests: 156 of 156
+### Unit tests: 173 of 173
+
+Passed for alpha.4 on 7 October 2026, including the audio-recovery and adaptive-video regressions.
 
 - STUN codec with the RFC 5769 test vectors, plus fuzzing.
 - TURN server: integrity, framing, quotas, room bandwidth, IPv6 destination policy and TCP deadlines.
@@ -92,7 +94,7 @@ coturn's `turnutils_uclient` against Freehop's TURN server: **UDP 800/800 and TC
 
 ### Local browser suites (macOS)
 
-The original local test run included every suite below. After the security fixes, the three-engine TLS mesh, multi-gate outage, kick/rekey and SDK reference app suites were rerun. Public tracker connectivity was also exercised in the live demo checks.
+On 7 October 2026, `npm run ship` passed the three-engine TLS mesh, multi-gate outage, kick/rekey and SDK reference app suites for alpha.4. The list below also includes the original three-Chromium and public-tracker checks; tracker connectivity was separately exercised in live demo checks.
 
 - A mesh of three Chromium browsers.
 - Chromium, Firefox and WebKit in one mesh over TLS.
@@ -101,6 +103,10 @@ The original local test run included every suite below. After the security fixes
 - **A public WebTorrent tracker as the only gate** (`wss://tracker.openwebtorrent.com`): no server of our own.
 - The SDK reference app driven through its own interface and API, including a kick rotation.
 
+### TypeScript consumers
+
+Alpha.4 ships declarations for all 15 public entry points. Strict browser and backend consumers passed with TypeScript 6 and 7 on 7 October 2026, including a backend without DOM types and Electron 44.6 declarations. A fresh install from npm passed compile and runtime smoke checks after publication. Run `npm run typesgate` from a checkout for the maintained consumer fixtures.
+
 ### Security review
 
 The earlier source and test review recorded 11 findings. The subsequent source review and security regressions cover key epochs, alias revocation, tickets, authority races, forwarding authorization, gate input limits, UDP response budgets and Electron IPC. See the [security model](./concepts/security.mdx) for the current trust limits.
@@ -108,13 +114,14 @@ The earlier source and test review recorded 11 findings. The subsequent source r
 ## Not yet verified
 
 1. **Physical networks:** real home routers, 4G and 5G carrier NAT (usually with IPv6), a UDP-blocking corporate network, and routers without UPnP, PCP or NAT-PMP.
-2. **The [Redline Wars](./redline-wars.mdx) integration** through the SDK, with the game as test environment, including its strict frame-time gates with voice on.
+2. **Application performance under load:** CPU, rendering and responsiveness when calls run alongside your meeting UI, shared workspace or game.
 3. **iOS Safari and Android browsers.** Only desktop engines were tested.
 4. **Media quality under real load.** Forwarded (bridged) media is re-encoded by the participant, and the upstream budget of a forwarding participant on home broadband is still unmeasured.
 
 ## Reproduce
 
 ```bash
+npm run typesgate
 node --test test/*.test.mjs
 node test/browser/smoke.mjs chromium,firefox,webkit --tls
 node test/browser/multigate.mjs && node test/browser/rekey.mjs && node test/browser/tracker.mjs && node test/browser/example-app.mjs

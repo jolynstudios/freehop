@@ -10,7 +10,7 @@ This specification is normative for the wire formats and behaviour of Freehop ve
 
 :::
 
-Freehop connects small groups with audio, video and data. `maxPeers` defaults to eight other participants; larger supported sizes require benchmarks. Its operator invariant: **no server that the application operator runs ever carries media.** Media goes peer-to-peer. When no direct route exists, it goes through a machine that belongs to the same session: a participant, a participant's own gateway or the session's host node. Volunteers may be added by configuration. The operator's servers ("gates") only introduce peers.
+Freehop connects small groups with audio, video and data. `maxPeers` defaults to eight other participants; larger supported sizes require benchmarks. Its signalling invariant: **gates never carry media.** Media goes peer-to-peer. When no direct route exists, it goes through a machine that belongs to the same session: a participant, a participant's own gateway or the session's host node. Volunteers may be added by configuration. Gates only introduce peers. An application operator may also run a session gateway and pay for its media bandwidth and compute.
 
 The [SDK reference](./sdk/authority.mdx) covers usage, and the [network test results](./results.mdx) cover measured behaviour.
 
@@ -212,7 +212,7 @@ The [SDK](./sdk/authority.mdx) describes how applications consume the protocol:
 
 ## 12. Known limits
 
-- A network that permits traffic only to the gate host cannot carry media without the gate operator carrying it. Freehop reports `unreachable`. A gate operator who *chooses* to also run a gateway (community gates) can serve such users; the application operator's own gates do not.
+- A network that permits traffic only to the gate host cannot carry media without the gate operator carrying it. Freehop reports `unreachable`. A separate session gateway can help only if its media transport is reachable under the network’s rules. Hosting it beside a gate does not by itself bypass those rules; gates remain signalling-only.
 - Two browser-only participants that are both behind hard NATs or UDP-blocking networks, with no IPv6, no gateway in the session and no third participant, cannot connect. A session host node reachable by both endpoints can provide a TURN relay path.
 - Chromium, home-lab browser finding: simultaneous ICE restarts (glare) intermittently left the polite side's RTP senders silent after its restart offer was rolled back. Freehop avoids simultaneous restarts (§7).
 - Playwright 1.62's WebKit build rejects `?transport=` in TURN URLs (WebKit bug 320931). The client detects this and degrades to UDP-only TURN URLs for that engine.

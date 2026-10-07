@@ -1,9 +1,17 @@
-# Freehop results, 2 October 2026
+# Freehop verification results
 
-**Outcome:** browser and desktop audio/video now connects peer-to-peer in every simulated network
+## Alpha.4 release checks — 7 October 2026
+
+`npm run ship` passed: 173 unit tests, export and documentation gates, and the local Chromium/Firefox/WebKit TLS mesh, multi-gate outage, kick/rekey and SDK example suites. TypeScript 6 and 7 consumers passed across all 15 public entry points, including backend-only and Electron checks. A fresh install of `freehop@0.1.0-alpha.4` from npm passed compile and runtime smoke checks.
+
+The 40-run Linux NAT matrix below is dated 2 October 2026 and has not been rerun for alpha.4. Its network evidence is separate from the current release checks. See the [release changelog](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.4).
+
+## Network evidence — 2 October 2026
+
+**Outcome:** browser and desktop audio/video connected peer-to-peer in every simulated network
 where *any* route exists inside the session. That includes the cases the earlier direct-only
 research proved impossible directly: two fully random symmetric NATs, and UDP-blocking
-networks. The operator runs only gates, which carry sealed signalling of tens of KB per call and
+networks. In this test setup, the operator ran only gates, which carry sealed signalling of tens of KB per call and
 never media. When no direct route exists, media goes through machines that belong to the
 session: a desktop participant's own gateway, the session's host node, or another participant. A hard-NAT pair without a helper remains unreachable. A network that reaches only the gate remains unreachable even with session helpers. There, media is impossible without
 the operator carrying it, and Freehop reports `unreachable`.
@@ -54,10 +62,10 @@ behind its own kernel-NAT router profile, with fake camera and microphone. Every
 party is needed. Gate traffic is the gate's total for the whole run, including retries of pairs
 that stay unreachable. It is signalling only.
 
-The 40-run matrix above was re-run in the same home-lab test environment on 2 October 2026 on the current revision, after security hardening: gateways and host nodes now relay only between allocations on themselves, and every gateway and host-node scenario still passed. The same run repeated the coturn conformance check (UDP 800/800 and TCP 800/800, 0 lost).
+The 40-run matrix above was re-run in the same home-lab test environment on 2 October 2026 after security hardening: gateways and host nodes now relay only between allocations on themselves, and every gateway and host-node scenario still passed. The same run repeated the coturn conformance check (UDP 800/800 and TCP 800/800, 0 lost).
 
 ## Other evidence
-- **Unit tests: 156/156.**
+- **Unit tests: 173/173 on 7 October 2026.**
   - STUN codec with RFC 5769 vectors and fuzzing;
   - TURN server;
   - port mapper, 30 cases with fake PCP/NAT-PMP/UPnP routers;
@@ -71,7 +79,7 @@ The 40-run matrix above was re-run in the same home-lab test environment on 2 Oc
 - **TURN browser interop (macOS, original test run):** 20 pass, 0 fail, 6 blocked. All six blocked cases are
   WebKit over TCP, caused by a TURN-URL bug in Playwright's WebKit build (bug 320931). The
   client degrades to UDP TURN for that engine.
-- **Local browser suites (macOS):** the original test run included all suites below. After security fixes, the three-engine TLS mesh, multi-gate outage, kick/rekey and SDK reference app were rerun; public tracker connectivity was also exercised in live demo checks.
+- **Local browser suites (macOS):** the original test run included all suites below. On 7 October 2026, the three-engine TLS mesh, multi-gate outage, kick/rekey and SDK reference app were rerun for alpha.4; public tracker connectivity was also exercised in live demo checks.
   - 3×Chromium mesh;
   - Chromium + Firefox + WebKit mesh over TLS;
   - multi-gate: peers on disjoint gates introduced through the mesh, then **all gates shut
@@ -82,14 +90,14 @@ The 40-run matrix above was re-run in the same home-lab test environment on 2 Oc
   - the SDK example app driven through its own UI and API, including a kick rotation.
 - **Earlier review:** the prior source and test review recorded 11 security/correctness findings. The current trust boundaries are described in [PROTOCOL.md](PROTOCOL.md), with regressions in `test/security.test.mjs` and the review test suites.
 
-## Not yet verified (next phases)
+## Not yet verified
 1. **Physical networks:**
    - real home routers;
    - 4G/5G carrier NAT, usually with IPv6;
    - a UDP-blocking corporate network;
    - a router without UPnP/PCP/NAT-PMP.
-2. **Redline Wars integration through the SDK** (redlinewars.online), with the game as test
-   environment, including the strict frame-time gates with voice on.
+2. **Application performance under load:** CPU, rendering and responsiveness alongside
+   a meeting UI, shared workspace or game.
 3. **iOS Safari and Android browsers:** only desktop engines were tested.
 4. **Media quality under real load:** forwarded (bridged) media is re-encoded by the
    participant, and the upstream budget of a forwarding participant on home broadband is still
@@ -97,6 +105,7 @@ The 40-run matrix above was re-run in the same home-lab test environment on 2 Oc
 
 ## Reproduce
 ```sh
+npm run typesgate
 node --test test/*.test.mjs
 node test/browser/smoke.mjs chromium,firefox,webkit --tls
 node test/browser/multigate.mjs && node test/browser/rekey.mjs && node test/browser/tracker.mjs && node test/browser/example-app.mjs

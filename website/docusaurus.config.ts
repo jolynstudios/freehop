@@ -104,7 +104,7 @@ const config: Config = {
   themeConfig: {
     image: 'img/social-card.png',
     metadata: [
-      {name: 'keywords', content: 'webrtc, peer-to-peer, p2p, voice chat, video chat, nat traversal, turn, stun, upnp, pcp, nat-pmp, sdk, games'},
+      {name: 'keywords', content: 'webrtc, peer-to-peer, p2p, voice chat, video chat, nat traversal, turn, stun, upnp, pcp, nat-pmp, sdk, typescript, meeting rooms, in-app calling, electron, games'},
       {name: 'twitter:card', content: 'summary_large_image'},
     ],
     colorMode: {

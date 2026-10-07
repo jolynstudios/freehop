@@ -16,7 +16,7 @@ Freehop is alpha software. Its network tests ran in a developer-built home-lab s
 
 Gus is on a guest network that lets traffic through to the gate's host and to nothing else. Envelopes reach the gate, so Gus can be introduced, but there is no machine in the session his media could travel to. Carrying it through the gate would mean the operator carries media, which is exactly what Freehop rules out. Freehop reports such pairs as `unreachable` (home-lab test scenario `gate-only`).
 
-A gate operator who *chooses* to also run a gateway, for example a community gate, can serve such users. Your own gates do not.
+A separately configured session gateway can help only if the network permits a route to its media transport. Running it on the gate’s host does not by itself bypass firewall rules. Its owner supplies the media bandwidth; the gate remains signalling-only.
 
 ### Two hard networks and nobody else
 
@@ -61,10 +61,10 @@ Gateway availability is assessed at startup. Automatic recovery after a router m
 
 ## Not yet verified
 
-These are the next phases of verification. Until they are done, treat Freehop's behaviour on them as unknown:
+The following environments and workloads remain unverified:
 
 1. **Physical networks:** real home routers, 4G and 5G carrier NAT (usually with IPv6), a UDP-blocking corporate network, and routers without UPnP, PCP or NAT-PMP.
-2. **The [Redline Wars](./redline-wars.mdx) integration** through the SDK, including the game's strict frame-time checks with voice on.
+2. **Application performance under load:** CPU, rendering and responsiveness while calls run alongside a meeting UI, shared workspace or game.
 3. **iOS Safari and Android browsers.** Only desktop engines were tested.
 4. **Media quality under real load,** including how much upload a forwarding participant on home broadband can spare.
 

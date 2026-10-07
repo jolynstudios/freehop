@@ -62,7 +62,7 @@ Media is captured with echo cancellation, noise suppression and automatic gain c
 | `send(data, { to })` | Sends application data (any JSON value, at most 4096 characters) to one member, or to every member without `to`. It is sealed like signalling and travels over the peers' own data channel once they are linked. Receivers get a `message` event `{ from, data }` and accept at most 20 messages per second from one sender. Treat the data as untrusted input. Resolves to the number of members it was sent to. |
 | `refresh(ticket)` | Applies a reissued ticket for the **same** epoch and secret with a later expiry, for example fresh gate tokens before a long call outlives them. The new tokens are used at the next gate (re)connect. Resolves to `false` for an invalid refresh. |
 | `disconnectPeer(peerId)` | Disconnects a peer locally and revokes its local gateway credentials. Does not revoke membership or exclude aliases. |
-| `kick(peerId)` | Throws migration guidance. Use backend `authority.kick()` and distribute replacement tickets to revoke membership. |
+| `kick()` | Throws migration guidance. Use backend `authority.kick()` and distribute replacement tickets to revoke membership. |
 | `drop(peerId)` | Disconnects a peer locally, without touching a gateway. |
 | `ticket()` | The current ticket. |
 | `stats()` | Resolves to a snapshot of gates, links, paths, media counters and bridges (see below). |

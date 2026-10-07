@@ -72,11 +72,11 @@ works, Freehop reports `unreachable` instead of sending media through an operato
 | | |
 |---|---|
 | **No media through your gate** | Gates carry sealed signalling only. In every home-lab network test, gate traffic for an entire scenario stayed between 30 and 210 KB. A session gateway you run can still carry media on your bill. |
-| **Routes through the session** | Two strict (symmetric) NATs, or a network that blocks UDP, can't connect directly. Freehop routes them through a session member's gateway or the session host, still with no operator relay. |
+| **Routes through the session** | Two strict (symmetric) NATs, or a network that blocks UDP, can't connect directly. Freehop routes them through a session member's gateway or the session host, without sending media through the signalling gate. |
 | **Multiple signalling gates** | Run one gate or many, operated by you, your community, or public WebTorrent trackers. Peers on different gates still find each other. **Calls keep running when every gate is down.** |
 | **Private by construction** | Signalling is sealed (HKDF + AES-256-GCM), so gates can't read or forge envelopes. Direct and gateway paths preserve end-to-end DTLS-SRTP; a forwarding participant decodes and re-encodes media. |
 | **Automatic** | No manual room link is required in a ticket-based integration. Your backend issues a ticket, and the SDK takes the cheapest path that works: direct, then gateway, then relay, then bridge. |
-| **Small and open** | Zero-dependency browser client; a gate with one dependency (`ws`); TURN gateway and PCP / NAT-PMP / UPnP port mapping in plain Node. Apache-2.0. |
+| **Small and open** | Zero-dependency browser client; a gate with one runtime dependency (`ws`); TURN gateway and PCP / NAT-PMP / UPnP port mapping in plain Node. Apache-2.0. |
 
 ## How it works
 
@@ -125,24 +125,11 @@ arrive.
 **40/40 home-lab network test runs passed** on 2 October 2026 after security hardening,
 including gateways that relay only inside their session. That matrix has not been rerun for
 this revision. These are repeatable simulated-network results, not field reliability evidence. Other checks:
-- **173/173 unit tests**, including the RFC 5769 STUN vectors and the security regressions.
-- **coturn's own test client** against Freehop's TURN server: 800/800 messages over UDP and 800/800 over TCP, 0 lost.
+- **173/173 unit tests** on 7 October 2026, including the RFC 5769 STUN vectors and the security regressions.
+- **coturn's own test client** against Freehop's TURN server on 2 October 2026: 800/800 messages over UDP and 800/800 over TCP, 0 lost.
 - **Browser suites:** multi-gate with every gate shut down mid-call, kick/rekey, a public WebTorrent tracker as the only gate, and the SDK example app.
 
 Full details are in [RESULTS.md](RESULTS.md).
-
-## Example consumer: Redline Wars
-
-[**Redline Wars**](https://redlinewars.online) is a real-time strategy game that runs in the
-browser and as a desktop app ([source](https://github.com/jolynstudios/redlinewars)). It is
-one planned consumer of Freehop. The game is integrating the independent SDK
-**through the public SDK only**, exactly like any other app would:
-
-- the match host acts as the session's gateway;
-- desktop participants open their own front door through their router;
-- browser participants simply join.
-
-Freehop is an independent project; any app can use the same public SDK.
 
 ## Quickstart
 
@@ -201,10 +188,10 @@ two people cannot connect directly, and who pays for that traffic.
 | Hosted video APIs | Daily, Agora, Twilio Video, Cloudflare Realtime and others | The provider's servers: most send every stream through them | Per participant-minute, or per GB (Cloudflare) | Large rooms, nothing to run | Proprietary |
 
 Freehop is built for products where **people in the session can help carry their own call**:
-games, small-group voice and video, communities. If you run the session host or gateway on your
+small meetings, in-app calls, shared workspaces, communities and games. If you run the session host or gateway on your
 own paid infrastructure, its media traffic is still your cost. If you need 50-person rooms,
-recording, or a guarantee on networks that block everything except your server, an SFU or a paid
-relay is the right tool. The [full comparison](https://jolynstudios.github.io/freehop/docs/comparison)
+recording, or centrally hosted media, consider an SFU or a paid relay. Connectivity still depends
+on transport support and firewall rules. The [full comparison](https://jolynstudios.github.io/freehop/docs/comparison)
 adds signalling and encryption, with sources.
 
 ## Honest limits
@@ -220,7 +207,7 @@ adds signalling and encryption, with sources.
   strict NATs or UDP-blocking networks, with no IPv6 and nobody else in the session, cannot
   connect.
 - **Home-lab tested, not field-proven.** Real ISPs, 4G/5G carrier NAT, corporate networks
-  and mobile browsers are being tested next. Status: **alpha**.
+  and mobile browsers remain unverified. Status: **alpha**.
 - **Forwarded media is re-encoded.** When a participant forwards the call, it re-encodes the
   media. That participant is in the call anyway.
 
@@ -237,20 +224,16 @@ adds signalling and encryption, with sources.
 | `lab/` | Reproducible Linux NAT test harness, run in a home lab |
 | `website/` | The documentation site (Docusaurus) |
 
-## Alpha.2 audio recovery
+## Releases
 
-Alpha.2 repairs stalled audio senders observed in five-participant Chromium calls. The
-watchdog rebinds the existing microphone track without opening another device, retries a
-failed restoration with backoff, and requires packet progress before considering the sender
-healthy. Continued silence falls back to ICE recovery. This is a compatible patch with no
-new options. It does not change network reachability or guarantee physical-network quality.
+[0.1.0-alpha.4](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.4) adds TypeScript declarations for all 15 public entry points. The JavaScript runtime and imports remain compatible. See the [release changelog](https://github.com/jolynstudios/freehop/releases) for changes and validation, and install `freehop@alpha` from npm.
 
 ## Get involved
 
-- ⭐ **Star the repo** to follow progress toward real-network testing and a 1.0 release.
-- 🎮 **Try the [live demo](https://jolynstudios.github.io/freehop/demo)**: a real call between two
+- **Star the repo** to follow progress toward real-network testing and a 1.0 release.
+- **Try the [live demo](https://jolynstudios.github.io/freehop/demo)**: a real call between two
   browser tabs, introduced through public trackers with no server of ours.
-- 🛠️ **Building a game or app on Freehop?** [Open an issue](https://github.com/jolynstudios/freehop/issues)
+- **Building with Freehop?** [Open an issue](https://github.com/jolynstudios/freehop/issues)
   and tell us about your use case. Integration reports directly shape the SDK.
 
 ## License and warranty
@@ -262,5 +245,4 @@ new options. It does not change network reachability or guarantee physical-netwo
 > **No warranty.** Freehop is provided "as is", without warranties or conditions of any kind.
 > You use it entirely at your own risk.
 
-Copyright 2026 Jolyn Studios. Freehop was developed under the codename *Peerlane*; some protocol
-identifiers keep that name.
+Copyright 2026 Jolyn Studios.

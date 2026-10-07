@@ -17,7 +17,7 @@ Freehop is a handful of small modules: a browser library, a gate, a gateway, and
      any number of gates, run by anyone                    ─── forwarded by a participant ───────
 ```
 
-On the left, everything your servers ever handle: sealed envelopes that introduce peers. On the right, everything that carries media: routes between machines that belong to the call.
+On the left, what gates handle: sealed envelopes that introduce peers. On the right, media routes between machines that belong to the call. Your backend handles admission separately; an optional session gateway you host can also incur media bandwidth and compute costs.
 
 ## What runs where
 
@@ -36,7 +36,7 @@ On the left, everything your servers ever handle: sealed envelopes that introduc
 | Client | `src/client/` | Browser or renderer | None | Rooms, sealed signalling, perfect negotiation, the path ladder, bridging and media |
 | Tracker client | `src/client/tracker-client.mjs` | Browser | None | Uses a public WebTorrent tracker as a gate (`bt+wss://`) |
 | Gate | `src/gate/` | Node.js server | `ws` | WebSocket rendezvous, optional STUN responder, token admission, byte budgets |
-| TURN server | `src/relay/turn-server.mjs` | Node.js or Electron main | Built-ins | RFC 8656 subset: UDP relays for UDP and TCP clients, internal relaying between allocations |
+| TURN server | `src/relay/turn-server.mjs` | Node.js or Electron main | Built-ins | RFC 8656 subset: UDP relays for UDP, TCP and TLS clients, internal relaying between allocations |
 | Port mapper | `src/relay/port-mapper.mjs` | Node.js or Electron main | Built-ins | PCP, NAT-PMP and UPnP IGD client for router port mappings |
 | Gateway | `src/relay/agent.mjs` | Node.js or Electron main | Built-ins | TURN plus port mapping plus per-peer, per-room credentials |
 | Gateway member | `src/relay/member.mjs` | Node.js | Built-ins, global `WebSocket` | A host node that joins without media and offers its gateway |
@@ -45,7 +45,7 @@ On the left, everything your servers ever handle: sealed envelopes that introduc
 | SDK | `src/sdk/` | Backend, browser, host | The modules above | `createAuthority()`, `connect()`, `hostSession()`, tickets |
 | Electron helper | `src/electron/` | Electron | The gateway | Gateway in the main process, origin-restricted preload |
 
-Around the library: `bin/freehop-gate.mjs` and `deploy/` (the gate service), `examples/minimal/` (a complete reference consumer), `lab/` (the home-lab Linux NAT test harness) and `test/` (unit tests and real-browser tests). The browser client has no runtime dependencies.
+Around the library: `bin/freehop-gate.mjs` and `deploy/` (the gate service), `examples/minimal/` (a complete reference consumer), `lab/` (the home-lab Linux NAT test harness) and `test/` (unit tests and real-browser tests). The browser client has no runtime dependencies. The runtime is JavaScript, with TypeScript declarations for all 15 public package entry points. Desktop gateways advertise UDP and TCP TURN; TLS is an option on the standalone TURN server.
 
 ## One call, step by step
 

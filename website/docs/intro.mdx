@@ -11,16 +11,17 @@ import PathBadge from '@site/src/components/PathBadge';
 
 <IntroScene caption="Participants connect through session routes. Gates only introduce them." />
 
-Freehop is a JavaScript SDK for adding peer-to-peer audio, video and data to browser and desktop apps: small meeting rooms, calls inside existing tools, shared workspaces, communities and games. Keep your own UI, room flow and account system; Freehop supplies the connection and media controls. Its initial target is small rooms of 2 to 8 people; that is a starting target, not a measured hardware limit. **Gates never carry media.** If you run a session host or gateway on infrastructure you pay for, its media bandwidth and compute can still appear on your bill.
+Freehop is a JavaScript SDK with bundled TypeScript declarations for adding peer-to-peer audio, video and data to browser and desktop apps: small meeting rooms, calls inside existing tools, shared workspaces, communities and games. Keep your own UI, room flow and account system; Freehop supplies the connection and media controls. Its initial target is small rooms of 2 to 8 people; that is a starting target, not a measured hardware limit. **Gates never carry media.** If you run a session host or gateway on infrastructure you pay for, its media bandwidth and compute can still appear on your bill.
 
 :::caution[Alpha, home-lab network tests only]
 
-Freehop is alpha software. Its developer-built test setup, run in a home lab, passed 40 of 40 simulated-network runs across three browser engines and 156 unit tests. This was not an independent lab evaluation or a test on real internet connections. Freehop has not yet been verified on physical home routers, 4G/5G carrier networks, corporate networks or mobile browsers. See [Limits](./limits.mdx) before you depend on it.
+Freehop is alpha software. Its developer-built home-lab setup passed 40 of 40 simulated-network runs across three browser engines on 2 October 2026. Release checks on 7 October passed 173 unit tests, local browser suites and TypeScript consumer checks; the full NAT matrix has not been rerun for alpha.4. This was not an independent lab evaluation or a test on real internet connections. Freehop has not yet been verified on physical home routers, 4G/5G carrier networks, corporate networks or mobile browsers. See [Limits](./limits.mdx) before you depend on it.
 
 :::
 
 ## Choose your starting point
 
+- **[TypeScript](./typescript.mdx):** typed sessions, events and backend APIs from the npm package.
 - **[Use cases](./use-cases.mdx):** recipes for meeting rooms, embedded calls, shared workspaces, desktop tools and communities.
 - **[Browser games](./games.mdx):** Three.js worlds with a voice/video overlay and small shared events.
 - **[Electron](./sdk/desktop.mdx):** the same client, plus a desktop participant’s gateway.
@@ -77,12 +78,12 @@ The test-profile column names the Linux kernel NAT profile used to simulate each
 ## Status
 
 <StatGrid>
-  <Stat value="40/40" label="home-lab network tests passed" note="11 simulated scenarios × 3 trials, plus 7 cross-engine runs" />
-  <Stat value="156/156" label="unit tests" note="STUN, TURN, port mapper, gate, gateway" />
+  <Stat value="40/40" label="home-lab network tests passed" note="2 October 2026 · 11 simulated scenarios, three browser engines" />
+  <Stat value="173/173" label="unit tests" note="Alpha.4 release checks · 7 October 2026" />
   <Stat value="800/800" label="TURN messages, UDP and TCP" note="coturn's turnutils_uclient against Freehop's TURN server, 0 lost" />
 </StatGrid>
 
-The browser client has zero runtime dependencies. The gate uses `ws`. The gateway uses only Node.js built-ins. Freehop is an independent SDK. [Redline Wars](./redline-wars.mdx), a browser and desktop real-time strategy game, is one planned consumer of its public API.
+The browser client has zero runtime dependencies. The gate uses `ws`; the gateway uses Node.js built-ins. All 15 public entry points include TypeScript declarations. [Hopper and the live call](/demos) are working examples; the [use-case recipes](./use-cases.mdx) show how to adapt the SDK to your app.
 
 ## Where to go next
 
@@ -90,5 +91,5 @@ The browser client has zero runtime dependencies. The gate uses `ws`. The gatewa
 - [Examples](/demos): try Hopper or inspect a real call in the live demo.
 - [Gates](./concepts/gates.mdx): what a gate is, and what it can and cannot see.
 - [Paths and escalation](./concepts/paths.mdx): how a pair of peers finds its route, with an interactive path finder.
-- [Cost model](./concepts/cost.mdx): what moves off your bill, and who carries it instead.
+- [Cost model](./concepts/cost.mdx): where bandwidth and compute costs fall.
 - [Live call](/demo): a real call in your browser, introduced by public trackers only.

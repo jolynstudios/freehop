@@ -34,7 +34,7 @@ export const OPTIONS: Option[] = [
     signalling: 'Your gates, community gates and public WebTorrent trackers, all at once; sealed end to end',
     fallback: "Machines in the session: a participant's desktop gateway, the host node, or a forwarding participant",
     bill: 'none',
-    billText: 'No operator media bill; session machines carry the traffic',
+    billText: 'Gates carry no media; gateway costs depend on who hosts it',
     size: 'Small-room mesh; initial target 2–8',
     e2e: 'Direct and gateway paths: yes. A forwarding participant decodes and re-encodes the media',
     license: 'Apache-2.0',
