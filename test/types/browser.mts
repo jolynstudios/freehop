@@ -81,6 +81,21 @@ const badTicket: Ticket = {...ticket, v: 2};
 // @ts-expect-error browser build has no Node ambient globals
 const nodeLeak = process.version;
 
+// Opt-in traversal aids: NAT classification, port prediction and an application TURN relay.
+const traversal = {portPrediction: true, classifyNat: true, turn: [{urls: ['turn:turn.example.com:3478?transport=udp'], username: 'u', credential: 'c'}],
+  timing: {predictMs: 8000, turnMs: 8000}, limits: {predictPorts: 4}} satisfies ConnectOptions;
+const traversing = await connect(ticket, traversal);
+const nat: 'eim' | 'sequential' | 'random' | 'unknown' | undefined = (await traversing.stats()).nat?.type;
+const known: number | undefined = traversing.nat?.delta;
+traversing.setTurn(null);
+traversing.setTurn([{urls: 'turns:turn.example.com:5349?transport=tcp', username: 'u', credential: 'c'}]);
+const ticketTurn: string | string[] | undefined = ticket.turn?.[0].urls;
+// @ts-expect-error portPrediction is a boolean
+connect(ticket, {portPrediction: 'yes'});
+// @ts-expect-error TURN servers need credentials
+connect(ticket, {turn: [{urls: 'turn:turn.example.com:3478'}]});
+// @ts-expect-error no imaginary NAT type
+const fullCone: typeof nat = 'full-cone';
 // @ts-expect-error nested functions are not JSON messages
 session.send({items: [() => {}]});
 // @ts-expect-error undefined is not a top-level message

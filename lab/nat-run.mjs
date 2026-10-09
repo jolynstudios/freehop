@@ -24,7 +24,17 @@ export const SCENARIOS = {
   'host-node-gates-down': { peers: 'a=random b=random h=public', members: ['h'], expect: { 'a-b': ['relay'] }, closeGates: true },
   'udpblock-pair-host-node': { peers: 'a=udpblock b=udpblock h=public', members: ['h'], expect: { 'a-b': ['relay'] } },
   'ipv6-direct': { peers: 'a=v6 b=v6', expect: { 'a-b': ['direct'] }, requireIpv6: true },
-  'gate-only': { peers: 'a=gateonly b=eim c=public', expect: { 'a-b': 'none', 'a-c': 'none', 'b-c': ['direct'] }, observeMs: 25000 }
+  'gate-only': { peers: 'a=gateonly b=eim c=public', expect: { 'a-b': 'none', 'a-c': 'none', 'b-c': ['direct'] }, observeMs: 25000 },
+  // Pairs that stay unreachable with the default options (documented limits).
+  'eim-random': { peers: 'a=eim b=random', expect: { 'a-b': 'none' }, observeMs: 25000 },
+  'udpblock-eim': { peers: 'a=udpblock b=eim', expect: { 'a-b': 'none' }, observeMs: 25000 },
+  // Opt-in rungs: the application's own TURN relay (t runs it, no browser) and port prediction,
+  // which must never fire for random NATs. The lab has no sequential NAT profile, so a positive
+  // prediction run needs real networks (tools/MANUAL-GATES.md).
+  'hard-pair-turn': { peers: 'a=random b=random t=public', turns: ['t'], expect: { 'a-b': ['relay'] }, expectVia: 'turn' },
+  'udpblock-pair-turn': { peers: 'a=udpblock b=udpblock t=public', turns: ['t'], expect: { 'a-b': ['relay'] }, expectVia: 'turn' },
+  'random-eim-predict': { peers: 'a=random b=eim', options: { portPrediction: true }, secondStun: true, expect: { 'a-b': 'none' }, observeMs: 30000, absentCounters: ['predictAttempts'] },
+  'hard-pair-predict': { peers: 'a=random b=random', options: { portPrediction: true }, secondStun: true, expect: { 'a-b': 'none' }, observeMs: 30000, absentCounters: ['predictAttempts'] }
 };
 
 if (process.argv[2] === '--topology') { console.log(SCENARIOS[process.argv[3]]?.peers ?? ''); process.exit(SCENARIOS[process.argv[3]] ? 0 : 2); }
@@ -49,14 +59,18 @@ for (const dir of ['src/client', 'src/gate', 'src/relay', 'src/shared', 'lab']) 
 const gatewayProcs = new Map();
 let services; const launched = [];
 try {
-  services = await startServices({ host: '198.20.113.1', port: 8443, tls: selfSignedCert(labDir, '198.20.113.1'), gate: { stun: [{ host: '198.20.113.1', port: 3478 }, { host: '2001:db8:113::1', port: 3478 }] } });
+  // NAT classification needs two IPv4 STUN servers; only the scenarios that classify get the second one.
+  const stun = [{ host: '198.20.113.1', port: 3478 }, ...(scenario.secondStun ? [{ host: '198.20.113.1', port: 3479 }] : []), { host: '2001:db8:113::1', port: 3478 }];
+  services = await startServices({ host: '198.20.113.1', port: 8443, tls: selfSignedCert(labDir, '198.20.113.1'), gate: { stun } });
   report.stunUrls = services.gate.stunUrls;
   const secret = randomBytes(32).toString('base64url');
   // Desktop peers run the gateway next to their browser; host nodes (members) run a gateway
   // and join the room as a gateway member without any browser.
   const { tag: roomTag } = await deriveRoom(secret, 'lab');
   const nodeProcs = [...(scenario.gateways ?? []).map(name => [name, 'gateway-proc.mjs', [roomTag]]),
-    ...(scenario.members ?? []).map(name => [name, 'member-proc.mjs', [services.gateUrl, secret, 'lab']])];
+    ...(scenario.members ?? []).map(name => [name, 'member-proc.mjs', [services.gateUrl, secret, 'lab']]),
+    ...(scenario.turns ?? []).map(name => [name, 'turn-proc.mjs', []])];
+  const headless = [...(scenario.members ?? []), ...(scenario.turns ?? [])];
   for (const [name, script, extra] of nodeProcs) {
     const peer = peers.find(p => p.name === name);
     const child = spawn('ip', ['netns', 'exec', 'pl-' + name, process.execPath, new URL(script, import.meta.url).pathname, peer.lan, ...extra],
@@ -76,11 +90,11 @@ try {
       lines.on('line', l => { try { const m = JSON.parse(l); if (m.type === 'ready') { clearTimeout(t); resolve(m); } } catch {} });
       child.on('exit', code => { clearTimeout(t); reject(new Error('gateway exited ' + code + ': ' + logs.join(' | '))); });
     });
-    gatewayProcs.set(name, { child, messages, logs, credentialsFor, info: ready.info, startStats: ready.stats, member: ready.member ?? null });
+    gatewayProcs.set(name, { child, messages, logs, credentialsFor, info: ready.info, startStats: ready.stats, member: ready.member ?? null, turn: ready.turn ?? null });
     report.peers[name] = { gateway: { info: ready.info ? { urls: ready.info.urls, external: ready.info.external, internal: ready.info.internal } : null, mappings: ready.stats?.mappings ?? [] } };
-    assert(ready.info, `gateway ${name} must obtain a public mapping`);
+    assert(ready.info || ready.turn, `gateway ${name} must obtain a public mapping`);
   }
-  for (const peer of peers.filter(p => !(scenario.members ?? []).includes(p.name))) {
+  for (const peer of peers.filter(p => !headless.includes(p.name))) {
     const peerKind = kindFor(peer.name), exe = playwright[peerKind].executablePath();
     const wrapper = `${labDir}/browser-${peer.name}.sh`;
     await writeFile(wrapper, `#!/bin/sh\nexec ip netns exec pl-${peer.name} '${exe.replaceAll("'", "'\\''")}' "$@"\n`, { mode: 0o700 });
@@ -92,8 +106,9 @@ try {
   const t0 = Date.now();
   for (const p of launched) {
     if ((scenario.gateways ?? []).includes(p.name)) await p.page.exposeFunction('freehopTestCredentials', gatewayProcs.get(p.name).credentialsFor);
+    const turn = (scenario.turns ?? []).flatMap(name => gatewayProcs.get(name).turn ?? []);
     await openAndJoin(p, services.origin, { gates: [services.gateUrl], stun: services.gate.stunUrls, secret, app: 'lab', media: { audio: true, video: true },
-      gateway: (scenario.gateways ?? []).includes(p.name) ? gatewayProcs.get(p.name).info : undefined });
+      gateway: (scenario.gateways ?? []).includes(p.name) ? gatewayProcs.get(p.name).info : undefined, ...(scenario.options ?? {}), ...(turn.length ? { turn } : {}) });
   }
   const idName = Object.fromEntries([...launched.map(p => [p.id, p.name]), ...[...gatewayProcs].filter(([, g]) => g.member).map(([n, g]) => [g.member, n])]);
   const pairs = Object.keys(scenario.expect);
@@ -157,7 +172,7 @@ try {
   for (const [name, g] of gatewayProcs) report.peers[name].gateway.turn = g.messages.filter(m => m.type === 'stats').at(-1)?.stats?.turn ?? null;
   report.natCounters = {};
   for (const peer of peers.filter(p => p.profile !== 'public')) {
-    if ((scenario.members ?? []).includes(peer.name)) continue;
+    if (headless.includes(peer.name)) continue;
     report.natCounters[peer.name] = execFileSync('ip', ['netns', 'exec', 'pl-r' + peer.name, 'iptables', '-L', 'FORWARD', '-v', '-n', '-x'], { encoding: 'utf8' })
       .split('\n').filter(l => /DROP|ACCEPT/.test(l)).map(l => l.trim().replace(/\s+/g, ' ')).slice(0, 6);
   }
@@ -168,10 +183,13 @@ try {
       if (want === 'none') assert.ok(!flowing(side) && !side.connected, `${pair}: ${name} must not receive media (boundary case)`);
       else {
         assert.ok(want.includes(side.path), `${pair}: ${name} path ${side.path} not in ${want}`);
+        if (scenario.expectVia) assert.equal(side.via, scenario.expectVia, `${pair}: ${name} relay must be ${scenario.expectVia}`);
         assert.ok(flowing(side), `${pair}: ${name} audio/video must flow (a=${side.audioPackets} v=${side.videoFrames})`);
       }
     }
   }
+  for (const counter of scenario.absentCounters ?? []) for (const p of launched)
+    assert.equal(report.peers[p.name].counters?.[counter], undefined, `${p.name}: ${counter} must stay absent`);
   if (scenario.requireIpv6) for (const pair of pairs) for (const [n, side] of Object.entries(result[pair]))
     assert.ok(Object.values(report.peers).length && /:/.test(String(final.find(e => e.p.name === n).stats.links[0]?.path.remoteAddress ?? '')), `${pair}: ${n} must use an IPv6 route`);
   // The gate is signalling-only: its total traffic stays tiny and no gate ever relays media.

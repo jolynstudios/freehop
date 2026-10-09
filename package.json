@@ -71,14 +71,16 @@
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "test:browsers": "node test/browser/smoke.mjs chromium,firefox,webkit --tls && node test/browser/multigate.mjs && node test/browser/rekey.mjs && node test/browser/example-app.mjs",
+    "test:browsers": "node test/browser/smoke.mjs chromium,firefox,webkit --tls && node test/browser/multigate.mjs && node test/browser/rekey.mjs && node test/browser/example-app.mjs && node test/browser/turn-rung.mjs",
     "unitgate": "node tools/unitgate.mjs",
     "exportsgate": "node tools/exportsgate.mjs",
     "docsyncgate": "node tools/docsyncgate.mjs",
     "ship": "node tools/ship.mjs",
     "gate": "node bin/freehop-gate.mjs",
     "example": "node examples/minimal/server.mjs",
-    "typesgate": "node tools/typesgate.mjs"
+    "typesgate": "node tools/typesgate.mjs",
+    "contractgate": "node tools/contractgate.mjs",
+    "laddergate": "node tools/laddergate.mjs"
   },
   "author": "Jolyn Studios",
   "homepage": "https://jolynstudios.github.io/freehop/",

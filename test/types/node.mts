@@ -89,6 +89,13 @@ verifyGateToken('secret', signed);
 token('secret', {exp: 123});
 decodeTicket(encodeTicket(ticket));
 validTicket(ticket);
+const relayAuthority = createAuthority({app: 'test', gates: ['wss://example.com/gate'], turn: [{urls: 'turn:turn.example.com:3478', username: 'u', credential: 'c'}]});
+const minted = createAuthority({app: 'test', gates: ['wss://example.com/gate'], turn: async ({roomId, member, expires}) => [{urls: ['turn:turn.example.com:3478'], username: `${expires}:${roomId}:${member ?? 'host'}`, credential: 'c'}]});
+const relayTicket = await minted.ticket('room', 'member');
+const relayUrls: string | string[] | undefined = relayTicket.turn?.[0].urls;
+await relayAuthority.openRoom('room');
+// @ts-expect-error turn servers are objects with credentials
+createAuthority({app: 'test', gates: ['wss://example.com/gate'], turn: ['turn:turn.example.com:3478']});
 // @ts-expect-error expiry is required
 mintGateToken('secret', {room: 'a'});
 // @ts-expect-error no imaginary relay scope

@@ -36,6 +36,12 @@ export interface DesktopGateway {
   revokePeer(tag: string, peer: string): Promise<void>;
   revokeRoom(tag: string): Promise<void>;
 }
+/** An application TURN server for the opt-in relay rung (for example short-lived credentials from your TURN provider). */
+export interface TurnServer {
+  urls: string | string[];
+  username: string;
+  credential: string;
+}
 export interface RotationOptions {
   dropped?: string[];
 }

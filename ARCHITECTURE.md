@@ -111,6 +111,10 @@ stateDiagram-v2
   - `bridged`: a participant forwards the media.
 - **Refresh.** Classification is retried while browser stats settle and refreshed every 5 s.
   This also catches later route upgrades.
+- **Opt-in rungs.** Before a pair is reported unreachable, an application may enable port
+  prediction (`portPrediction`, for NATs that allocate ports in order) and its own TURN relay
+  (`turn`, reported as `relay` via `'turn'`). Both reuse the restart rules above, add no phase,
+  envelope kind or path kind, and fall through to unreachable on failure (PROTOCOL.md §7a).
 
 ## 4. Gateways
 

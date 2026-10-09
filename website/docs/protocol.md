@@ -25,7 +25,7 @@ The [SDK reference](./sdk/authority.mdx) covers usage, and the [network test res
 | **Gateway** | A peer's own machine (desktop app main process) or the session's host node; a TURN server plus router port mapping | Relayed packets of the session's peers, DTLS-SRTP encrypted end to end | Anything for peers outside its session (credentials are per room and per peer) |
 | **Gateway member** | The session's host node (a participant's desktop app, or a community server hosting the session) | Joins the room through gates without media and offers its gateway | Media of its own |
 
-Cost rule: a byte of media only crosses machines that belong to the call. These are the two endpoints, another participant, or the session's own host. The operator's gate traffic is bounded by construction (§4.6) and measured in every home-lab network test run.
+Cost rule: a byte of media only crosses machines that belong to the call. These are the two endpoints, another participant, or the session's own host. The operator's gate traffic is bounded by construction (§4.6) and measured in every home-lab network test run. The opt-in application TURN rung (§7a) is the only exception, and only when the application configures it: that pair's media then also crosses the application's TURN server, still DTLS-SRTP encrypted end to end.
 
 ## 2. Identifiers and keys
 
@@ -107,6 +107,7 @@ A gate frame is at most 64 KiB and a box at most 48 KiB. Each socket gets a toke
 - `peers` lists the sender's connected links. It is used for mesh routing and introductions.
 - `forward` means the sender may bridge other pairs (§9).
 - `gateway` holds credentials minted **for the recipient** (§8.2). A gateway member sets `role:"gateway"`.
+- `nat` (`{type:"eim"|"sequential"|"random", delta}`) is present only when the sender enabled NAT classification (§7a); `delta` is the port step (1–16) of a `sequential` NAT and 0 otherwise. Receivers that did not opt in drop it.
 
 A peer sends caps to every peer it discovers (through gates), on every new data channel, and when its link set changes. It also embeds caps in every `description` envelope.
 
@@ -139,7 +140,19 @@ Negotiation follows W3C *perfect negotiation*. The peer with the lexicographical
 - Departures: a member that has been absent from every gate for 8 s, and whose link is not connected, is dropped as `gone`. Its replay window is kept, and it may return by authenticating again. `bye` and kicks are final.
 - On `disconnected` the link waits 4 s, then restarts. On `failed` it restarts immediately. Both follow the single-initiator rule.
 
-Path classification uses the selected candidate pair: `direct` (no relay on either side), `gateway` (relay owned by one endpoint), `relay` (relay owned by another session member), `bridged` (§9) or `unreachable`. A local peer-reflexive candidate whose `relayProtocol` is set still rides a relay.
+Path classification uses the selected candidate pair: `direct` (no relay on either side), `gateway` (relay owned by one endpoint), `relay` (relay owned by another session member, or with `via: 'turn'` the application's TURN relay, §7a), `bridged` (§9) or `unreachable`. A local peer-reflexive candidate whose `relayProtocol` is set still rides a relay.
+
+### 7a. Opt-in rungs before `unreachable`
+
+Three options, all off by default, add rungs exactly where §7 would report `unreachable` (no untried session gateway and no active bridge). With none set, signalling, timings, ICE servers and events are unchanged; `tools/laddergate.mjs` checks this against traces recorded before the rungs existed.
+
+| Option | What it does | Budget |
+|---|---|---|
+| `classifyNat` | Each ICE generation's srflx candidates from up to three `stun:` servers classify this endpoint's NAT: one port for every answering server is `eim`, ports a regular step of 1–16 apart are `sequential`, anything else is `random`. The verdict is shared in caps (§5) and reported as `stats().nat`. | none |
+| `portPrediction` (implies `classifyNat`) | Tried once per link when one side is `sequential` and the other `eim` or `sequential`. The link restarts ICE; the side whose peer is `sequential` then adds remote candidates for the peer's next ports above its highest srflx port (8 per srflx candidate by default, at most 16 per generation). The predicted candidates are added locally; nothing extra is signalled. | `timing.predictMs`, 10 s |
+| `turn` | The application's TURN servers join that link's ICE servers and the link restarts ICE. The path reports `relay` with `via: 'turn'`. | `timing.turnMs`, 10 s |
+
+Order: prediction, then TURN, then `unreachable` with the usual backoff. Both rungs reuse the restart rules of §7 (impolite side first, polite side after `restartFallbackMs`). A rung that fails, for example a TURN URL the browser refuses, is counted (`rungErrors`, `turnErrors`) and the link falls through to `unreachable` in the same escalation. There is no new phase, envelope kind or path kind. Random NATs are never predicted: two of them need a relay.
 
 ## 8. Gateways
 
@@ -191,7 +204,7 @@ A forwarder is a participant of the same call, so it already receives both media
 
 The [SDK](./sdk/authority.mdx) describes how applications consume the protocol:
 
-- an **authority** (application backend) issues per-member **tickets** `{v, app, roomId, epoch, gates, secret, auth?, stun?, expires}` and rotates the room on kick;
+- an **authority** (application backend) issues per-member **tickets** `{v, app, roomId, epoch, gates, secret, auth?, stun?, expires, turn?}` and rotates the room on kick;
 - clients `connect(ticket)` and `update(newTicket, {dropped})`;
 - hosts run `hostSession(ticket)` (gateway member);
 - desktop apps expose their gateway through the Electron preload (`window.freehopGateway`, restricted by exact HTTPS origins (HTTP only on loopback) in both the preload and main-process IPC handlers; subframes are rejected).
@@ -208,12 +221,14 @@ The [SDK](./sdk/authority.mdx) describes how applications consume the protocol:
 - **Gates** learn: socket IP addresses, opaque room tags and peer ids, envelope sizes and timing. They cannot read SDP, ICE candidates, caps or credentials. They cannot forge or re-route envelopes without detection, and cannot inject peers into a room. A hostile gate can drop or delay traffic; using several gates mitigates that.
 - **Room members** are mutually trusted for signalling: any member can forge envelopes in the room's name. Per-peer signatures are a possible v2 addition. Removal requires a secret rotation (§2). SDK ticket expiry does not erase copies of the shared secret or end established media; it is not a replacement for rotation.
 - **Gateways**: credentials are per peer and short-lived. The peer policy prevents use as a proxy into private networks. Quotas: 6 allocations per username, 4 Mbit/s per allocation, 32 allocations and 20 Mbit/s per room, 40 Mbit/s in total, separately per direction; at most 64 allocations overall. By default a gateway relays only between allocations on itself, so a member cannot use its credentials to reach other internet hosts (§8.3). Expiry blocks further authenticated requests; existing allocations may continue until their granted lifetime ends. Revocation ends them immediately, and a participant's desktop gateway releases a room when the participant leaves.
+- **Opt-in traversal aids** (§7a): with `classifyNat`, room members learn the sender's NAT type. Port prediction adds at most 16 predicted remote candidates per ICE generation, only for the peer that link already negotiates with. An application TURN relay sees the IP addresses, timing and DTLS-SRTP-encrypted packets of the pairs that use it. TURN servers come only from the ticket or the application's options, never from gates or caps.
 - **IP privacy**: direct paths expose network addresses to other participants. Gate and tracker operators also see connecting IP addresses. The SDK does not provide an IP-anonymity mode.
 
 ## 12. Known limits
 
-- A network that permits traffic only to the gate host cannot carry media without the gate operator carrying it. Freehop reports `unreachable`. A separate session gateway can help only if its media transport is reachable under the network’s rules. Hosting it beside a gate does not by itself bypass those rules; gates remain signalling-only.
-- Two browser-only participants that are both behind hard NATs or UDP-blocking networks, with no IPv6, no gateway in the session and no third participant, cannot connect. A session host node reachable by both endpoints can provide a TURN relay path.
+- A network that permits traffic only to the gate host cannot carry media without the gate operator carrying it. Freehop reports `unreachable`. A separate session gateway can help only if its media transport is reachable under the network’s rules. Hosting it beside a gate does not by itself bypass those rules; gates remain signalling-only. The same holds for an application TURN relay (§7a): it helps only if this network can reach it.
+- Two browser-only participants that are both behind hard NATs or UDP-blocking networks, with no IPv6, no gateway in the session and no third participant, cannot connect. A session host node reachable by both endpoints can provide a TURN relay path, and so can the application's own TURN relay (§7a, opt-in). Port prediction (§7a, opt-in) can connect such a pair directly when one NAT allocates ports in order and the other keeps one mapping (two sequential NATs: best effort); two random NATs always need a relay.
+- NAT classification needs at least two `stun:` servers at different addresses. Browsers report a repeated srflx address once, so `eim` is inferred from the absence of STUN errors and may be wrong in browsers that do not report them; a wrong verdict costs one extra ICE restart.
 - Chromium, home-lab browser finding: simultaneous ICE restarts (glare) intermittently left the polite side's RTP senders silent after its restart offer was rolled back. Freehop avoids simultaneous restarts (§7).
 - Playwright 1.62's WebKit build rejects `?transport=` in TURN URLs (WebKit bug 320931). The client detects this and degrades to UDP-only TURN URLs for that engine.
 - Desktop apps can alternatively pin WebRTC's UDP port range (`webContents.setWebRTCUDPPortRange`, Electron 28 and newer) and map it directly. Freehop's gateway approach needs no Chromium cooperation.

@@ -1,0 +1,6375 @@
+{
+  "scenarios": {
+    "bridged": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 1,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 2,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": true,
+            "path": {
+              "kind": "direct",
+              "via": null
+            },
+            "peer": "C",
+            "phase": 0,
+            "restarts": 0,
+            "retries": 0
+          },
+          {
+            "connected": false,
+            "path": {
+              "kind": "bridged",
+              "via": "C"
+            },
+            "peer": "B",
+            "phase": 2,
+            "restarts": 1,
+            "retries": 1
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "C",
+          "t": 0
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc1",
+          "t": 0
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "C",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "C"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 0,
+          "type": "offer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 0,
+          "to": "C"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 5,
+          "to": "C"
+        },
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 10
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc2",
+          "t": 10
+        },
+        {
+          "call": "bind",
+          "pc": "pc2",
+          "peer": "B",
+          "t": 10
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 10,
+          "to": "C"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc2",
+          "t": 10,
+          "type": "offer",
+          "ufrag": "pc2g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc2g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 10,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc2g1"
+          },
+          "out": "candidate",
+          "t": 15,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc2g1"
+          },
+          "out": "candidate",
+          "t": 20,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 60,
+          "type": "answer",
+          "ufrag": "Cr1"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc2",
+          "t": 70,
+          "type": "answer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Cr1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Cr1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc2",
+          "t": 80,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc2",
+          "t": 80,
+          "ufrag": "Br1"
+        },
+        {
+          "connected": true,
+          "event": "link",
+          "peer": "C",
+          "t": 270
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 270,
+          "to": "C"
+        },
+        {
+          "bytesReceived": 1300,
+          "bytesSent": 1200,
+          "event": "path",
+          "kind": "direct",
+          "local": "srflx",
+          "localAddress": "203.0.113.10",
+          "peer": "C",
+          "protocol": "udp",
+          "relayProtocol": null,
+          "relayUrl": null,
+          "remote": "srflx",
+          "remoteAddress": "198.51.100.20",
+          "rtt": 0.04,
+          "t": 270,
+          "via": null
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [
+              "C"
+            ],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 520,
+          "to": "C"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [
+              "C"
+            ],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 520,
+          "to": "B"
+        },
+        {
+          "event": "path",
+          "kind": "connecting",
+          "peer": "B",
+          "phase": 2,
+          "t": 5010
+        },
+        {
+          "a": "A",
+          "b": "B",
+          "out": "bridge-request",
+          "t": 5010,
+          "to": "C"
+        },
+        {
+          "a": "A",
+          "b": "B",
+          "out": "bridge-accept",
+          "t": 5040,
+          "to": "C"
+        },
+        {
+          "event": "path",
+          "kind": "bridged",
+          "peer": "B",
+          "t": 5070,
+          "via": "C"
+        },
+        {
+          "event": "path",
+          "kind": "bridged",
+          "peer": "B",
+          "t": 35010,
+          "via": "C"
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc2",
+          "t": 35010
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc2",
+          "t": 35010,
+          "type": "offer",
+          "ufrag": "pc2g2"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [
+              "C"
+            ],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc2g2"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 35010,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50002 typ host generation 0",
+            "ufrag": "pc2g2"
+          },
+          "out": "candidate",
+          "t": 35015,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50002 generation 0",
+            "ufrag": "pc2g2"
+          },
+          "out": "candidate",
+          "t": 35020,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc2",
+          "t": 35070,
+          "type": "answer",
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc2",
+          "t": 35080,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc2",
+          "t": 35080,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 40000
+        },
+        {
+          "call": "close",
+          "pc": "pc2",
+          "t": 40000
+        }
+      ]
+    },
+    "classify-sequential": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 0,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "natSamples": 1,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": true,
+            "path": {
+              "kind": "direct",
+              "via": null
+            },
+            "peer": "B",
+            "phase": 0,
+            "restarts": 0,
+            "retries": 0
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 0
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc1",
+          "t": 0
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 0,
+          "type": "offer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 5,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40001 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 10,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40002 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 15,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 60,
+          "type": "answer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "nat": {
+              "delta": 1,
+              "type": "sequential"
+            },
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 270,
+          "to": "B"
+        },
+        {
+          "connected": true,
+          "event": "link",
+          "peer": "B",
+          "t": 270
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "nat": {
+              "delta": 1,
+              "type": "sequential"
+            },
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 270,
+          "to": "B"
+        },
+        {
+          "bytesReceived": 1300,
+          "bytesSent": 1200,
+          "event": "path",
+          "kind": "direct",
+          "local": "srflx",
+          "localAddress": "203.0.113.10",
+          "peer": "B",
+          "protocol": "udp",
+          "relayProtocol": null,
+          "relayUrl": null,
+          "remote": "srflx",
+          "remoteAddress": "198.51.100.20",
+          "rtt": 0.04,
+          "t": 270,
+          "via": null
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "nat": {
+              "delta": 1,
+              "type": "sequential"
+            },
+            "peers": [
+              "B"
+            ],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 520,
+          "to": "B"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 20000
+        }
+      ]
+    },
+    "direct-impolite": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 0,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": true,
+            "path": {
+              "kind": "direct",
+              "via": null
+            },
+            "peer": "B",
+            "phase": 0,
+            "restarts": 0,
+            "retries": 0
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 0
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc1",
+          "t": 0
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 0,
+          "type": "offer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 5,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 10,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 60,
+          "type": "answer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "connected": true,
+          "event": "link",
+          "peer": "B",
+          "t": 270
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 270,
+          "to": "B"
+        },
+        {
+          "bytesReceived": 1300,
+          "bytesSent": 1200,
+          "event": "path",
+          "kind": "direct",
+          "local": "srflx",
+          "localAddress": "203.0.113.10",
+          "peer": "B",
+          "protocol": "udp",
+          "relayProtocol": null,
+          "relayUrl": null,
+          "remote": "srflx",
+          "remoteAddress": "198.51.100.20",
+          "rtt": 0.04,
+          "t": 270,
+          "via": null
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [
+              "B"
+            ],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 520,
+          "to": "B"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 20000
+        }
+      ]
+    },
+    "direct-polite": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 0,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": true,
+            "path": {
+              "kind": "direct",
+              "via": null
+            },
+            "peer": "B",
+            "phase": 0,
+            "restarts": 0,
+            "retries": 0
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc1",
+          "t": 200
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 200
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 200,
+          "type": "offer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 200,
+          "type": "answer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "answer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 200,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 205,
+          "to": "B"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 210,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 210,
+          "ufrag": "Br1"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 210,
+          "to": "B"
+        },
+        {
+          "connected": true,
+          "event": "link",
+          "peer": "B",
+          "t": 410
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 410,
+          "to": "B"
+        },
+        {
+          "bytesReceived": 1300,
+          "bytesSent": 1200,
+          "event": "path",
+          "kind": "direct",
+          "local": "srflx",
+          "localAddress": "203.0.113.10",
+          "peer": "B",
+          "protocol": "udp",
+          "relayProtocol": null,
+          "relayUrl": null,
+          "remote": "srflx",
+          "remoteAddress": "198.51.100.20",
+          "rtt": 0.04,
+          "t": 410,
+          "via": null
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [
+              "B"
+            ],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 660,
+          "to": "B"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 20000
+        }
+      ]
+    },
+    "failed": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 0,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": true,
+            "path": {
+              "kind": "direct",
+              "via": null
+            },
+            "peer": "B",
+            "phase": 0,
+            "restarts": 1,
+            "retries": 0
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 0
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc1",
+          "t": 0
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 0,
+          "type": "offer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 5,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 10,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 60,
+          "type": "answer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "connected": true,
+          "event": "link",
+          "peer": "B",
+          "t": 270
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 270,
+          "to": "B"
+        },
+        {
+          "bytesReceived": 1300,
+          "bytesSent": 1200,
+          "event": "path",
+          "kind": "direct",
+          "local": "srflx",
+          "localAddress": "203.0.113.10",
+          "peer": "B",
+          "protocol": "udp",
+          "relayProtocol": null,
+          "relayUrl": null,
+          "remote": "srflx",
+          "remoteAddress": "198.51.100.20",
+          "rtt": 0.04,
+          "t": 270,
+          "via": null
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [
+              "B"
+            ],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 520,
+          "to": "B"
+        },
+        {
+          "connected": false,
+          "event": "link",
+          "peer": "B",
+          "t": 10000
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 10000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 10000,
+          "type": "offer",
+          "ufrag": "pc1g2"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g2"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 10000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50002 typ host generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 10005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50002 generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 10010,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 10060,
+          "type": "answer",
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 10070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 10070,
+          "ufrag": "Br2"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 10250,
+          "to": "B"
+        },
+        {
+          "connected": true,
+          "event": "link",
+          "peer": "B",
+          "t": 10270
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [
+              "B"
+            ],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 10520,
+          "to": "B"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 40000
+        }
+      ]
+    },
+    "grace": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 2,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": false,
+            "path": {
+              "kind": "unreachable",
+              "via": null
+            },
+            "peer": "B",
+            "phase": 1,
+            "restarts": 2,
+            "retries": 2
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 0
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc1",
+          "t": 0
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 0,
+          "type": "offer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 5,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 10,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 60,
+          "type": "answer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 10000
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 10000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 10000,
+          "type": "offer",
+          "ufrag": "pc1g2"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g2"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 10000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50002 typ host generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 10005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50002 generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 10010,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 10060,
+          "type": "answer",
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 10070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 10070,
+          "ufrag": "Br2"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 47000
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 47000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 47000,
+          "type": "offer",
+          "ufrag": "pc1g3"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g3"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 47000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50003 typ host generation 0",
+            "ufrag": "pc1g3"
+          },
+          "out": "candidate",
+          "t": 47005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50003 generation 0",
+            "ufrag": "pc1g3"
+          },
+          "out": "candidate",
+          "t": 47010,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 47060,
+          "type": "answer",
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 47070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 47070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 60000
+        }
+      ]
+    },
+    "offer-timeout": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 2,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "negotiationErrors": 0,
+          "offerTimeouts": 7,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": false,
+            "path": {
+              "kind": "unreachable",
+              "via": null
+            },
+            "peer": "B",
+            "phase": 1,
+            "restarts": 8,
+            "retries": 2
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 0
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc1",
+          "t": 0
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 0,
+          "type": "offer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 5,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 10,
+          "to": "B"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 5000
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 5000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 8000,
+          "type": "rollback"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 8000,
+          "type": "offer",
+          "ufrag": "pc1g2"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g2"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 8000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50002 typ host generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 8005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50002 generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 8010,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 16000,
+          "type": "rollback"
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 16000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 16000,
+          "type": "offer",
+          "ufrag": "pc1g3"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g3"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 16000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50003 typ host generation 0",
+            "ufrag": "pc1g3"
+          },
+          "out": "candidate",
+          "t": 16005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50003 generation 0",
+            "ufrag": "pc1g3"
+          },
+          "out": "candidate",
+          "t": 16010,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 24000,
+          "type": "rollback"
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 24000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 24000,
+          "type": "offer",
+          "ufrag": "pc1g4"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g4"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 24000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50004 typ host generation 0",
+            "ufrag": "pc1g4"
+          },
+          "out": "candidate",
+          "t": 24005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50004 generation 0",
+            "ufrag": "pc1g4"
+          },
+          "out": "candidate",
+          "t": 24010,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 32000,
+          "type": "rollback"
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 32000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 32000,
+          "type": "offer",
+          "ufrag": "pc1g5"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g5"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 32000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50005 typ host generation 0",
+            "ufrag": "pc1g5"
+          },
+          "out": "candidate",
+          "t": 32005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50005 generation 0",
+            "ufrag": "pc1g5"
+          },
+          "out": "candidate",
+          "t": 32010,
+          "to": "B"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 35000
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 35000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 40000,
+          "type": "rollback"
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 40000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 40000,
+          "type": "offer",
+          "ufrag": "pc1g6"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g6"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 40000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50006 typ host generation 0",
+            "ufrag": "pc1g6"
+          },
+          "out": "candidate",
+          "t": 40005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50006 generation 0",
+            "ufrag": "pc1g6"
+          },
+          "out": "candidate",
+          "t": 40010,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 48000,
+          "type": "rollback"
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 48000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 48000,
+          "type": "offer",
+          "ufrag": "pc1g7"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g7"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 48000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50007 typ host generation 0",
+            "ufrag": "pc1g7"
+          },
+          "out": "candidate",
+          "t": 48005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50007 generation 0",
+            "ufrag": "pc1g7"
+          },
+          "out": "candidate",
+          "t": 48010,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 56000,
+          "type": "rollback"
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 56000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 56000,
+          "type": "offer",
+          "ufrag": "pc1g8"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g8"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 56000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50008 typ host generation 0",
+            "ufrag": "pc1g8"
+          },
+          "out": "candidate",
+          "t": 56005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50008 generation 0",
+            "ufrag": "pc1g8"
+          },
+          "out": "candidate",
+          "t": 56010,
+          "to": "B"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 60000
+        }
+      ]
+    },
+    "own-gateway": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 0,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": true,
+            "path": {
+              "kind": "gateway",
+              "via": "A"
+            },
+            "peer": "B",
+            "phase": 0,
+            "restarts": 0,
+            "retries": 0
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 0
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            },
+            {
+              "credential": "c-own",
+              "urls": [
+                "turn:10.0.0.1:3478"
+              ],
+              "username": "1800007200:TTTTTTTT:self"
+            }
+          ],
+          "pc": "pc1",
+          "t": 0
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": {
+              "credential": "c-own",
+              "external": [
+                "198.18.0.10"
+              ],
+              "internal": "10.0.0.1",
+              "urls": [
+                "turn:198.18.0.10:3478"
+              ],
+              "username": "1800007200:TTTTTTTT:B"
+            },
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 0,
+          "type": "offer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": {
+              "credential": "c-own",
+              "external": [
+                "198.18.0.10"
+              ],
+              "internal": "10.0.0.1",
+              "urls": [
+                "turn:198.18.0.10:3478"
+              ],
+              "username": "1800007200:TTTTTTTT:B"
+            },
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 5,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 10,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:3 1 udp 41885439 198.18.1.10 60000 typ relay raddr 203.0.113.10 rport 40000 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 40,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 60,
+          "type": "answer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "connected": true,
+          "event": "link",
+          "peer": "B",
+          "t": 270
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": {
+              "credential": "c-own",
+              "external": [
+                "198.18.0.10"
+              ],
+              "internal": "10.0.0.1",
+              "urls": [
+                "turn:198.18.0.10:3478"
+              ],
+              "username": "1800007200:TTTTTTTT:B"
+            },
+            "peers": [
+              "B"
+            ],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 270,
+          "to": "B"
+        },
+        {
+          "bytesReceived": 1300,
+          "bytesSent": 1200,
+          "event": "path",
+          "kind": "gateway",
+          "local": "relay",
+          "localAddress": "198.18.0.10",
+          "peer": "B",
+          "protocol": "udp",
+          "relayProtocol": "udp",
+          "relayUrl": "turn:10.0.0.1:3478",
+          "remote": "srflx",
+          "remoteAddress": "198.51.100.20",
+          "rtt": 0.04,
+          "t": 270,
+          "via": "A"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": {
+              "credential": "c-own",
+              "external": [
+                "198.18.0.10"
+              ],
+              "internal": "10.0.0.1",
+              "urls": [
+                "turn:198.18.0.10:3478"
+              ],
+              "username": "1800007200:TTTTTTTT:B"
+            },
+            "peers": [
+              "B"
+            ],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 520,
+          "to": "B"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 20000
+        }
+      ]
+    },
+    "peer-gateway": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 0,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": true,
+            "path": {
+              "kind": "gateway",
+              "via": "B"
+            },
+            "peer": "B",
+            "phase": 0,
+            "restarts": 0,
+            "retries": 0
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 0
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            },
+            {
+              "credential": "c-b",
+              "urls": [
+                "turn:198.18.0.20:3478"
+              ],
+              "username": "u-b"
+            }
+          ],
+          "pc": "pc1",
+          "t": 0
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 0,
+          "type": "offer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 5,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 10,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:3 1 udp 41885439 198.18.1.10 60000 typ relay raddr 203.0.113.10 rport 40000 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 40,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 60,
+          "type": "answer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "connected": true,
+          "event": "link",
+          "peer": "B",
+          "t": 270
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 270,
+          "to": "B"
+        },
+        {
+          "bytesReceived": 1300,
+          "bytesSent": 1200,
+          "event": "path",
+          "kind": "gateway",
+          "local": "relay",
+          "localAddress": "198.18.0.20",
+          "peer": "B",
+          "protocol": "udp",
+          "relayProtocol": "udp",
+          "relayUrl": "turn:198.18.0.20:3478",
+          "remote": "srflx",
+          "remoteAddress": "198.51.100.20",
+          "rtt": 0.04,
+          "t": 270,
+          "via": "B"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [
+              "B"
+            ],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 520,
+          "to": "B"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 20000
+        }
+      ]
+    },
+    "predict-eim-to-sequential": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 1,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "natSamples": 2,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "predictAttempts": 1,
+          "predictCandidates": 9,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": true,
+            "path": {
+              "kind": "direct",
+              "via": null
+            },
+            "peer": "B",
+            "phase": 1,
+            "restarts": 1,
+            "retries": 0
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 0
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc1",
+          "t": 0
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 0,
+          "type": "offer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 5,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 10,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 60,
+          "type": "answer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41011 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:3 1 udp 1686052351 198.51.100.20 41012 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "nat": {
+              "delta": 0,
+              "type": "eim"
+            },
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 265,
+          "to": "B"
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 5000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 5000,
+          "type": "offer",
+          "ufrag": "pc1g2"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "nat": {
+              "delta": 0,
+              "type": "eim"
+            },
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g2"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 5000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50002 typ host generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 5005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50002 generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 5010,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 5060,
+          "type": "answer",
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41021 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p1 1 udp 1686052606 198.51.100.20 41022 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p2 1 udp 1686052605 198.51.100.20 41023 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p3 1 udp 1686052604 198.51.100.20 41024 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p4 1 udp 1686052603 198.51.100.20 41025 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p5 1 udp 1686052602 198.51.100.20 41026 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p6 1 udp 1686052601 198.51.100.20 41027 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p7 1 udp 1686052600 198.51.100.20 41028 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p8 1 udp 1686052599 198.51.100.20 41029 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:3 1 udp 1686052351 198.51.100.20 41022 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:3p8 1 udp 1686052343 198.51.100.20 41030 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "connected": true,
+          "event": "link",
+          "peer": "B",
+          "t": 5270
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "nat": {
+              "delta": 0,
+              "type": "eim"
+            },
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 5270,
+          "to": "B"
+        },
+        {
+          "bytesReceived": 1300,
+          "bytesSent": 1200,
+          "event": "path",
+          "kind": "direct",
+          "local": "srflx",
+          "localAddress": "203.0.113.10",
+          "peer": "B",
+          "protocol": "udp",
+          "relayProtocol": null,
+          "relayUrl": null,
+          "remote": "srflx",
+          "remoteAddress": "198.51.100.20",
+          "rtt": 0.04,
+          "t": 5270,
+          "via": null
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "nat": {
+              "delta": 0,
+              "type": "eim"
+            },
+            "peers": [
+              "B"
+            ],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 5520,
+          "to": "B"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 40000
+        }
+      ]
+    },
+    "predict-random-peer": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 2,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "natSamples": 3,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": false,
+            "path": {
+              "kind": "unreachable",
+              "via": null
+            },
+            "peer": "B",
+            "phase": 1,
+            "restarts": 2,
+            "retries": 2
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 0
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc1",
+          "t": 0
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 0,
+          "type": "offer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 5,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 10,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 60,
+          "type": "answer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41011 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:3 1 udp 1686052351 198.51.100.20 41012 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "nat": {
+              "delta": 0,
+              "type": "eim"
+            },
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 265,
+          "to": "B"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 5000
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 5000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 5000,
+          "type": "offer",
+          "ufrag": "pc1g2"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "nat": {
+              "delta": 0,
+              "type": "eim"
+            },
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g2"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 5000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50002 typ host generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 5005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50002 generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 5010,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 5060,
+          "type": "answer",
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41021 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:3 1 udp 1686052351 198.51.100.20 41022 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 35000
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 35000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 35000,
+          "type": "offer",
+          "ufrag": "pc1g3"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "nat": {
+              "delta": 0,
+              "type": "eim"
+            },
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g3"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 35000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50003 typ host generation 0",
+            "ufrag": "pc1g3"
+          },
+          "out": "candidate",
+          "t": 35005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50003 generation 0",
+            "ufrag": "pc1g3"
+          },
+          "out": "candidate",
+          "t": 35010,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 35060,
+          "type": "answer",
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 35070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41031 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 35070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:3 1 udp 1686052351 198.51.100.20 41032 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 35070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 40000
+        }
+      ]
+    },
+    "predict-then-turn": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 2,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "natSamples": 3,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "predictAttempts": 1,
+          "predictCandidates": 18,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "turnAttempts": 1,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": true,
+            "path": {
+              "kind": "relay",
+              "via": "turn"
+            },
+            "peer": "B",
+            "phase": 1,
+            "restarts": 2,
+            "retries": 0
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 0
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc1",
+          "t": 0
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 0,
+          "type": "offer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 5,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 10,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 60,
+          "type": "answer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41011 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:3 1 udp 1686052351 198.51.100.20 41012 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "nat": {
+              "delta": 0,
+              "type": "eim"
+            },
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 265,
+          "to": "B"
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 5000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 5000,
+          "type": "offer",
+          "ufrag": "pc1g2"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "nat": {
+              "delta": 0,
+              "type": "eim"
+            },
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g2"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 5000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50002 typ host generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 5005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50002 generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 5010,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 5060,
+          "type": "answer",
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41021 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p1 1 udp 1686052606 198.51.100.20 41022 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p2 1 udp 1686052605 198.51.100.20 41023 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p3 1 udp 1686052604 198.51.100.20 41024 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p4 1 udp 1686052603 198.51.100.20 41025 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p5 1 udp 1686052602 198.51.100.20 41026 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p6 1 udp 1686052601 198.51.100.20 41027 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p7 1 udp 1686052600 198.51.100.20 41028 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p8 1 udp 1686052599 198.51.100.20 41029 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:3 1 udp 1686052351 198.51.100.20 41022 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:3p8 1 udp 1686052343 198.51.100.20 41030 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "setConfiguration",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            },
+            {
+              "credential": "c-app",
+              "urls": [
+                "turn:turn.invalid:3478?transport=udp"
+              ],
+              "username": "u-app"
+            }
+          ],
+          "pc": "pc1",
+          "t": 15000
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 15000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 15000,
+          "type": "offer",
+          "ufrag": "pc1g3"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "nat": {
+              "delta": 0,
+              "type": "eim"
+            },
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g3"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 15000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50003 typ host generation 0",
+            "ufrag": "pc1g3"
+          },
+          "out": "candidate",
+          "t": 15005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50003 generation 0",
+            "ufrag": "pc1g3"
+          },
+          "out": "candidate",
+          "t": 15010,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:3 1 udp 41885439 198.18.1.10 60000 typ relay raddr 203.0.113.10 rport 40000 generation 0",
+            "ufrag": "pc1g3"
+          },
+          "out": "candidate",
+          "t": 15040,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 15060,
+          "type": "answer",
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 15070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41031 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 15070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p1 1 udp 1686052606 198.51.100.20 41032 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 15070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p2 1 udp 1686052605 198.51.100.20 41033 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 15070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p3 1 udp 1686052604 198.51.100.20 41034 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 15070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p4 1 udp 1686052603 198.51.100.20 41035 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 15070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p5 1 udp 1686052602 198.51.100.20 41036 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 15070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p6 1 udp 1686052601 198.51.100.20 41037 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 15070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p7 1 udp 1686052600 198.51.100.20 41038 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 15070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2p8 1 udp 1686052599 198.51.100.20 41039 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 15070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:3 1 udp 1686052351 198.51.100.20 41032 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 15070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:3p8 1 udp 1686052343 198.51.100.20 41040 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 15070,
+          "ufrag": "Br3"
+        },
+        {
+          "connected": true,
+          "event": "link",
+          "peer": "B",
+          "t": 15270
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "nat": {
+              "delta": 0,
+              "type": "eim"
+            },
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 15270,
+          "to": "B"
+        },
+        {
+          "bytesReceived": 1300,
+          "bytesSent": 1200,
+          "event": "path",
+          "kind": "relay",
+          "local": "relay",
+          "localAddress": "198.18.9.9",
+          "peer": "B",
+          "protocol": "udp",
+          "relayProtocol": "udp",
+          "relayUrl": "turn:turn.invalid:3478?transport=udp",
+          "remote": "srflx",
+          "remoteAddress": "198.51.100.20",
+          "rtt": 0.04,
+          "t": 15270,
+          "via": "turn"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "nat": {
+              "delta": 0,
+              "type": "eim"
+            },
+            "peers": [
+              "B"
+            ],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 15520,
+          "to": "B"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 60000
+        }
+      ]
+    },
+    "recovery": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 0,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": true,
+            "path": {
+              "kind": "direct",
+              "via": null
+            },
+            "peer": "B",
+            "phase": 0,
+            "restarts": 1,
+            "retries": 0
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 0
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc1",
+          "t": 0
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 0,
+          "type": "offer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 5,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 10,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 60,
+          "type": "answer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "connected": true,
+          "event": "link",
+          "peer": "B",
+          "t": 270
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 270,
+          "to": "B"
+        },
+        {
+          "bytesReceived": 1300,
+          "bytesSent": 1200,
+          "event": "path",
+          "kind": "direct",
+          "local": "srflx",
+          "localAddress": "203.0.113.10",
+          "peer": "B",
+          "protocol": "udp",
+          "relayProtocol": null,
+          "relayUrl": null,
+          "remote": "srflx",
+          "remoteAddress": "198.51.100.20",
+          "rtt": 0.04,
+          "t": 270,
+          "via": null
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [
+              "B"
+            ],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 520,
+          "to": "B"
+        },
+        {
+          "connected": false,
+          "event": "link",
+          "peer": "B",
+          "t": 10000
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 10250,
+          "to": "B"
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 14000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 14000,
+          "type": "offer",
+          "ufrag": "pc1g2"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g2"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 14000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50002 typ host generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 14005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50002 generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 14010,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 14060,
+          "type": "answer",
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 14070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 14070,
+          "ufrag": "Br2"
+        },
+        {
+          "connected": true,
+          "event": "link",
+          "peer": "B",
+          "t": 14270
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [
+              "B"
+            ],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 14520,
+          "to": "B"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 40000
+        }
+      ]
+    },
+    "session-gateway": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 1,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": true,
+            "path": {
+              "kind": "relay",
+              "via": "gw"
+            },
+            "peer": "B",
+            "phase": 1,
+            "restarts": 1,
+            "retries": 0
+          }
+        ]
+      },
+      "trace": [
+        {
+          "available": true,
+          "event": "gateway",
+          "id": "gw",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "gw"
+        },
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 10
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc1",
+          "t": 10
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 10
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 10,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 10,
+          "type": "offer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 10,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 15,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 20,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 70,
+          "type": "answer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 80,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 80,
+          "ufrag": "Br1"
+        },
+        {
+          "event": "path",
+          "kind": "connecting",
+          "peer": "B",
+          "phase": 1,
+          "t": 5010
+        },
+        {
+          "call": "setConfiguration",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            },
+            {
+              "credential": "c-gw",
+              "urls": [
+                "turn:198.18.0.30:3478"
+              ],
+              "username": "u-gw"
+            }
+          ],
+          "pc": "pc1",
+          "t": 5010
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 5010
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 5010,
+          "type": "offer",
+          "ufrag": "pc1g2"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g2"
+          },
+          "gateways": [
+            "gw"
+          ],
+          "out": "description",
+          "phase": 1,
+          "t": 5010,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50002 typ host generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 5015,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50002 generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 5020,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:3 1 udp 41885439 198.18.1.10 60000 typ relay raddr 203.0.113.10 rport 40000 generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 5050,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 5070,
+          "type": "answer",
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 5080,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5080,
+          "ufrag": "Br2"
+        },
+        {
+          "connected": true,
+          "event": "link",
+          "peer": "B",
+          "t": 5280
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 5280,
+          "to": "B"
+        },
+        {
+          "bytesReceived": 1300,
+          "bytesSent": 1200,
+          "event": "path",
+          "kind": "relay",
+          "local": "relay",
+          "localAddress": "198.18.0.30",
+          "peer": "B",
+          "protocol": "udp",
+          "relayProtocol": "udp",
+          "relayUrl": "turn:198.18.0.30:3478",
+          "remote": "srflx",
+          "remoteAddress": "198.51.100.20",
+          "rtt": 0.04,
+          "t": 5280,
+          "via": "gw"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [
+              "B"
+            ],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 5530,
+          "to": "B"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 40000
+        }
+      ]
+    },
+    "turn-configuration-refused": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 2,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "turnErrors": 1,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": false,
+            "path": {
+              "kind": "unreachable",
+              "via": null
+            },
+            "peer": "B",
+            "phase": 1,
+            "restarts": 2,
+            "retries": 2
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 0
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc1",
+          "t": 0
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 0,
+          "type": "offer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 5,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 10,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 60,
+          "type": "answer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 5000
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 5000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 5000,
+          "type": "offer",
+          "ufrag": "pc1g2"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g2"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 5000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50002 typ host generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 5005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50002 generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 5010,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 5060,
+          "type": "answer",
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 35000
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 35000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 35000,
+          "type": "offer",
+          "ufrag": "pc1g3"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g3"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 35000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50003 typ host generation 0",
+            "ufrag": "pc1g3"
+          },
+          "out": "candidate",
+          "t": 35005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50003 generation 0",
+            "ufrag": "pc1g3"
+          },
+          "out": "candidate",
+          "t": 35010,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 35060,
+          "type": "answer",
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 35070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 35070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 60000
+        }
+      ]
+    },
+    "turn-rung": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 1,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "turnAttempts": 1,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": true,
+            "path": {
+              "kind": "relay",
+              "via": "turn"
+            },
+            "peer": "B",
+            "phase": 1,
+            "restarts": 1,
+            "retries": 0
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 0
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc1",
+          "t": 0
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 0,
+          "type": "offer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 5,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 10,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 60,
+          "type": "answer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "setConfiguration",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            },
+            {
+              "credential": "c-app",
+              "urls": [
+                "turn:turn.invalid:3478?transport=udp"
+              ],
+              "username": "u-app"
+            }
+          ],
+          "pc": "pc1",
+          "t": 5000
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 5000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 5000,
+          "type": "offer",
+          "ufrag": "pc1g2"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g2"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 5000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50002 typ host generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 5005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50002 generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 5010,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:3 1 udp 41885439 198.18.1.10 60000 typ relay raddr 203.0.113.10 rport 40000 generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 5040,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 5060,
+          "type": "answer",
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "connected": true,
+          "event": "link",
+          "peer": "B",
+          "t": 5270
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 5270,
+          "to": "B"
+        },
+        {
+          "bytesReceived": 1300,
+          "bytesSent": 1200,
+          "event": "path",
+          "kind": "relay",
+          "local": "relay",
+          "localAddress": "198.18.9.9",
+          "peer": "B",
+          "protocol": "udp",
+          "relayProtocol": "udp",
+          "relayUrl": "turn:turn.invalid:3478?transport=udp",
+          "remote": "srflx",
+          "remoteAddress": "198.51.100.20",
+          "rtt": 0.04,
+          "t": 5270,
+          "via": "turn"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [
+              "B"
+            ],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 5520,
+          "to": "B"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 40000
+        }
+      ]
+    },
+    "turn-rung-polite": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 1,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "turnAttempts": 1,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": true,
+            "path": {
+              "kind": "relay",
+              "via": "turn"
+            },
+            "peer": "B",
+            "phase": 1,
+            "restarts": 1,
+            "retries": 0
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc1",
+          "t": 200
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 200
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 200,
+          "type": "offer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 200,
+          "type": "answer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "answer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 200,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 205,
+          "to": "B"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 210,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 210,
+          "ufrag": "Br1"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 210,
+          "to": "B"
+        },
+        {
+          "call": "setConfiguration",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            },
+            {
+              "credential": "c-app",
+              "urls": [
+                "turn:turn.invalid:3478?transport=udp"
+              ],
+              "username": "u-app"
+            }
+          ],
+          "pc": "pc1",
+          "t": 5200
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 7700
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 7700,
+          "type": "offer",
+          "ufrag": "pc1g2"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g2"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 7700,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50002 typ host generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 7705,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50002 generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 7710,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:3 1 udp 41885439 198.18.1.10 60000 typ relay raddr 203.0.113.10 rport 40000 generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 7740,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 7760,
+          "type": "answer",
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 7770,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 7770,
+          "ufrag": "Br2"
+        },
+        {
+          "connected": true,
+          "event": "link",
+          "peer": "B",
+          "t": 7970
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 7970,
+          "to": "B"
+        },
+        {
+          "bytesReceived": 1300,
+          "bytesSent": 1200,
+          "event": "path",
+          "kind": "relay",
+          "local": "relay",
+          "localAddress": "198.18.9.9",
+          "peer": "B",
+          "protocol": "udp",
+          "relayProtocol": "udp",
+          "relayUrl": "turn:turn.invalid:3478?transport=udp",
+          "remote": "srflx",
+          "remoteAddress": "198.51.100.20",
+          "rtt": 0.04,
+          "t": 7970,
+          "via": "turn"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [
+              "B"
+            ],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 8220,
+          "to": "B"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 40000
+        }
+      ]
+    },
+    "unreachable-backoff": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 6,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": false,
+            "path": {
+              "kind": "unreachable",
+              "via": null
+            },
+            "peer": "B",
+            "phase": 1,
+            "restarts": 6,
+            "retries": 6
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 0
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc1",
+          "t": 0
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 0,
+          "type": "offer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 5,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 10,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 60,
+          "type": "answer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 70,
+          "ufrag": "Br1"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 5000
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 5000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 5000,
+          "type": "offer",
+          "ufrag": "pc1g2"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g2"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 5000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50002 typ host generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 5005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50002 generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 5010,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 5060,
+          "type": "answer",
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 5070,
+          "ufrag": "Br2"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 35000
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 35000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 35000,
+          "type": "offer",
+          "ufrag": "pc1g3"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g3"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 35000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50003 typ host generation 0",
+            "ufrag": "pc1g3"
+          },
+          "out": "candidate",
+          "t": 35005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50003 generation 0",
+            "ufrag": "pc1g3"
+          },
+          "out": "candidate",
+          "t": 35010,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 35060,
+          "type": "answer",
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 35070,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 35070,
+          "ufrag": "Br3"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 95000
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 95000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 95000,
+          "type": "offer",
+          "ufrag": "pc1g4"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g4"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 95000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50004 typ host generation 0",
+            "ufrag": "pc1g4"
+          },
+          "out": "candidate",
+          "t": 95005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50004 generation 0",
+            "ufrag": "pc1g4"
+          },
+          "out": "candidate",
+          "t": 95010,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 95060,
+          "type": "answer",
+          "ufrag": "Br4"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 95070,
+          "ufrag": "Br4"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 95070,
+          "ufrag": "Br4"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 215000
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 215000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 215000,
+          "type": "offer",
+          "ufrag": "pc1g5"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g5"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 215000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50005 typ host generation 0",
+            "ufrag": "pc1g5"
+          },
+          "out": "candidate",
+          "t": 215005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50005 generation 0",
+            "ufrag": "pc1g5"
+          },
+          "out": "candidate",
+          "t": 215010,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 215060,
+          "type": "answer",
+          "ufrag": "Br5"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 215070,
+          "ufrag": "Br5"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 215070,
+          "ufrag": "Br5"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 455000
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 455000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 455000,
+          "type": "offer",
+          "ufrag": "pc1g6"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g6"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 455000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50006 typ host generation 0",
+            "ufrag": "pc1g6"
+          },
+          "out": "candidate",
+          "t": 455005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50006 generation 0",
+            "ufrag": "pc1g6"
+          },
+          "out": "candidate",
+          "t": 455010,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 455060,
+          "type": "answer",
+          "ufrag": "Br6"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 455070,
+          "ufrag": "Br6"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 455070,
+          "ufrag": "Br6"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 755000
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 755000
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 755000,
+          "type": "offer",
+          "ufrag": "pc1g7"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g7"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 755000,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50007 typ host generation 0",
+            "ufrag": "pc1g7"
+          },
+          "out": "candidate",
+          "t": 755005,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50007 generation 0",
+            "ufrag": "pc1g7"
+          },
+          "out": "candidate",
+          "t": 755010,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 755060,
+          "type": "answer",
+          "ufrag": "Br7"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 755070,
+          "ufrag": "Br7"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 755070,
+          "ufrag": "Br7"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 800000
+        }
+      ]
+    },
+    "unreachable-polite": {
+      "errors": [],
+      "final": {
+        "counters": {
+          "appDropped": 0,
+          "appReceived": 0,
+          "appSent": 0,
+          "bridgesServed": 0,
+          "bridgesUsed": 0,
+          "candidateErrors": 0,
+          "duplicates": 0,
+          "escalations": 4,
+          "linkErrors": 0,
+          "mediaStalls": 0,
+          "meshForwarded": 0,
+          "negotiationErrors": 0,
+          "offerTimeouts": 0,
+          "queued": 0,
+          "received": 0,
+          "rejected": 0,
+          "sent": 0,
+          "undeliverable": 0,
+          "viaGate": 0,
+          "viaIntroducer": 0,
+          "viaMesh": 0
+        },
+        "links": [
+          {
+            "connected": false,
+            "path": {
+              "kind": "unreachable",
+              "via": null
+            },
+            "peer": "B",
+            "phase": 1,
+            "restarts": 4,
+            "retries": 4
+          }
+        ]
+      },
+      "trace": [
+        {
+          "event": "peer",
+          "id": "B",
+          "t": 0
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "out": "caps",
+          "t": 0,
+          "to": "B"
+        },
+        {
+          "call": "new",
+          "iceServers": [
+            {
+              "urls": [
+                "stun:stun-a.invalid:3478",
+                "stun:stun-b.invalid:3478"
+              ]
+            }
+          ],
+          "pc": "pc1",
+          "t": 200
+        },
+        {
+          "call": "bind",
+          "pc": "pc1",
+          "peer": "B",
+          "t": 200
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 200,
+          "type": "offer",
+          "ufrag": "Br1"
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 200,
+          "type": "answer",
+          "ufrag": "pc1g1"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "answer",
+            "ufrag": "pc1g1"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 0,
+          "t": 200,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50001 typ host generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 205,
+          "to": "B"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 210,
+          "ufrag": "Br1"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 210,
+          "ufrag": "Br1"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50001 generation 0",
+            "ufrag": "pc1g1"
+          },
+          "out": "candidate",
+          "t": 210,
+          "to": "B"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 5200
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 7700
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 7700,
+          "type": "offer",
+          "ufrag": "pc1g2"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g2"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 7700,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50002 typ host generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 7705,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50002 generation 0",
+            "ufrag": "pc1g2"
+          },
+          "out": "candidate",
+          "t": 7710,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 7760,
+          "type": "answer",
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 7770,
+          "ufrag": "Br2"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 7770,
+          "ufrag": "Br2"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 35200
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 37700
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 37700,
+          "type": "offer",
+          "ufrag": "pc1g3"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g3"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 37700,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50003 typ host generation 0",
+            "ufrag": "pc1g3"
+          },
+          "out": "candidate",
+          "t": 37705,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50003 generation 0",
+            "ufrag": "pc1g3"
+          },
+          "out": "candidate",
+          "t": 37710,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 37760,
+          "type": "answer",
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 37770,
+          "ufrag": "Br3"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 37770,
+          "ufrag": "Br3"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 95200
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 97700
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 97700,
+          "type": "offer",
+          "ufrag": "pc1g4"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g4"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 97700,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50004 typ host generation 0",
+            "ufrag": "pc1g4"
+          },
+          "out": "candidate",
+          "t": 97705,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50004 generation 0",
+            "ufrag": "pc1g4"
+          },
+          "out": "candidate",
+          "t": 97710,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 97760,
+          "type": "answer",
+          "ufrag": "Br4"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 97770,
+          "ufrag": "Br4"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 97770,
+          "ufrag": "Br4"
+        },
+        {
+          "event": "path",
+          "kind": "unreachable",
+          "peer": "B",
+          "t": 215200
+        },
+        {
+          "call": "restartIce",
+          "pc": "pc1",
+          "t": 217700
+        },
+        {
+          "call": "setLocalDescription",
+          "pc": "pc1",
+          "t": 217700,
+          "type": "offer",
+          "ufrag": "pc1g5"
+        },
+        {
+          "caps": {
+            "forward": true,
+            "gateway": null,
+            "peers": [],
+            "v": 1
+          },
+          "description": {
+            "type": "offer",
+            "ufrag": "pc1g5"
+          },
+          "gateways": [],
+          "out": "description",
+          "phase": 1,
+          "t": 217700,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 udp 2122260223 10.0.0.1 50005 typ host generation 0",
+            "ufrag": "pc1g5"
+          },
+          "out": "candidate",
+          "t": 217705,
+          "to": "B"
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:2 1 udp 1686052607 203.0.113.10 40000 typ srflx raddr 10.0.0.1 rport 50005 generation 0",
+            "ufrag": "pc1g5"
+          },
+          "out": "candidate",
+          "t": 217710,
+          "to": "B"
+        },
+        {
+          "call": "setRemoteDescription",
+          "pc": "pc1",
+          "t": 217760,
+          "type": "answer",
+          "ufrag": "Br5"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:1 1 udp 2122260223 10.9.0.2 50100 typ host generation 0",
+          "pc": "pc1",
+          "t": 217770,
+          "ufrag": "Br5"
+        },
+        {
+          "call": "addIceCandidate",
+          "candidate": "candidate:2 1 udp 1686052607 198.51.100.20 41000 typ srflx raddr 10.9.0.2 rport 50100 generation 0",
+          "pc": "pc1",
+          "t": 217770,
+          "ufrag": "Br5"
+        },
+        {
+          "call": "close",
+          "pc": "pc1",
+          "t": 400000
+        }
+      ]
+    }
+  },
+  "schema": 1
+}

@@ -33,13 +33,14 @@ const authority = createAuthority({
   app: 'my-app',                                   // namespaces room keys
   gates: ['wss://example.com/freehop'],           // one or more gates (yours, community, bt+wss:// trackers)
   gateTokenSecrets: { 'wss://example.com/freehop': process.env.FREEHOP_GATE_TOKEN_SECRET },
-  stun: ['stun:example.com:3478']                    // application-approved discovery servers
+  stun: ['stun:example.com:3478'],                   // application-approved discovery servers
+  // turn: [{ urls: ['turn:turn.example.com:3478'], username, credential }]   // optional: see "When no route exists"
 });
 await authority.openRoom(roomId);                  // creates the room secret (never leaves the backend except in tickets)
 const ticket = await authority.ticket(roomId, memberId);   // for members your app admitted
 const { tickets } = await authority.kick(roomId, memberId); // rotates the secret; deliver new tickets to the rest
 ```
-A ticket (`{ v, app, roomId, epoch, gates, secret, auth?, stun?, expires }`) is a bearer credential for the
+A ticket (`{ v, app, roomId, epoch, gates, secret, auth?, stun?, expires, turn? }`) is a bearer credential for the
 room. Deliver it only to that member, over the application's own authenticated channel.
 `auth` maps exact gate URLs to audience-bound tokens; community gates without a configured signing key receive no token. `stun` lists approved STUN URLs: clients ignore gate-supplied STUN hints.
 `encodeTicket`/`decodeTicket` (`freehop/ticket`) turn it into a compact string.
@@ -65,7 +66,7 @@ import { connect } from 'freehop';
 const session = await connect(ticket, { media: { audio: true, video: false }, adaptiveVideo: true });
 session.on('peer', ({ id }) => …);                       // an authenticated member appeared
 session.on('track', ({ peer, track }) => session.attach(track, elementFor(peer)));
-session.on('path', ({ peer, kind, via }) => …);          // direct | gateway | relay | bridged | unreachable
+session.on('path', ({ peer, kind, via }) => …);          // direct | gateway | relay | bridged | unreachable (via 'turn': your TURN relay)
 session.on('peer-left', ({ id, reason }) => …);
 await session.setMicrophone(false); await session.setCamera(true);
 const levels = await session.levels();                   // speaking indicators
@@ -84,6 +85,28 @@ await session.leave();                   // also releases the room on a desktop 
 `adaptiveVideo` is opt-in and defaults to `false`. When enabled, Freehop uses per-link WebRTC statistics to lower video after sustained packet loss, dropped frames, encoder CPU limitation or a low outgoing bitrate estimate. It never changes audio. It can ask the other endpoint on that link to lower video too; peers that did not opt in ignore the request. Recovery requires 25 seconds of healthy samples and moves one level at a time. Severe sustained pressure can pause video; a minimal-quality probe checks for recovery before restoring it. A manual `setCamera(false)` remains authoritative.
 
 The `video-quality` event reports `{ peer, direction: 'send'|'receive', level: 'normal'|'reduced'|'minimal'|'paused', reason }`. `reason` is `monitoring`, `cpu`, `bandwidth`, `peer-request`, `recovery-probe`, `recovery` or `disabled`. Browser support and stats availability vary; missing measurements leave the current quality unchanged.
+
+### When no route exists (opt-in)
+
+By default a pair with no route inside the session reports `unreachable`. Three options add rungs at
+exactly that point; with none of them set, the ladder behaves as before (`tools/laddergate.mjs` checks
+this):
+
+- `classifyNat: true` learns from the srflx candidates the browser already gathers whether this
+  endpoint's NAT keeps one mapping (`eim`), allocates ports in order (`sequential`) or at random
+  (`random`), shares that with peers and reports it as `(await session.stats()).nat`. It needs at
+  least two `stun:` servers.
+- `portPrediction: true` (implies `classifyNat`) tries once, before `unreachable`, the next ports of a
+  peer whose NAT allocates in order, when the other side keeps one mapping or also allocates in order.
+  Random NATs are never predicted. It is off by default until it is proven on real carrier networks.
+- `turn: [{ urls, username, credential }]` is your own TURN relay, tried last. The path reports
+  `relay` with `via: 'turn'`. Tickets can carry it: `createAuthority({ turn })` takes the servers or a
+  function `({ roomId, member, expires }) => servers` that mints short-lived credentials per ticket.
+  `session.refresh()` applies fresh credentials from a reissued ticket, `session.setTurn(servers)`
+  replaces them directly, and `connect(ticket, { turn: null })` keeps TURN off whatever the ticket says.
+  Media through it stays DTLS-SRTP encrypted end to end, but that relay's bandwidth is yours: a
+  provider's free tier or Freehop's own TURN server (`freehop/turn`) on a machine you already run
+  keeps it at zero. Gates and peers can never supply TURN servers.
 
 Map your member ids to Freehop peer ids (`session.id`) in your backend, so that a kick can
 name the peer the remaining clients must drop.

@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 import type {Ticket} from './ticket.mjs';
+import type {MaybePromise, TurnServer} from '../shared/types.mjs';
 export interface AuthorityOptions {
   app: string;
   gates: string[];
   gateTokenSecret?: string;
   gateTokenSecrets?: Record<string, string>;
   stun?: string[];
+  /** Application TURN servers put into every ticket, or a function minting them per ticket. */
+  turn?: TurnServer[] | ((context: {roomId: string; member?: string; expires: number}) => MaybePromise<TurnServer[] | null | undefined>);
   ticketTtlSeconds?: number;
   maxRooms?: number;
 }

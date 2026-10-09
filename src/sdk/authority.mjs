@@ -11,12 +11,16 @@ import { randomBytes } from 'node:crypto';
 import { deriveRoom } from '../client/crypto.mjs';
 import { mintGateToken } from '../shared/tokens.mjs';
 import { validTicket } from './ticket.mjs';
+import { validTurnServers } from '../client/ice-urls.mjs';
 
-export function createAuthority({ app, gates, gateTokenSecret, gateTokenSecrets = {}, stun = [], ticketTtlSeconds = 6 * 3600, maxRooms = 10000 } = {}) {
+// turn (optional): application TURN servers for the opt-in relay rung, as an array or as a function
+// ({ roomId, member, expires }) => servers (sync or async) that mints short-lived credentials per ticket.
+export function createAuthority({ app, gates, gateTokenSecret, gateTokenSecrets = {}, stun = [], turn, ticketTtlSeconds = 6 * 3600, maxRooms = 10000 } = {}) {
   if (!app || !validTicket({ v: 1, app, gates, stun, roomId: '', epoch: 1, secret: 'x'.repeat(22), expires: Math.floor(Date.now() / 1000) + 60 }) ||
       !Number.isSafeInteger(ticketTtlSeconds) || ticketTtlSeconds < 1 || !Number.isSafeInteger(maxRooms) || maxRooms < 1)
     throw new TypeError('createAuthority needs valid { app, gates, ticketTtlSeconds, maxRooms }.');
   gates = [...gates]; stun = [...stun];
+  if (turn !== undefined && typeof turn !== 'function' && !validTurnServers(turn)) throw new TypeError('turn must be valid TURN servers or a function returning them');
   if (!gateTokenSecrets || typeof gateTokenSecrets !== 'object' || Array.isArray(gateTokenSecrets) || Object.keys(gateTokenSecrets).some(url => !gates.includes(url) || url.startsWith('bt+'))) throw new TypeError('gateTokenSecrets must map configured WebSocket gates to secrets');
   const gateKeys = gates.filter(url => !url.startsWith('bt+')).map(url => [url, gateTokenSecrets[url] ?? gateTokenSecret]).filter(([, key]) => key !== undefined);
   if (gateKeys.some(([, key]) => typeof key !== 'string' || !key.length)) throw new TypeError('Gate token secrets must be nonempty strings');
@@ -34,10 +38,13 @@ export function createAuthority({ app, gates, gateTokenSecret, gateTokenSecrets 
     const secret = randomBytes(32).toString('base64url');
     return { secret, tag: (await deriveRoom(secret, app)).tag };
   }
-  function issue(roomId, room) {
+  async function issue(roomId, room, member) {
     const expires = Math.floor(Date.now() / 1000) + ticketTtlSeconds;
+    const servers = typeof turn === 'function' ? await turn({ roomId, member, expires }) : turn;
+    if (servers !== undefined && servers !== null && !validTurnServers(servers)) throw new Error('turn() returned invalid TURN servers');
     const ticket = { v: 1, app, roomId, epoch: room.epoch, gates: [...gates], stun: [...stun], secret: room.secret, expires,
-      ...(gateKeys.length ? { auth: Object.fromEntries(gateKeys.map(([url, key]) => [url, mintGateToken(key, { exp: expires, room: room.tag, aud: url })])) } : {}) };
+      ...(gateKeys.length ? { auth: Object.fromEntries(gateKeys.map(([url, key]) => [url, mintGateToken(key, { exp: expires, room: room.tag, aud: url })])) } : {}),
+      ...(servers?.length ? { turn: servers.map(s => ({ urls: [].concat(s.urls), username: s.username, credential: s.credential })) } : {}) };
     if (!validTicket(ticket)) throw new Error('Refusing to issue an invalid ticket (check gate URLs and app name).');
     return ticket;
   }
@@ -62,7 +69,7 @@ export function createAuthority({ app, gates, gateTokenSecret, gateTokenSecrets 
       const room = rooms.get(roomId);
       if (!room) throw new Error(`Room ${roomId} is not open.`);
       if (member !== undefined) room.members.add(String(member));
-      return issue(roomId, room);
+      return issue(roomId, room, member === undefined ? undefined : String(member));
     }); },
     /** Remove a member: the room gets a new secret; every remaining member needs its new ticket. */
     kick(roomId, member) { return transaction(roomId, async () => {
@@ -71,8 +78,9 @@ export function createAuthority({ app, gates, gateTokenSecret, gateTokenSecrets 
       const next = { ...room, ...await keyRoom(), epoch: room.epoch + 1, members: new Set(room.members),
         previousTags: [...room.previousTags, room.tag].slice(-32) };
       next.members.delete(String(member));
-      const tickets = new Map([...next.members].map(m => [m, issue(roomId, next)]));
-      const hostTicket = issue(roomId, next);
+      const tickets = new Map();
+      for (const m of next.members) tickets.set(m, await issue(roomId, next, m));
+      const hostTicket = await issue(roomId, next);
       rooms.set(roomId, next);
       return { epoch: next.epoch, previousTags: [...next.previousTags], tickets, hostTicket };
     }); },

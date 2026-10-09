@@ -1,8 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-import type {ClientGateway, GateAuth, JsonValue, JsonCompatible, Log} from '../shared/types.mjs';
-export type {ClientGateway, GateAuth, JsonValue, JsonCompatible, Log} from '../shared/types.mjs';
+import type {ClientGateway, GateAuth, JsonValue, JsonCompatible, Log, TurnServer} from '../shared/types.mjs';
+export type {ClientGateway, GateAuth, JsonValue, JsonCompatible, Log, TurnServer} from '../shared/types.mjs';
 export type PathKind = 'connecting' | 'direct' | 'gateway' | 'relay' | 'bridged' | 'unreachable';
 export type VideoQualityLevel = 'normal' | 'reduced' | 'minimal' | 'paused';
+/** How this endpoint's NAT maps ports, from its own srflx candidates (classifyNat). */
+export type NatType = 'eim' | 'sequential' | 'random' | 'unknown';
+export interface NatInfo {
+  type: NatType;
+  /** Port step of a sequential allocator; 0 otherwise. */
+  delta: number;
+}
 export interface ConnectionPath {
   kind: PathKind;
   via?: string | null;
@@ -48,6 +55,10 @@ export interface RoomTiming {
   greetMs: number;
   outboxMs: number;
   sweepMs: number;
+  /** Port-prediction rung budget (default 10000). */
+  predictMs?: number;
+  /** Application TURN rung budget (default 10000). */
+  turnMs?: number;
 }
 export interface RoomLimits {
   audioBitrate: number;
@@ -59,6 +70,8 @@ export interface RoomLimits {
   maxBridges: number;
   meshForwardPerMinute: number;
   outboxPerPeer: number;
+  /** Predicted candidates per peer srflx candidate, 1-16 (default 8; at most 16 per ICE generation). */
+  predictPorts?: number;
 }
 export interface MediaOptions {
   audio?: boolean;
@@ -71,6 +84,12 @@ export interface MediaControls {
   stun?: string[];
   forward?: boolean;
   adaptiveVideo?: boolean;
+  /** Opt-in: learn this endpoint's NAT behaviour and share it with peers. */
+  classifyNat?: boolean;
+  /** Opt-in: before reporting unreachable, try predicted ports for peers whose NAT allocates in order. Implies classifyNat. */
+  portPrediction?: boolean;
+  /** Opt-in: the application's TURN relay, tried last before unreachable. */
+  turn?: TurnServer[] | null;
   timing?: Partial<RoomTiming>;
   limits?: Partial<RoomLimits>;
   log?: Log;
@@ -133,6 +152,8 @@ export interface RoomStats {
   links: LinkStats[];
   bridges: Array<{peer: string; via: string | null; state: string; requestedAt: number}>;
   relaying: Array<{a: string; b: string}>;
+  /** Present when classifyNat (or portPrediction) is enabled. */
+  nat?: NatInfo;
 }
 export interface PeerConnectionView {
   id: string;
@@ -157,14 +178,21 @@ export class Room {
   readonly timing: RoomTiming;
   readonly limits: RoomLimits;
   readonly adaptiveVideoEnabled: boolean;
+  readonly classifyNatEnabled: boolean;
+  readonly portPredictionEnabled: boolean;
+  /** Latest conclusive classification of this endpoint's NAT (classifyNat), or null. */
+  readonly nat: NatInfo | null;
+  readonly turnServers: Array<{urls: string[]; username: string; credential: string}> | null;
   readonly devices: {audio: string | null; video: string | null};
   on<E extends keyof RoomEvents>(event: E, handler: (detail: RoomEvents[E]) => void): () => void;
   off<E extends keyof RoomEvents>(event: E, handler: (detail: RoomEvents[E]) => void): void;
   start(): Promise<void>;
-  rekey(secret: string | Uint8Array, options?: {auth?: GateAuth; gates?: string[]; stun?: string[]}): Promise<void>;
+  rekey(secret: string | Uint8Array, options?: {auth?: GateAuth; gates?: string[]; stun?: string[]; turn?: TurnServer[] | null}): Promise<void>;
   drop(peer: string): void;
   send<T>(data: T & JsonCompatible<T>, options?: {to?: string}): Promise<number>;
   setGateway(gateway: ClientGateway | null): Promise<void>;
+  /** Replace the application TURN servers (fresh credentials); null removes them. */
+  setTurn(servers: TurnServer[] | null): void;
   setMedia(media: MediaOptions | MediaStream | null): Promise<void>;
   setMicrophone(enabled: boolean): Promise<void>;
   setCamera(enabled: boolean): Promise<void>;

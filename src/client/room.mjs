@@ -2,13 +2,15 @@
 // A room is the set of peers sharing one secret. Gates only introduce peers; once two peers
 // are linked, signalling flows over their own data channel. Media takes the cheapest
 // working path: direct (host/IPv6/srflx/prflx) or an endpoint's own gateway, then a gateway
-// run by another session member, then forwarding by another participant. No path ever uses
-// infrastructure outside the session's own peers.
+// run by another session member, then forwarding by another participant. No path uses
+// infrastructure outside the session's own peers unless the application opts into its own TURN
+// relay (the `turn` option), the last rung before `unreachable`.
 import { deriveRoom, seal, open, randomId } from './crypto.mjs';
 import { Emitter, GateClient } from './gate-client.mjs';
 import { TrackerClient } from './tracker-client.mjs';
-import { validIceUrl, validStunUrls } from './ice-urls.mjs';
+import { validIceUrl, validStunUrls, validTurnServers, normalizeTurnServers } from './ice-urls.mjs';
 import { PeerLink, PHASE } from './peer.mjs';
+import { classifyNat, cleanNat } from './nat.mjs';
 
 const PEER_ID = /^[A-Za-z0-9_-]{22}$/;
 const IP = /^[0-9a-fA-F.:]{2,45}$/;
@@ -100,6 +102,14 @@ export class Room extends Emitter {
     this.limits = { ...DEFAULT_LIMITS, ...options.limits };
     if (options.adaptiveVideo !== undefined && typeof options.adaptiveVideo !== 'boolean') throw new TypeError('adaptiveVideo must be a boolean');
     this.adaptiveVideoEnabled = options.adaptiveVideo === true;
+    // Opt-in traversal aids; with both unset the ladder, caps and stats are exactly as before.
+    for (const name of ['classifyNat', 'portPrediction']) if (options[name] !== undefined && typeof options[name] !== 'boolean') throw new TypeError(`${name} must be a boolean`);
+    if (options.portPrediction === true && options.classifyNat === false) throw new TypeError('portPrediction needs classifyNat');
+    this.portPredictionEnabled = options.portPrediction === true;
+    this.classifyNatEnabled = this.portPredictionEnabled || options.classifyNat === true;
+    this.nat = null;
+    if (options.turn !== undefined && options.turn !== null && !validTurnServers(options.turn)) throw new TypeError('Invalid application TURN servers');
+    this.turnServers = normalizeTurnServers(options.turn);
     this.log = options.log ?? (() => {});
     do { this.id = randomId(16); } while (isGatewayMember(this.id));
     this.links = new Map(); this.caps = new Map(); this.known = new Set(); this.departed = new Map(); this.gatewayMembers = new Set();
@@ -183,10 +193,11 @@ export class Room extends Emitter {
     return task;
   }
 
-  async changeKey(secret, { auth, gates, stun } = {}) {
+  async changeKey(secret, { auth, gates, stun, turn } = {}) {
     if (this.closed) return;
     if (gates !== undefined && (!Array.isArray(gates) || !gates.length)) throw new TypeError('At least one gate URL is required.');
     if (stun !== undefined && !validStunUrls(stun)) throw new TypeError('Invalid application STUN URLs');
+    if (turn !== undefined && turn !== null && !validTurnServers(turn)) throw new TypeError('Invalid application TURN servers');
     const nextGates = gates ?? this.options.gates;
     if (typeof auth === 'string' && nextGates.length !== 1) throw new TypeError('Use per-gate auth tokens for multiple gates');
     const next = await deriveRoom(secret, this.app);
@@ -194,6 +205,7 @@ export class Room extends Emitter {
     // A rotation may also evict a gate or change STUN: the next ticket's lists replace the old ones.
     this.options = { ...this.options, auth, gates: nextGates };
     if (stun !== undefined) this.stunUrls = new Set(stun);
+    if (turn !== undefined) this.turnServers = normalizeTurnServers(turn);
     if (next.tag === this.tag) return;
     for (const gate of this.gates) gate.close();
     clearTimeout(this.capsTimer); this.capsTimer = null;
@@ -536,7 +548,9 @@ export class Room extends Emitter {
       const c = await this.gatewayCredsFor(peer);
       if (c) gateway = { urls: this.ownGateway.urls, username: c.username, credential: c.credential, external: this.ownGateway.external, internal: this.ownGateway.internal };
     }
-    return { v: 1, forward: this.forward, peers: [...this.links.values()].filter(l => l.connected && l.control.readyState === 'open').map(l => l.id), gateway };
+    const caps = { v: 1, forward: this.forward, peers: [...this.links.values()].filter(l => l.connected && l.control.readyState === 'open').map(l => l.id), gateway };
+    if (this.classifyNatEnabled && this.nat) caps.nat = { type: this.nat.type, delta: this.nat.delta };
+    return caps;
   }
 
   async sendCaps(peer) {
@@ -555,6 +569,7 @@ export class Room extends Emitter {
     const clean = { role: caps.role === 'gateway' && isGatewayMember(from) ? 'gateway' : 'peer', forward: caps.forward === true,
       peers: (Array.isArray(caps.peers) ? caps.peers : []).filter(p => typeof p === 'string' && PEER_ID.test(p)).slice(0, 32),
       gateway: cleanGateway(caps.gateway) };
+    if (this.classifyNatEnabled) { const nat = cleanNat(caps.nat); if (nat) clean.nat = nat; }
     this.caps.set(from, clean);
     // Peers a member reports are hints too: greet them through the mesh.
     for (const p of clean.peers) if (p !== this.id && !this.known.has(p)) this.hint(p, null);
@@ -567,6 +582,21 @@ export class Room extends Emitter {
         else if (link.phase >= PHASE.SESSION) this.rescueLink(link.id);
       }
     }
+  }
+
+  // Opt-in (classifyNat): one ICE generation's srflx evidence from any link. Only a conclusive
+  // verdict is kept; a change is announced to peers in caps.
+  observeNat(sample, complete) {
+    try {
+      const servers = [...this.stunUrls].slice(0, 3).filter(url => /^stun:/i.test(url)).length;
+      const nat = classifyNat({ ...sample, servers, complete });
+      if (nat.type === 'unknown') return;
+      this.count('natSamples');
+      if (this.nat?.type === nat.type && this.nat.delta === nat.delta) return;
+      this.nat = nat;
+      this.log('nat', { ...nat });
+      this.scheduleCapsBroadcast();
+    } catch (error) { this.count('natErrors', error); }
   }
 
   async setGateway(gateway) {
@@ -585,6 +615,8 @@ export class Room extends Emitter {
     if (this.ownGateway && self) add({ urls: this.ownGateway.internalUrls.length ? this.ownGateway.internalUrls : this.ownGateway.urls, username: self.username, credential: self.credential });
     add(this.caps.get(link.id)?.gateway);
     for (const id of link.extraGateways) if (id !== link.id) add(this.caps.get(id)?.gateway);
+    // The application's TURN relay joins only links that reached that rung of the ladder.
+    if (link.useTurn && this.turnServers) for (const s of this.turnServers) servers.push({ urls: [...s.urls], username: s.username, credential: s.credential });
     return compatibleServers(servers, this.RTCPeerConnection);
   }
 
@@ -613,8 +645,10 @@ export class Room extends Emitter {
       return;
     }
     if (link.phase === PHASE.BRIDGED && !this.bridges.get(pairKey(this.id, link.id))?.via) this.requestBridge(link);
+    if ((this.portPredictionEnabled || this.turnServers) && this.bridges.get(pairKey(this.id, link.id))?.state !== 'active' && this.optInRung(link)) return;
     // Nothing better exists right now: keep retrying slowly. New peers, gateways or a network
-    // change may open a path later; every retry is a cheap ICE restart, never a server relay.
+    // change may open a path later; every retry is a cheap ICE restart, through a server relay only
+    // when the application configured its own (`turn`).
     if (link.phase === PHASE.ENDPOINT) link.phase = PHASE.SESSION;
     link.path = this.bridges.get(pairKey(this.id, link.id))?.state === 'active' ? link.path : { kind: 'unreachable' };
     this.emitPath(link);
@@ -624,6 +658,50 @@ export class Room extends Emitter {
     const delay = Math.min(this.timing.bridgedRetryMs * 2 ** Math.min(link.retries++, 4), this.timing.maxRetryMs);
     clearTimeout(link.watchdog);
     link.watchdog = setTimeout(() => { link.watchdog = null; link.enqueue(() => link.checkProgress()); }, delay);
+  }
+
+  // Opt-in rungs between the last route inside the session and `unreachable`: port prediction when
+  // the NATs allocate predictably, then the application's own TURN relay. Each is tried once per
+  // link; any failure falls through to `unreachable` exactly as without them.
+  optInRung(link) {
+    try {
+      if (this.portPredictionEnabled && !link.predictTried && this.predictionPair(link)) {
+        link.predictTried = true; link.predicting = true;
+        this.count('predictAttempts');
+        this.retryRung(link, this.timing.predictMs ?? 10000);
+        return true;
+      }
+      if (this.turnServers && !link.turnTried) {
+        link.turnTried = true; link.useTurn = true;
+        try { link.applyServers(false); } catch (error) { link.useTurn = false; this.count('turnErrors', error); return false; }
+        this.count('turnAttempts');
+        this.retryRung(link, this.timing.turnMs ?? 10000);
+        return true;
+      }
+    } catch (error) { this.count('rungErrors', error); }
+    return false;
+  }
+
+  // One side's NAT allocates ports in order and the other's either does too or keeps one mapping.
+  predictionPair(link) {
+    const local = this.nat?.type, remote = this.caps.get(link.id)?.nat?.type;
+    return local === 'sequential' && (remote === 'sequential' || remote === 'eim') || remote === 'sequential' && local === 'eim';
+  }
+
+  // A fresh ICE generation under the usual restart rules, then the next escalation after `ms`.
+  retryRung(link, ms) {
+    if (link.phase === PHASE.ENDPOINT) link.phase = PHASE.SESSION;
+    link.grace = false;
+    link.requestRestart();
+    clearTimeout(link.watchdog);
+    link.watchdog = setTimeout(() => { link.watchdog = null; link.enqueue(() => link.checkProgress()); }, ms);
+  }
+
+  /** Replace the application TURN servers (e.g. fresh credentials); links using them pick them up at their next restart. */
+  setTurn(servers) {
+    if (servers !== null && !validTurnServers(servers)) throw new TypeError('Invalid application TURN servers');
+    this.turnServers = normalizeTurnServers(servers);
+    for (const link of this.links.values()) if (link.useTurn) { try { link.applyServers(false); } catch (error) { this.count('turnErrors', error); } }
   }
 
   rescueLink(peer) {
@@ -664,7 +742,16 @@ export class Room extends Emitter {
       if ((info.local === 'relay' || info.relayProtocol) && owns(g, info.localAddress, info.relayUrl)) return id;
       if (info.remote === 'relay' && owns(g, info.remoteAddress, null)) return id;
     }
+    if (this.turnServers && this.turnOwns(info)) return 'turn';
     return 'unknown';
+  }
+
+  turnOwns(info) {
+    const strip = url => String(url ?? '').replace(/\?transport=(udp|tcp)$/, '');
+    const urls = this.turnServers.flatMap(s => s.urls);
+    if ((info.local === 'relay' || info.relayProtocol) && info.relayUrl && urls.some(url => strip(url) === strip(info.relayUrl))) return true;
+    const hosts = urls.map(url => /^turns?:(\[[^\]]+\]|[^:?]+)/.exec(url)?.[1].replace(/^\[|\]$/g, ''));
+    return info.remote === 'relay' && !!info.remoteAddress && hosts.includes(info.remoteAddress);
   }
 
   onLinkConnected(link) {
@@ -1249,7 +1336,8 @@ export class Room extends Emitter {
     }
     return { id: this.id, tag: this.tag, counters: { ...this.counters },
       gates: this.gates.map(g => ({ url: g.url, state: g.state, ...g.counters })),
-      bridges: [...this.bridges.values()].map(b => ({ ...b })), relaying: [...this.relaying.values()].map(b => ({ ...b })), links };
+      bridges: [...this.bridges.values()].map(b => ({ ...b })), relaying: [...this.relaying.values()].map(b => ({ ...b })), links,
+      ...(this.classifyNatEnabled ? { nat: this.nat ? { ...this.nat } : { type: 'unknown', delta: 0 } } : {}) };
   }
 
   async leave() {

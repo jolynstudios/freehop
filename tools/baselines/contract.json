@@ -1,0 +1,199 @@
+{
+  "client": {
+    "capsKeys": [
+      "v",
+      "forward",
+      "peers",
+      "gateway"
+    ],
+    "defaultLimits": {
+      "audioBitrate": 32000,
+      "forwardVideoBitrate": 200000,
+      "maxBridges": 4,
+      "maxGatewayMembers": 4,
+      "maxHints": 64,
+      "maxPeers": 8,
+      "meshForwardPerMinute": 600,
+      "outboxPerPeer": 32,
+      "videoBitrate": 300000
+    },
+    "defaultTiming": {
+      "bridgeWaitMs": 4000,
+      "bridgedRetryMs": 30000,
+      "capsWaitMs": 150,
+      "departGraceMs": 8000,
+      "endpointMs": 5000,
+      "greetMs": 20000,
+      "maxRetryMs": 300000,
+      "mediaWatchMs": 5000,
+      "offerTimeoutMs": 8000,
+      "outboxMs": 20000,
+      "politeWaitMs": 1500,
+      "recoveryMs": 4000,
+      "restartFallbackMs": 2500,
+      "sessionMs": 7000,
+      "sweepMs": 2000
+    },
+    "kinds": [
+      "caps",
+      "description",
+      "candidate",
+      "bye",
+      "restart-request",
+      "video-quality",
+      "bridge-request",
+      "bridge-offer",
+      "bridge-accept",
+      "bridge-confirm",
+      "bridge-ready",
+      "bridge-active",
+      "bridge-release",
+      "bridge-fail",
+      "forward-map",
+      "forward-unmap",
+      "app"
+    ],
+    "pathKinds": [
+      "connecting",
+      "direct",
+      "gateway",
+      "relay",
+      "bridged",
+      "unreachable"
+    ],
+    "phase": {
+      "BRIDGED": 2,
+      "ENDPOINT": 0,
+      "SESSION": 1
+    }
+  },
+  "exports": {
+    "bin": [
+      "freehop-gate"
+    ],
+    "entries": {
+      ".": [
+        "connect",
+        "decodeTicket",
+        "encodeTicket",
+        "validTicket"
+      ],
+      "./authority": [
+        "createAuthority"
+      ],
+      "./client": [
+        "DEFAULT_LIMITS",
+        "DEFAULT_TIMING",
+        "PHASE",
+        "Room",
+        "deriveRoom",
+        "join",
+        "randomId"
+      ],
+      "./electron": [
+        "installFreehopGateway"
+      ],
+      "./electron/preload": [],
+      "./gate": [
+        "GATE_LIMITS",
+        "GATE_PROTOCOL",
+        "createGate",
+        "mintGateToken",
+        "randomTag",
+        "verifyGateToken"
+      ],
+      "./host": [
+        "closeSharedGateway",
+        "hostSession",
+        "sharedGateway"
+      ],
+      "./member": [
+        "GATEWAY_ID_PREFIX",
+        "joinAsGateway"
+      ],
+      "./port-mapper": [
+        "PortMapperError",
+        "createPortMapper",
+        "detectGateway",
+        "isPrivateIPv4",
+        "parseDefaultGateway",
+        "parseIgdDescription",
+        "parseSoapFault"
+      ],
+      "./relay": [
+        "isPublicAddress",
+        "startGateway"
+      ],
+      "./sdk": [
+        "connect",
+        "decodeTicket",
+        "encodeTicket",
+        "validTicket"
+      ],
+      "./stun": [
+        "ATTR",
+        "CLASS",
+        "MAGIC_COOKIE",
+        "METHOD",
+        "bytesToIp",
+        "decode",
+        "decodeAddress",
+        "decodeChannelData",
+        "decodeErrorCode",
+        "decodeXorAddress",
+        "encode",
+        "encodeAddress",
+        "encodeChannelData",
+        "encodeXorAddress",
+        "errorCodeValue",
+        "frameStreamMessages",
+        "getAttr",
+        "ipToBytes",
+        "isChannelData",
+        "isStunMessage",
+        "longTermKey",
+        "saslprep",
+        "verifyFingerprint",
+        "verifyIntegrity"
+      ],
+      "./ticket": [
+        "decodeTicket",
+        "encodeTicket",
+        "validTicket"
+      ],
+      "./tokens": [
+        "mintGateToken",
+        "verifyGateToken"
+      ],
+      "./turn": [
+        "DEFAULT_LIMITS",
+        "classifyPeerAddress",
+        "createTurnServer"
+      ]
+    }
+  },
+  "schema": 1,
+  "tickets": {
+    "issuedKeys": [
+      "v",
+      "app",
+      "roomId",
+      "epoch",
+      "gates",
+      "stun",
+      "secret",
+      "expires"
+    ],
+    "issuedKeysWithAuth": [
+      "v",
+      "app",
+      "roomId",
+      "epoch",
+      "gates",
+      "stun",
+      "secret",
+      "expires",
+      "auth"
+    ]
+  }
+}

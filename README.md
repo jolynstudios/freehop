@@ -205,7 +205,9 @@ adds signalling and encryption, with sources.
   silently paying for a relay.
 - **Hard NATs need someone with a reachable route.** Two browser-only users, both behind
   strict NATs or UDP-blocking networks, with no IPv6 and nobody else in the session, cannot
-  connect.
+  connect by default. Two opt-in rungs run just before `unreachable`: port prediction for NATs
+  that allocate ports in order, and your own TURN relay (`turn`), whose bandwidth is then yours.
+  See [SDK.md](SDK.md#when-no-route-exists-opt-in).
 - **Home-lab tested, not field-proven.** Real ISPs, 4G/5G carrier NAT, corporate networks
   and mobile browsers remain unverified. Status: **alpha**.
 - **Forwarded media is re-encoded.** When a participant forwards the call, it re-encodes the

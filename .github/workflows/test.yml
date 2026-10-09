@@ -19,3 +19,5 @@ jobs:
       - run: npm run exportsgate
       - run: npm run typesgate
       - run: npm run docsyncgate
+      - run: npm run contractgate
+      - run: npm run laddergate

@@ -38,6 +38,9 @@ TypeScript consumers get inferred session and event types. See the [TypeScript g
 | `stun` | none | Application-approved STUN URLs, overriding `ticket.stun`. Gate-supplied URLs are ignored. |
 | `forward` | `true` | Whether this participant may [forward](../concepts/forwarding.mdx) media for pairs that cannot connect. |
 | `adaptiveVideo` | `false` | Opt into per-peer video quality adjustment when sustained congestion or processing pressure is measured. |
+| `classifyNat` | `false` | Learn this endpoint's NAT behaviour (`eim`, `sequential`, `random`) from the candidates the browser gathers, share it with peers and report it as `stats().nat`. Needs at least two `stun:` servers. |
+| `portPrediction` | `false` | Before reporting `unreachable`, try the next ports of a peer whose NAT allocates them in order (implies `classifyNat`). Random NATs are never predicted. |
+| `turn` | `ticket.turn` | Your own TURN servers `[{ urls, username, credential }]`, tried last before `unreachable`; `null` keeps them off. Their bandwidth is yours. Gates and peers can never supply them. |
 | `log` | none | `(event, details) => void` for diagnostics. |
 | `timing`, `limits` | built-in | Overrides for the protocol's timers and limits. Leave them alone unless you test the protocol itself. |
 
@@ -102,7 +105,7 @@ Mute is one-way and audio-only: media still arrives and counts against bandwidth
 | `connecting` | Still negotiating | `phase`: 0 endpoint, 1 session, 2 bridged |
 | `direct` | No relay on either side | `local`, `remote` (candidate types), `protocol`, `localAddress`, `remoteAddress`, `rtt`, `bytesSent`, `bytesReceived` |
 | `gateway` | Through one endpoint's own gateway; `via` is its owner | As above, plus `relayProtocol` and `relayUrl` |
-| `relay` | Through another session member's gateway; `via` is its owner | As for `gateway` |
+| `relay` | Through another session member's gateway; `via` is its owner, or `'turn'` for your own TURN relay | As for `gateway` |
 | `bridged` | Forwarded by a participant; `via` is the forwarder | |
 | `unreachable` | No route inside the session right now | |
 

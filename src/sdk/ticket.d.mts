@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type {GateAuth} from '../shared/types.mjs';
+import type {GateAuth, TurnServer} from '../shared/types.mjs';
 export interface Ticket {
   v: 1;
   app: string;
@@ -11,6 +11,8 @@ export interface Ticket {
   auth?: GateAuth;
   /** Unix expiry in seconds. */
   expires: number;
+  /** Application TURN servers for the opt-in relay rung. */
+  turn?: TurnServer[];
 }
 export function validTicket(value: unknown): value is Ticket;
 export function encodeTicket(ticket: Ticket): string;

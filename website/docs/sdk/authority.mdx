@@ -29,6 +29,7 @@ const authority = createAuthority({
 | `gateTokenSecrets` | `{}` | Map from exact gate URL to its signing key. Only configured gates receive a token, bound to both room and audience. |
 | `gateTokenSecret` | none | Fallback signing key for all WebSocket gates; use the per-URL map when mixing private and community gates. Trackers never receive gate tokens. |
 | `stun` | `[]` | Up to four application-approved STUN URLs. Clients ignore STUN URLs supplied by gates. |
+| `turn` | none | Optional TURN servers `[{ urls, username, credential }]` for the opt-in relay rung, or a function `({ roomId, member, expires }) => servers` (sync or async) that mints short-lived credentials per ticket. Up to two servers with one to eight `turn:`/`turns:` URLs each. |
 | `ticketTtlSeconds` | `21600` (6 h) | Lifetime written into each ticket and its gate token. |
 | `maxRooms` | `10000` | Upper bound on open rooms. |
 
@@ -62,7 +63,8 @@ A ticket is everything a client needs to enter one room:
     "wss://gate-2.example.com/freehop": "token for gate-2"
   },
   "stun": ["stun:gate-1.example.com:3478"],
-  "expires": 1800000000
+  "expires": 1800000000,
+  "turn": [{ "urls": ["turn:turn.example.com:3478"], "username": "…", "credential": "…" }]
 }
 ```
 
@@ -77,7 +79,7 @@ const text = encodeTicket(ticket);   // base64url of the JSON
 const again = decodeTicket(text);    // throws TypeError on a malformed or invalid ticket
 ```
 
-`connect()` and `hostSession()` accept either form. A ticket is valid when its version is 1, `app` has at most 64 characters, `roomId` at most 128, `epoch` is a positive integer, it lists one to eight gate URLs, the secret is 22 to 128 characters long, `auth` (if present) maps configured WebSocket gate URLs to tokens of at most 2048 characters each (a legacy string is allowed only with one WebSocket gate), and `expires` is a safe integer Unix timestamp in the future.
+`connect()` and `hostSession()` accept either form. A ticket is valid when its version is 1, `app` has at most 64 characters, `roomId` at most 128, `epoch` is a positive integer, it lists one to eight gate URLs, the secret is 22 to 128 characters long, `auth` (if present) maps configured WebSocket gate URLs to tokens of at most 2048 characters each (a legacy string is allowed only with one WebSocket gate), `turn` (if present) holds at most two TURN servers, and `expires` is a safe integer Unix timestamp in the future. `turn` appears only when the authority is configured with it.
 
 ## Kicking a member
 

@@ -20,6 +20,9 @@ measured results.
 Cost rule: a byte of media only crosses machines that belong to the call. These are the
 two endpoints, another participant, or the session's own host. Gate signalling traffic
 is bounded by construction (§4.6) and measured in every home-lab network test run.
+The opt-in application TURN rung (§7a) is the only exception, and only when the application
+configures it: that pair's media then also crosses the application's TURN server, still DTLS-SRTP
+encrypted end to end.
 
 ## 2. Identifiers and keys
 
@@ -131,6 +134,9 @@ impractical, while one five-peer join needs about 100 KB.
 - `forward` means the sender may bridge other pairs (§9).
 - `gateway` holds credentials minted **for the recipient** (§8.2). A gateway member sets
   `role:"gateway"`.
+- `nat` (`{type:"eim"|"sequential"|"random", delta}`) is present only when the sender enabled NAT
+  classification (§7a); `delta` is the port step (1–16) of a `sequential` NAT and 0 otherwise.
+  Receivers that did not opt in drop it.
 
 A peer sends caps to every peer it discovers (through gates), on every new data channel,
 and when its link set changes. It also embeds caps in every `description` envelope.
@@ -186,9 +192,28 @@ A suppressed `negotiationneeded` is re-checked once the state is stable again.
   Both follow the single-initiator rule.
 
 Path classification uses the selected candidate pair: `direct` (no relay on either side),
-`gateway` (relay owned by one endpoint), `relay` (relay owned by another session member),
-`bridged` (§9) or `unreachable`. A local peer-reflexive candidate whose `relayProtocol` is
+`gateway` (relay owned by one endpoint), `relay` (relay owned by another session member, or
+with `via: 'turn'` the application's TURN relay, §7a), `bridged` (§9) or `unreachable`. A local peer-reflexive candidate whose `relayProtocol` is
 set still rides a relay.
+
+### 7a. Opt-in rungs before `unreachable`
+
+Three options, all off by default, add rungs exactly where §7 would report `unreachable` (no
+untried session gateway and no active bridge). With none set, signalling, timings, ICE servers and
+events are unchanged; `tools/laddergate.mjs` checks this against traces recorded before the rungs
+existed.
+
+| Option | What it does | Budget |
+|---|---|---|
+| `classifyNat` | Each ICE generation's srflx candidates from up to three `stun:` servers classify this endpoint's NAT: one port for every answering server is `eim`, ports a regular step of 1–16 apart are `sequential`, anything else is `random`. The verdict is shared in caps (§5) and reported as `stats().nat`. | none |
+| `portPrediction` (implies `classifyNat`) | Tried once per link when one side is `sequential` and the other `eim` or `sequential`. The link restarts ICE; the side whose peer is `sequential` then adds remote candidates for the peer's next ports above its highest srflx port (8 per srflx candidate by default, at most 16 per generation). The predicted candidates are added locally; nothing extra is signalled. | `timing.predictMs`, 10 s |
+| `turn` | The application's TURN servers join that link's ICE servers and the link restarts ICE. The path reports `relay` with `via: 'turn'`. | `timing.turnMs`, 10 s |
+
+Order: prediction, then TURN, then `unreachable` with the usual backoff. Both rungs reuse the
+restart rules of §7 (impolite side first, polite side after `restartFallbackMs`). A rung that fails,
+for example a TURN URL the browser refuses, is counted (`rungErrors`, `turnErrors`) and the link
+falls through to `unreachable` in the same escalation. There is no new phase, envelope kind or path
+kind. Random NATs are never predicted: two of them need a relay.
 
 ## 8. Gateways
 
@@ -263,7 +288,7 @@ capped at 200 kbit/s.
 ## 9a. SDK roles
 `SDK.md` describes how applications consume the protocol:
 - an **authority** (application backend) issues per-member **tickets**
-  `{v, app, roomId, epoch, gates, secret, auth?, stun?, expires}` and rotates the room on kick;
+  `{v, app, roomId, epoch, gates, secret, auth?, stun?, expires, turn?}` and rotates the room on kick;
 - clients `connect(ticket)` and `update(newTicket, {dropped})`;
 - hosts run `hostSession(ticket)` (gateway member);
 - desktop apps expose their gateway through the Electron preload (`window.freehopGateway`,
@@ -287,15 +312,24 @@ capped at 200 kbit/s.
 - **Gateways**: credentials are per peer and short-lived. The peer policy prevents use as a
   proxy into private networks. Quotas: 6 allocations per username, 4 Mbit/s per
   allocation, 32 allocations and 20 Mbit/s per room, 40 Mbit/s in total, separately per direction; at most 64 allocations overall. Room quotas aggregate every alias in that room; global limits still apply. By default a gateway relays only between allocations on itself, so a member cannot use its credentials to reach other internet hosts (§8.3). Expiry blocks further authenticated requests; existing allocations may continue until their granted lifetime ends. Revocation ends them immediately, and a participant's desktop gateway releases a room when the participant leaves.
+- **Opt-in traversal aids** (§7a): with `classifyNat`, room members learn the sender's NAT
+  type. Port prediction adds at most 16 predicted remote candidates per ICE generation, only for
+  the peer that link already negotiates with. An application TURN relay sees the IP addresses,
+  timing and DTLS-SRTP-encrypted packets of the pairs that use it. TURN servers come only from the
+  ticket or the application's options, never from gates or caps.
 - **IP privacy**: direct paths expose network addresses to other participants. Gate and tracker operators also see connecting IP addresses. The SDK does not provide an IP-anonymity mode.
 
 ## 12. Known limits
 - A network that permits traffic only to the gate host cannot carry media without the gate
   operator carrying it. Freehop reports `unreachable`. A separate session gateway can help
   only if its media transport is reachable under the network’s rules. Hosting it beside a
-  gate does not by itself bypass those rules; gates remain signalling-only.
+  gate does not by itself bypass those rules; gates remain signalling-only. The same holds for an
+  application TURN relay (§7a): it helps only if this network can reach it.
 - Two browser-only participants that are both behind hard NATs or UDP-blocking networks, with
-  no IPv6, no gateway in the session and no third participant, cannot connect. A session host node reachable by both endpoints can provide a TURN relay path.
+  no IPv6, no gateway in the session and no third participant, cannot connect. A session host node reachable by both endpoints can provide a TURN relay path, and so can the application's own TURN relay (§7a, opt-in). Port prediction (§7a, opt-in) can connect such a pair directly when one NAT allocates ports in order and the other keeps one mapping (two sequential NATs: best effort); two random NATs always need a relay.
+- NAT classification needs at least two `stun:` servers at different addresses. Browsers report a
+  repeated srflx address once, so `eim` is inferred from the absence of STUN errors and may be
+  wrong in browsers that do not report them; a wrong verdict costs one extra ICE restart.
 - Chromium, home-lab browser finding: simultaneous ICE restarts (glare) intermittently left the polite
   side's RTP senders silent after its restart offer was rolled back. Freehop avoids
   simultaneous restarts (§7).

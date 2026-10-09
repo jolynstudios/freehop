@@ -2,6 +2,8 @@
 // One RTCPeerConnection per remote peer. Perfect negotiation (W3C WebRTC "perfect negotiation"
 // example) lets either side renegotiate; the path ladder escalates only after the cheaper
 // path demonstrably failed, so media cost stays with the two endpoints whenever possible.
+import { createPredictor, createSampler } from './nat.mjs';
+
 export const PHASE = Object.freeze({ ENDPOINT: 0, SESSION: 1, BRIDGED: 2 });
 const UFRAG = /^a=ice-ufrag:(\S+)\r?$/gm;
 
@@ -29,6 +31,7 @@ export class PeerLink {
     pc.onconnectionstatechange = () => this.onConnectionState();
     pc.onsignalingstatechange = () => { if (pc.signalingState === 'stable') this.room.applyEncodingLimits(this); };
     pc.ontrack = event => this.onTrack(event);
+    if (room.classifyNatEnabled) this.observeGathering();
     room.attachLocalMedia(this);
     this.armWatchdog();
   }
@@ -80,6 +83,18 @@ export class PeerLink {
       gateways: [...this.extraGateways], caps });
   }
 
+  // Opt-in (classifyNat): sample this link's own srflx candidates per ICE generation. Listeners only;
+  // the signalling handler above is untouched.
+  observeGathering() {
+    let sampler = null;
+    this.pc.addEventListener('icegatheringstatechange', () => {
+      if (this.pc.iceGatheringState === 'gathering') sampler = createSampler();
+      else if (this.pc.iceGatheringState === 'complete' && sampler) { const sample = sampler.result(); sampler = null; this.room.observeNat(sample, true); }
+    });
+    this.pc.addEventListener('icecandidate', event => { if (event.candidate?.candidate) sampler?.candidate(event.candidate.candidate); });
+    this.pc.addEventListener('icecandidateerror', event => sampler?.error(event.url));
+  }
+
   remoteUfrags() { return [...(this.pc.remoteDescription?.sdp ?? '').matchAll(UFRAG)].map(m => m[1]); }
 
   async onDescription({ description, phase, gateways, caps, n }) {
@@ -122,7 +137,21 @@ export class PeerLink {
       if (this.pendingCandidates.length > 128) this.pendingCandidates.shift();
       return;
     }
-    try { await this.pc.addIceCandidate(candidate); } catch (error) { if (!this.ignoreOffer) this.room.count('candidateErrors', error); }
+    try { await this.pc.addIceCandidate(candidate); } catch (error) { if (!this.ignoreOffer) this.room.count('candidateErrors', error); return; }
+    if (this.predicting) await this.predictFrom(candidate);
+  }
+
+  // Opt-in (portPrediction): a peer whose NAT allocates ports in order maps its next destinations
+  // just above the srflx ports it reported. Probing those ports from here opens our own filter for
+  // the mapping its checks to us arrive from. Local only: nothing extra is signalled.
+  async predictFrom(candidate) {
+    const nat = this.room.caps.get(this.id)?.nat;
+    if (nat?.type !== 'sequential') return;
+    this.predictor ??= createPredictor({ count: this.room.limits.predictPorts ?? 8 });
+    for (const init of this.predictor(candidate, nat)) {
+      try { await this.pc.addIceCandidate(init); this.room.count('predictCandidates'); }
+      catch (error) { this.room.count('predictErrors', error); }
+    }
   }
 
   async flushCandidates() {

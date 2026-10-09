@@ -25,8 +25,12 @@ export async function connect(ticket, options = {}) {
   const allow = async secret => { if (gateway && desktop?.allowRoom) await desktop.allowRoom((await deriveRoom(secret, ticket.app)).tag).catch(() => {}); };
   await allow(ticket.secret);
 
-  const room = await join({ ...options, gates: ticket.gates, stun: options.stun ?? ticket.stun, secret: ticket.secret, app: ticket.app, auth: ticket.auth, gateway: gateway ?? undefined });
+  const turn = options.turn !== undefined ? options.turn : ticket.turn;   // null pins TURN off
+  const room = await join({ ...options, gates: ticket.gates, stun: options.stun ?? ticket.stun, secret: ticket.secret, app: ticket.app, auth: ticket.auth, gateway: gateway ?? undefined, ...(turn !== undefined ? { turn } : {}) });
   let current = ticket;
+  // Application TURN servers follow the tickets unless options.turn pinned them; a ticket without
+  // them, after one that had them, removes them.
+  const ticketTurn = next => options.turn !== undefined ? undefined : next.turn ?? (current.turn !== undefined ? null : undefined);
   let updating = Promise.resolve();
   const trackPeers = new Map();   // remote track id -> origin peer (direct or forwarded)
   room.on('track', ({ peer, track }) => { trackPeers.set(track.id, peer); track.addEventListener('ended', () => trackPeers.delete(track.id)); });
@@ -58,7 +62,8 @@ export async function connect(ticket, options = {}) {
         for (const peer of dropped) await remove(peer);
         // Revoke the whole old epoch, including any unreported identity's credentials.
         await release(previousTag);
-        await room.rekey(next.secret, { auth: next.auth, gates: next.gates, stun: options.stun ?? next.stun });
+        const turnUpdate = ticketTurn(next);
+        await room.rekey(next.secret, { auth: next.auth, gates: next.gates, stun: options.stun ?? next.stun, ...(turnUpdate !== undefined ? { turn: turnUpdate } : {}) });
         trackPeers.clear();
         current = next;
         return true;
@@ -73,6 +78,8 @@ export async function connect(ticket, options = {}) {
         if (!validTicket(next) || room.closed || next.roomId !== current.roomId || next.app !== current.app || next.epoch !== current.epoch || next.expires <= current.expires) return false;
         if ((await deriveRoom(next.secret, next.app)).tag !== room.tag) return false;
         room.options = { ...room.options, auth: next.auth };   // read at the next gate (re)connect
+        const turnUpdate = ticketTurn(next);
+        if (turnUpdate !== undefined) room.setTurn(turnUpdate);   // fresh TURN credentials
         current = next;
         return true;
       });

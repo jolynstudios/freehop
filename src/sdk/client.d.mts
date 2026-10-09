@@ -5,7 +5,8 @@ import type {Ticket} from './ticket.mjs';
 export {encodeTicket, decodeTicket, validTicket} from './ticket.mjs';
 export type {Ticket} from './ticket.mjs';
 export type {RoomEvents, RoomStats, LinkStats, ConnectionPath, PathKind, VideoQualityLevel, RoomTiming, RoomLimits, MediaOptions} from '../client/peerlane.mjs';
-export type {DesktopGateway, GatewayInfo, GatewayCredentials, JsonValue, Log} from '../shared/types.mjs';
+export type {NatInfo, NatType} from '../client/peerlane.mjs';
+export type {DesktopGateway, GatewayInfo, GatewayCredentials, JsonValue, Log, TurnServer} from '../shared/types.mjs';
 export interface ConnectOptions extends MediaControls {
   /** null disables automatic discovery of window.freehopGateway. */
   desktopGateway?: DesktopGateway | null;
