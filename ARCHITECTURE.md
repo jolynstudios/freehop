@@ -8,7 +8,7 @@ This document explains how Freehop is put together and why. For the normative wi
 | Goal | Consequence |
 |---|---|
 | Signalling gates never carry media | Two separate planes: a **signalling plane** (gates) and a **media plane** (peer paths). Gates are bounded so that media cannot fit through them. |
-| Media cost stays with the session | Fallback routes use only machines that belong to the session: endpoint gateways, the host node, participants. |
+| Media cost stays with the session | Fallback routes use only machines that belong to the session: endpoint gateways, the host node, participants. The one exception is opt-in: an application can add its own TURN relay as a last resort (`turn`). |
 | No single point of failure | Any number of interchangeable gates; signalling moves onto the mesh once peers are linked. |
 | Gates are untrusted | End-to-end sealed envelopes; membership only after authentication. |
 | Zero configuration for users | Tickets from the app backend; automatic path escalation; automatic router port mapping on desktop. |
@@ -54,6 +54,8 @@ flowchart TB
 | `src/client/tracker-client.mjs` | WebTorrent tracker used as a gate (offers = hellos, answers = envelopes) |
 | `src/client/room.mjs` | The orchestrator: hints and admission, routing (mesh → gates → introducer → outbox), caps, path ladder, bridging, per-link adaptive video, media controls, departures, rekey |
 | `src/client/peer.mjs` | One `RTCPeerConnection` per remote peer: perfect negotiation, candidate buffering, offer timeout, single-initiator ICE restarts, path classification |
+| `src/client/nat.mjs` | Opt-in NAT classification from the browser's own srflx candidates, validation of a peer's NAT claim, bounded port prediction |
+| `src/client/ice-urls.mjs` | STUN and TURN URL validation, including the application's TURN servers |
 | `src/sdk/authority.mjs` | Backend: room secrets, tickets, kick-and-rotate |
 | `src/sdk/client.mjs` | `connect(ticket)`: desktop-gateway detection, `update()`, `disconnectPeer()`, `levels()`, `attach()` |
 | `src/sdk/host.mjs` | `hostSession(ticket)`: shared process gateway plus gateway member |
@@ -194,15 +196,23 @@ sequenceDiagram
 ## 9. Test architecture
 
 - **Unit tests** (`node --test test/*.test.mjs`): the STUN codec against RFC 5769, the TURN
-  server, the gate, the port mapper against fake routers, and gateway credentials.
+  server, the gate, the port mapper against fake routers, gateway credentials, NAT
+  classification and the opt-in ladder rungs.
+- **Release gates** (`npm run ship`): besides the unit tests, `exportsgate`, `typesgate` and
+  `docsyncgate` check the public surface and the docs; `contractgate` freezes exports, wire
+  constants, the ticket format and the client markers downstream apps check; `laddergate` replays
+  19 path-ladder scenarios through real `Room`s on a deterministic fake `RTCPeerConnection` and
+  compares them with traces checked into `tools/baselines/`.
 - **Browser suites** (`test/browser/`): real Chromium, Firefox and WebKit through Playwright.
   They cover the mesh, cross-engine runs over TLS, multi-gate with a gate outage, kick/rekey,
-  the public tracker, and the SDK example.
+  the public tracker, the SDK example and the application TURN rung.
 - **Home-lab NAT test harness** (`lab/`): a disposable privileged Linux container with network namespaces. Each
   peer gets a router and client namespace with a NAT profile; miniupnpd plays the home router.
-  Browsers run inside the namespaces with fake capture devices. `lab/qualify.sh` runs every
-  scenario three times plus cross-engine runs and coturn conformance. `lab/summarize.mjs`
-  turns the evidence into the table in [RESULTS.md](RESULTS.md).
+  Browsers run inside the namespaces with fake capture devices. `lab/docker.sh` builds the
+  container from `lab/Dockerfile` and runs it with Docker, including Docker Desktop on macOS.
+  `lab/docker.sh qualify` runs the 11-scenario matrix three times plus cross-engine runs and
+  coturn conformance; `lab/docker.sh <scenario>` runs any single scenario, including the opt-in
+  ones. `lab/summarize.mjs` turns the evidence into the table in [RESULTS.md](RESULTS.md).
 
 ---
 Documentation licensed under CC BY 4.0. Copyright 2026 Jolyn Studios.

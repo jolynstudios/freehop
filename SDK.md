@@ -106,7 +106,7 @@ this):
   replaces them directly, and `connect(ticket, { turn: null })` keeps TURN off whatever the ticket says.
   Media through it stays DTLS-SRTP encrypted end to end, but that relay's bandwidth is yours: a
   provider's free tier or Freehop's own TURN server (`freehop/turn`) on a machine you already run
-  keeps it at zero. Gates and peers can never supply TURN servers.
+  can keep it at zero. Gates and peers can never supply the application's TURN servers.
 
 Map your member ids to Freehop peer ids (`session.id`) in your backend, so that a kick can
 name the peer the remaining clients must drop.

@@ -145,8 +145,8 @@ lab and is not yet verified on real networks, so it stays off by default. These 
 simulated-network results, not field reliability evidence. Other checks:
 - **201/201 unit tests** on 9 October 2026, including the RFC 5769 STUN vectors, the security regressions and the opt-in route tests.
 - **coturn's own test client** against Freehop's TURN server on 9 October 2026: 800/800 messages over UDP and 800/800 over TCP, 0 lost.
-- **Browser suites:** multi-gate with every gate shut down mid-call, kick/rekey, a public WebTorrent tracker as the only gate, the SDK example app, and two Chromium peers that can only connect through the app's TURN relay.
-- **Release gates:** `laddergate` replays 19 connection scenarios against traces recorded before the opt-in routes existed, and `contractgate` freezes the public API, wire format and ticket format.
+- **Browser suites** (`npm run ship`, 9 October 2026): a Chromium, Firefox and WebKit mesh over TLS, multi-gate with every gate shut down mid-call, kick/rekey, the SDK example app, and two Chromium peers that can only connect through the app's TURN relay. A public WebTorrent tracker as the only gate was verified in the original test run.
+- **Release gates:** `laddergate` replays 19 connection scenarios, and the 12 without the opt-in routes must match traces recorded before those routes existed, and `contractgate` freezes the public API, wire format and ticket format.
 
 Full details are in [RESULTS.md](RESULTS.md).
 
@@ -182,13 +182,14 @@ servers, and let clients try predicted ports first:
 ```js
 const authority = createAuthority({
   app: 'my-app', gates: ['wss://example.com/freehop'],
+  stun: ['stun:example.com:3478', 'stun:stun2.example.net:3478'],  // port prediction needs two or more
   turn: async ({ expires }) => mintTurnCredentials(expires)  // your provider: [{ urls, username, credential }]
 });
 const session = await connect(ticket, { media: { audio: true }, portPrediction: true });
 session.on('path', ({ kind, via }) => { if (via === 'turn') console.log('carried by your TURN relay'); });
 ```
 The relay carries only calls that would otherwise fail, and its bandwidth is yours. A provider's free
-tier, or Freehop's own TURN server (`freehop/turn`) on a machine you already run, keeps that at zero.
+tier, or Freehop's own TURN server (`freehop/turn`) on a machine you already run, can keep that at zero.
 See [SDK.md](SDK.md#when-no-route-exists-opt-in).
 
 **Gate:** the signalling service. Set `FREEHOP_GATE_TOKEN_SECRET` to the same private signing key (at least 32 characters) in the backend and gate environments, and put the gate behind your TLS proxy.

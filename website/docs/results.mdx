@@ -18,7 +18,7 @@ These are Freehop's own network-test results, produced by its developer in a hom
 
 :::note[Scope]
 
-This is a repeatable kernel-NAT test in Linux network namespaces, not a certification, independent evaluation or test on physical ISP, carrier or corporate networks. The 40-run matrix was run on 2 October 2026 after the security fixes: gateways and host nodes now relay only inside their session, and every simulated scenario still passed. On 9 October 2026 every scenario ran once more with Chromium for alpha.5, in the same lab packaged as a Docker container (`lab/docker.sh`), and took the same route; the three-trial, three-engine matrix has not been rerun. Unit, local-browser and type checks below were run on 7 October 2026. See [Not yet verified](#not-yet-verified) below.
+This is a repeatable kernel-NAT test in Linux network namespaces, not a certification, independent evaluation or test on physical ISP, carrier or corporate networks. The 40-run matrix was run on 2 October 2026 after the security fixes: gateways and host nodes now relay only inside their session, and every simulated scenario still passed. On 9 October 2026 every scenario ran once more with Chromium for alpha.5, in the same lab packaged as a Docker container (`lab/docker.sh`), and took the same route; the three-trial, three-engine matrix has not been rerun. Unit, local-browser and TypeScript checks below ran for alpha.5 on 9 October 2026 unless marked otherwise. See [Not yet verified](#not-yet-verified) below.
 
 :::
 
@@ -42,7 +42,7 @@ Real **Chromium 151**, **Firefox 153** and **WebKit 26.5** ran in separate Linux
 
 ## Scenario results
 
-The measurements below are from the original 2 October run; all 40 scenarios also passed the security-hardening rerun that day. Peers are named by letter: `a`, `b` and `c` are browser participants, `g` is a desktop participant running a gateway, and `h` is a host node (a gateway member without media). Gate traffic is the gate's total for the whole run, including retries of pairs that stay unreachable. It is signalling only.
+The measurements below are from the original 2 October run; all 40 runs also passed the security-hardening rerun that day. Peers are named by letter: `a`, `b` and `c` are browser participants, `g` is a desktop participant running a gateway, and `h` is a host node (a gateway member without media). Gate traffic is the gate's total for the whole run, including retries of pairs that stay unreachable. It is signalling only.
 
 | Scenario | Networks | Browsers | Passed | Paths per pair | Gate traffic per run |
 |---|---|---|---|---|---|
@@ -121,7 +121,7 @@ On 9 October 2026, `npm run ship` passed the three-engine TLS mesh, multi-gate o
 
 ### TypeScript consumers
 
-Declarations cover all 15 public entry points since alpha.4. For alpha.5 on 9 October 2026, strict browser and backend consumers passed with the repository's TypeScript 7 compiler, including the new option types; the TypeScript 6 and Electron 44.6 checks are from alpha.4 on 7 October 2026. A fresh install from npm passed compile and runtime smoke checks after publication. Run `npm run typesgate` from a checkout for the maintained consumer fixtures.
+Declarations cover all 15 public entry points since alpha.4. For alpha.5 on 9 October 2026, strict browser and backend consumers passed with the repository's TypeScript 7 compiler, including the new option types; the TypeScript 6 and Electron 44.6 checks are from alpha.4 on 7 October 2026. After publication on 9 October, a fresh install of `freehop@0.1.0-alpha.5` from npm passed the same compile and runtime smoke checks. Run `npm run typesgate` from a checkout for the maintained consumer fixtures.
 
 ### Security review
 
@@ -133,22 +133,20 @@ The earlier source and test review recorded 11 findings. The subsequent source r
 2. **Application performance under load:** CPU, rendering and responsiveness when calls run alongside your meeting UI, shared workspace or game.
 3. **iOS Safari and Android browsers.** Only desktop engines were tested.
 4. **Media quality under real load.** Forwarded (bridged) media is re-encoded by the participant, and the upstream budget of a forwarding participant on home broadband is still unmeasured.
+5. **Port prediction on real networks.** Its success case, a NAT that hands out ports in order, cannot be simulated with Linux NAT, so `portPrediction` stays off by default.
 
 ## Reproduce
 
 ```bash
-npm run typesgate
-node --test test/*.test.mjs
-node test/browser/smoke.mjs chromium,firefox,webkit --tls
-node test/browser/multigate.mjs && node test/browser/rekey.mjs && node test/browser/tracker.mjs && node test/browser/example-app.mjs
+npm run ship                    # unit tests, release gates and browser suites
+node test/browser/tracker.mjs   # a public WebTorrent tracker as the only gate
 ```
 
-The home-lab NAT test harness builds network namespaces and kernel NAT rules, so its scripts refuse to run anywhere except a disposable, privileged Linux container (`FREEHOP_DISPOSABLE_LAB=yes`, as root):
+The home-lab NAT test harness builds network namespaces and kernel NAT rules, so its scripts refuse to run anywhere except a disposable, privileged Linux container (`FREEHOP_DISPOSABLE_LAB=yes`, as root). `lab/docker.sh` builds that container from `lab/Dockerfile` and runs it with Docker, including Docker Desktop on macOS:
 
 ```bash
-docker run -d --name freehop-lab --privileged -v "$PWD":/work mcr.microsoft.com/playwright:v1.62.0-noble sleep infinity
-docker exec freehop-lab bash -lc 'apt-get update && apt-get install -y iproute2 iptables miniupnpd coturn openssl'
-docker exec -e FREEHOP_DISPOSABLE_LAB=yes freehop-lab bash -lc 'cd /work && lab/qualify.sh'
+lab/docker.sh qualify           # the 11-scenario matrix three times, cross-engine runs and coturn conformance
+lab/docker.sh hard-pair-turn    # one scenario, including the opt-in ones
 ```
 
 Every run writes a JSON report with the source hashes, paths, media counters and gate statistics.

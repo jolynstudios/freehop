@@ -32,9 +32,9 @@ Freehop supplies connections and media controls. Your app supplies its interface
 
 ## The one rule
 
-A byte of media only crosses machines that belong to the call: the two people talking, another participant, or the machine that hosts the session. A session host or gateway you operate can carry media and incur costs; signalling gates never carry media.
+By default, a byte of media only crosses machines that belong to the call: the two people talking, another participant, or the machine that hosts the session. The one exception is a TURN relay your app opts into as a last resort. A session host or gateway you operate can carry media and incur costs; signalling gates never carry media.
 
-Classic WebRTC deployments fall back to a TURN relay that the operator rents. Every relayed minute of every call flows through that relay, and the operator pays for the bandwidth. Freehop removes that fallback and replaces it with routes that stay inside the session:
+Classic WebRTC deployments fall back to a TURN relay that the operator rents. Every relayed minute of every call flows through that relay, and the operator pays for the bandwidth. By default Freehop does without that fallback and uses routes that stay inside the session:
 
 | Step | Path | What carries the media |
 |---|---|---|
@@ -81,7 +81,7 @@ The test-profile column names the Linux kernel NAT profile used to simulate each
 
 <StatGrid>
   <Stat value="40/40" label="home-lab network tests passed" note="2 October 2026 · 11 simulated scenarios, three browser engines" />
-  <Stat value="173/173" label="unit tests" note="Alpha.4 release checks · 7 October 2026" />
+  <Stat value="201/201" label="unit tests" note="Alpha.5 release checks · 9 October 2026" />
   <Stat value="800/800" label="TURN messages, UDP and TCP" note="coturn's turnutils_uclient against Freehop's TURN server, 0 lost" />
 </StatGrid>
 

@@ -10,7 +10,7 @@ This specification is normative for the wire formats and behaviour of Freehop ve
 
 :::
 
-Freehop connects small groups with audio, video and data. `maxPeers` defaults to eight other participants; larger supported sizes require benchmarks. Its signalling invariant: **gates never carry media.** Media goes peer-to-peer. When no direct route exists, it goes through a machine that belongs to the same session: a participant, a participant's own gateway or the session's host node. Volunteers may be added by configuration. Gates only introduce peers. An application operator may also run a session gateway and pay for its media bandwidth and compute.
+Freehop connects small groups with audio, video and data. `maxPeers` defaults to eight other participants; larger supported sizes require benchmarks. Its signalling invariant: **gates never carry media.** Media goes peer-to-peer. When no direct route exists, it goes through a machine that belongs to the same session: a participant, a participant's own gateway or the session's host node. An application may also opt into its own TURN relay as a last resort (§7a). Volunteers may be added by configuration. Gates only introduce peers. An application operator may also run a session gateway and pay for its media bandwidth and compute.
 
 The [SDK reference](./sdk/authority.mdx) covers usage, and the [network test results](./results.mdx) cover measured behaviour.
 
@@ -101,7 +101,8 @@ A gate frame is at most 64 KiB and a box at most 48 KiB. Each socket gets a toke
 ```text
 { v:1, role?:"gateway", forward:bool, peers:[id], gateway: null |
   { urls:["turn:host:port?transport=udp", "turn:host:port?transport=tcp"],
-    username, credential, external:[ip], internal: ip|null } }
+    username, credential, external:[ip], internal: ip|null },
+  nat?: { type, delta } }
 ```
 
 - `peers` lists the sender's connected links. It is used for mesh routing and introductions.
@@ -149,7 +150,7 @@ Three options, all off by default, add rungs exactly where §7 would report `unr
 | Option | What it does | Budget |
 |---|---|---|
 | `classifyNat` | Each ICE generation's srflx candidates from up to three `stun:` servers classify this endpoint's NAT: one port for every answering server is `eim`, ports a regular step of 1–16 apart are `sequential`, anything else is `random`. The verdict is shared in caps (§5) and reported as `stats().nat`. | none |
-| `portPrediction` (implies `classifyNat`) | Tried once per link when one side is `sequential` and the other `eim` or `sequential`. The link restarts ICE; the side whose peer is `sequential` then adds remote candidates for the peer's next ports above its highest srflx port (8 per srflx candidate by default, at most 16 per generation). The predicted candidates are added locally; nothing extra is signalled. | `timing.predictMs`, 10 s |
+| `portPrediction` (implies `classifyNat`) | Tried once per link when one side is `sequential` and the other `eim` or `sequential`. The link restarts ICE; the side whose peer is `sequential` then adds remote candidates for the peer's next ports above its highest srflx port (`limits.predictPorts`, 8 per srflx candidate by default, at most 16 per generation). The predicted candidates are added locally; nothing extra is signalled. | `timing.predictMs`, 10 s |
 | `turn` | The application's TURN servers join that link's ICE servers and the link restarts ICE. The path reports `relay` with `via: 'turn'`. | `timing.turnMs`, 10 s |
 
 Order: prediction, then TURN, then `unreachable` with the usual backoff. Both rungs reuse the restart rules of §7 (impolite side first, polite side after `restartFallbackMs`). A rung that fails, for example a TURN URL the browser refuses, is counted (`rungErrors`, `turnErrors`) and the link falls through to `unreachable` in the same escalation. There is no new phase, envelope kind or path kind. Random NATs are never predicted: two of them need a relay.
@@ -195,7 +196,7 @@ Receivers attribute tracks by stream id. When the direct route later connects, a
 Hardening:
 
 - A forwarder accepts `bridge-accept` only for an offer it made to that endpoint, within 30 s, while forwarding is enabled and under its bridge limit.
-- An endpoint accepts `bridge-active` only from the eligible forwarder it already accepted. Pending consent expires after 30 seconds. Upgrade all three participants together for this handshake.
+- An endpoint accepts `bridge-active` only from the eligible forwarder it already accepted. Unsolicited and conflicting activations are released. Pending consent expires after 30 seconds. Upgrade all three participants together for this handshake.
 - `forward-map` is accepted only for an origin the receiver cannot reach itself, and only from that pair's forwarder.
 
 A forwarder is a participant of the same call, so it already receives both media streams. Bridging exposes nothing new to it. Forwarded video is capped at 200 kbit/s.
@@ -220,8 +221,8 @@ The [SDK](./sdk/authority.mdx) describes how applications consume the protocol:
 
 - **Gates** learn: socket IP addresses, opaque room tags and peer ids, envelope sizes and timing. They cannot read SDP, ICE candidates, caps or credentials. They cannot forge or re-route envelopes without detection, and cannot inject peers into a room. A hostile gate can drop or delay traffic; using several gates mitigates that.
 - **Room members** are mutually trusted for signalling: any member can forge envelopes in the room's name. Per-peer signatures are a possible v2 addition. Removal requires a secret rotation (§2). SDK ticket expiry does not erase copies of the shared secret or end established media; it is not a replacement for rotation.
-- **Gateways**: credentials are per peer and short-lived. The peer policy prevents use as a proxy into private networks. Quotas: 6 allocations per username, 4 Mbit/s per allocation, 32 allocations and 20 Mbit/s per room, 40 Mbit/s in total, separately per direction; at most 64 allocations overall. By default a gateway relays only between allocations on itself, so a member cannot use its credentials to reach other internet hosts (§8.3). Expiry blocks further authenticated requests; existing allocations may continue until their granted lifetime ends. Revocation ends them immediately, and a participant's desktop gateway releases a room when the participant leaves.
-- **Opt-in traversal aids** (§7a): with `classifyNat`, room members learn the sender's NAT type. Port prediction adds at most 16 predicted remote candidates per ICE generation, only for the peer that link already negotiates with. An application TURN relay sees the IP addresses, timing and DTLS-SRTP-encrypted packets of the pairs that use it. TURN servers come only from the ticket or the application's options, never from gates or caps.
+- **Gateways**: credentials are per peer and short-lived. The peer policy prevents use as a proxy into private networks. Quotas: 6 allocations per username, 4 Mbit/s per allocation, 32 allocations and 20 Mbit/s per room, 40 Mbit/s in total, separately per direction; at most 64 allocations overall. Room quotas aggregate every alias in that room; global limits still apply. By default a gateway relays only between allocations on itself, so a member cannot use its credentials to reach other internet hosts (§8.3). Expiry blocks further authenticated requests; existing allocations may continue until their granted lifetime ends. Revocation ends them immediately, and a participant's desktop gateway releases a room when the participant leaves.
+- **Opt-in traversal aids** (§7a): with `classifyNat`, room members learn the sender's NAT type. Port prediction adds at most 16 predicted remote candidates per ICE generation, only for the peer that link already negotiates with. An application TURN relay sees the IP addresses, timing and DTLS-SRTP-encrypted packets of the pairs that use it. Application TURN servers come only from the ticket or the application's options, never from gates or caps.
 - **IP privacy**: direct paths expose network addresses to other participants. Gate and tracker operators also see connecting IP addresses. The SDK does not provide an IP-anonymity mode.
 
 ## 12. Known limits

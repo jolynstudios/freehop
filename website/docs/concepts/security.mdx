@@ -41,7 +41,8 @@ The additional data binds the room, the sender and the recipient. If a gate re-l
 | **Gate** | Socket IP addresses, opaque room tags, random peer ids, envelope sizes and timing | Read SDP, candidates, capabilities or credentials; forge or re-route envelopes undetected; add members to a room |
 | **Gateway owner** (a desktop participant or host node) | Which peers relay through it, and how much | Read the media: it stays DTLS-SRTP encrypted end to end, and the gateway relays ciphertext |
 | **Forwarding participant** | The media it forwards | Nothing new: it is in the call and already receives both streams |
-| **Room member** | Network addresses on direct paths and the room's shared key | Authenticate to the new epoch after a kick, provided every remaining member and host updates its ticket |
+| **Application TURN relay** (only with the opt-in `turn`) | IP addresses, timing and sizes of the encrypted packets of the pairs it carries | Read the media: it stays DTLS-SRTP encrypted end to end |
+| **Room member** | Network addresses on direct paths, the room's shared key and, with `classifyNat`, each member's NAT type | Authenticate to the new epoch after a kick, provided every remaining member and host updates its ticket |
 
 A hostile gate can drop or delay traffic. Several gates in each ticket mitigate that: clients use all of them, and envelopes arrive through any route that works.
 
@@ -51,7 +52,7 @@ A gate's list of peers in a room is only a hint. A hint makes a client greet tha
 
 ## Tickets
 
-A ticket is `{ v, app, roomId, epoch, gates, secret, auth?, stun?, expires }`. It carries the room secret, so it is a bearer credential: anyone holding it can join the room. Deliver it only to the member it was issued for, over your application's own authenticated channel, and never put it in a listing or a shareable link. A ticket's `expires` is 6 hours after issue by default, and, when configured, the gate token inside it expires at the same moment. The SDK refuses expired tickets at connect and update; token-gated sockets reject further requests at expiry and close on the next heartbeat. Expiry does not erase a member's copy of the shared secret or terminate established media. Use key rotation to revoke membership, including on public trackers.
+A ticket is `{ v, app, roomId, epoch, gates, secret, auth?, stun?, turn?, expires }`. It carries the room secret, so it is a bearer credential: anyone holding it can join the room. With the opt-in `turn` it also carries credentials for your TURN relay; mint short-lived ones per ticket. Deliver it only to the member it was issued for, over your application's own authenticated channel, and never put it in a listing or a shareable link. A ticket's `expires` is 6 hours after issue by default, and, when configured, the gate token inside it expires at the same moment. The SDK refuses expired tickets at connect and update; token-gated sockets reject further requests at expiry and close on the next heartbeat. Expiry does not erase a member's copy of the shared secret or terminate established media. Use key rotation to revoke membership, including on public trackers.
 
 ## Kicks rotate the room
 

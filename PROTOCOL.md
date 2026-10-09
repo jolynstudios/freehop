@@ -2,7 +2,8 @@
 
 Freehop connects small groups with audio, video and data. `maxPeers` defaults to eight other participants; larger supported sizes require benchmarks. Its signalling invariant: **gates never carry media.** Media goes peer-to-peer.
 When no direct route exists, it goes through a machine that belongs to the same session —
-a participant, a participant's own gateway or the session's host node. Volunteers may be
+a participant, a participant's own gateway or the session's host node. An application may also
+opt into its own TURN relay as a last resort (§7a). Volunteers may be
 added by configuration. Gates only introduce peers. An application operator may also run a session gateway and pay for its media bandwidth and compute.
 
 This document is normative for the wire formats and behaviour. `README.md` covers usage and
@@ -128,7 +129,8 @@ impractical, while one five-peer join needs about 100 KB.
 ```
 { v:1, role?:"gateway", forward:bool, peers:[id], gateway: null |
   { urls:["turn:host:port?transport=udp", "turn:host:port?transport=tcp"],
-    username, credential, external:[ip], internal: ip|null } }
+    username, credential, external:[ip], internal: ip|null },
+  nat?: { type, delta } }
 ```
 - `peers` lists the sender's connected links. It is used for mesh routing and introductions.
 - `forward` means the sender may bridge other pairs (§9).
@@ -206,7 +208,7 @@ existed.
 | Option | What it does | Budget |
 |---|---|---|
 | `classifyNat` | Each ICE generation's srflx candidates from up to three `stun:` servers classify this endpoint's NAT: one port for every answering server is `eim`, ports a regular step of 1–16 apart are `sequential`, anything else is `random`. The verdict is shared in caps (§5) and reported as `stats().nat`. | none |
-| `portPrediction` (implies `classifyNat`) | Tried once per link when one side is `sequential` and the other `eim` or `sequential`. The link restarts ICE; the side whose peer is `sequential` then adds remote candidates for the peer's next ports above its highest srflx port (8 per srflx candidate by default, at most 16 per generation). The predicted candidates are added locally; nothing extra is signalled. | `timing.predictMs`, 10 s |
+| `portPrediction` (implies `classifyNat`) | Tried once per link when one side is `sequential` and the other `eim` or `sequential`. The link restarts ICE; the side whose peer is `sequential` then adds remote candidates for the peer's next ports above its highest srflx port (`limits.predictPorts`, 8 per srflx candidate by default, at most 16 per generation). The predicted candidates are added locally; nothing extra is signalled. | `timing.predictMs`, 10 s |
 | `turn` | The application's TURN servers join that link's ICE servers and the link restarts ICE. The path reports `relay` with `via: 'turn'`. | `timing.turnMs`, 10 s |
 
 Order: prediction, then TURN, then `unreachable` with the usual backoff. Both rungs reuse the
@@ -315,7 +317,7 @@ capped at 200 kbit/s.
 - **Opt-in traversal aids** (§7a): with `classifyNat`, room members learn the sender's NAT
   type. Port prediction adds at most 16 predicted remote candidates per ICE generation, only for
   the peer that link already negotiates with. An application TURN relay sees the IP addresses,
-  timing and DTLS-SRTP-encrypted packets of the pairs that use it. TURN servers come only from the
+  timing and DTLS-SRTP-encrypted packets of the pairs that use it. Application TURN servers come only from the
   ticket or the application's options, never from gates or caps.
 - **IP privacy**: direct paths expose network addresses to other participants. Gate and tracker operators also see connecting IP addresses. The SDK does not provide an IP-anonymity mode.
 

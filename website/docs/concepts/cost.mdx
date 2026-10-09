@@ -48,7 +48,7 @@ Connected pairs move most signalling onto their own data channels. Keepalives, n
 | `relay` with `via: 'turn'` (opt-in) | Your application's own TURN relay | Your TURN provider's or server's bandwidth, only for pairs that would otherwise be unreachable |
 | `unreachable` | Nobody; no media flows | No media traffic is sent |
 
-The opt-in TURN relay is the only route that leaves the session, and only when you configure it. At Freehop's media caps a relayed call is roughly 50 MB per hour of two-way audio, or about 330 MB per hour with video; a provider's free tier or a TURN server on a machine you already run usually keeps that at zero.
+The opt-in TURN relay is the only route that leaves the session, and only when you configure it. At Freehop's media caps, packet overhead included, a pair relayed for an hour moves roughly 50 MB through the relay with audio only, or about 330 MB with video; a provider's free tier or a TURN server on a machine you already run can keep that at zero.
 
 Freehop avoids sending media through its gates. It cannot make bandwidth free: if you run the session host or gateway on your own paid server, you pay that server's normal bandwidth and compute costs. Forwarded video is capped at 200 kbit/s, and gateways have per-allocation, per-room and overall quotas.
 

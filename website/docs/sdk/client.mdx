@@ -60,7 +60,7 @@ Media is captured with echo cancellation, noise suppression and automatic gain c
 | `attach(track, element)` | Plays a remote track in an `<audio>` or `<video>` element (sets `srcObject`, autoplay, inline playback). |
 | `setPeerMuted(peerId, muted)` | Silences one member locally: their current and future audio tracks stop rendering (video unchanged). Works before the peer sends audio; they cannot tell they are muted. `levels()` keeps reporting their speaking level. State clears when the peer leaves for good, not on a temporary disconnect (`gone`). |
 | `levels()` | Resolves to `{ [peerId]: 0..1 }`: the current speaking level of each origin peer, from inbound audio statistics. |
-| `update(ticket, { dropped })` | Applies an unexpired newer ticket with a new secret for the same app and room. Closes old links, revokes the old desktop gateway epoch, adopts the new ticket's gates and STUN servers, and reconnects approved members. A failed gateway revocation never blocks the rotation; it is retried on `leave()`. Resolves to `false` for an invalid update. |
+| `update(ticket, { dropped })` | Applies an unexpired newer ticket with a new secret for the same app and room. Closes old links, revokes the old desktop gateway epoch, adopts the new ticket's gates, STUN servers and TURN servers (unless `connect()` was given `turn`), and reconnects approved members. A failed gateway revocation never blocks the rotation; it is retried on `leave()`. Resolves to `false` for an invalid update. |
 | `switchDevice(kind, deviceId)` | Uses another microphone (`'audio'`) or camera (`'video'`), by `deviceId` from `navigator.mediaDevices.enumerateDevices()`, or `null` for the default. A running track is replaced on every link without renegotiation and keeps its mute state; otherwise the choice applies to the next `setMicrophone(true)` or `setCamera(true)`. Initial choices can be passed as `connect(ticket, { devices: { audio, video } })`. |
 | `send(data, { to })` | Sends application data (any JSON value, at most 4096 characters) to one member, or to every member without `to`. It is sealed like signalling and travels over the peers' own data channel once they are linked. Receivers get a `message` event `{ from, data }` and accept at most 20 messages per second from one sender. Treat the data as untrusted input. Resolves to the number of members it was sent to. |
 | `refresh(ticket)` | Applies a reissued ticket for the **same** epoch and secret with a later expiry, for example fresh gate tokens before a long call outlives them. The new tokens are used at the next gate (re)connect. Resolves to `false` for an invalid refresh. |
@@ -124,7 +124,7 @@ const s = await session.stats();
 // s.nat    -> { type: 'eim' | 'sequential' | 'random' | 'unknown', delta }   (only with classifyNat or portPrediction)
 ```
 
-With the opt-in options, `s.counters` also reports `natSamples`, `predictAttempts`, `predictCandidates`, `turnAttempts` and any `turnErrors` or `rungErrors`.
+With the opt-in options, `s.counters` also reports `natSamples`, `predictAttempts`, `predictCandidates`, `turnAttempts` and any `natErrors`, `predictErrors`, `turnErrors` or `rungErrors`.
 
 `bytesOut` and `bytesIn` per gate are what your gate actually carried for this client: a quick way to see that media never touches it.
 

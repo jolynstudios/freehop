@@ -8,6 +8,7 @@ Alpha.5 adds opt-in last resorts before `unreachable`: NAT classification (`clas
 - `laddergate` replayed 19 path-ladder scenarios; the 12 with the new options unset match traces recorded from the unmodified ladder byte for byte.
 - The Linux NAT lab, packaged as a disposable Docker container (`lab/docker.sh`, Docker Desktop on macOS, Linux 6.10), ran every existing scenario once with Chromium: all 12 passed with the same routes as on 2 October. The six new scenarios passed once each: `eim-random` and `udpblock-eim` stay unreachable with default options; `hard-pair-turn` (UDP) and `udpblock-pair-turn` (TCP) connect as relay via `turn` through the application's TURN server; `random-eim-predict` and `hard-pair-predict` stay unreachable with no prediction attempt.
 - coturn's `turnutils_uclient` against Freehop's TURN server: UDP 800/800 and TCP 800/800, 0 lost.
+- After publication, a fresh install of `freehop@0.1.0-alpha.5` from npm passed compile and runtime smoke checks; the npm archive is byte-identical to the GitHub release asset.
 - Not verified: port prediction's success case (a NAT that hands out ports in order) cannot be simulated with Linux NAT and has not been tested on real networks, so the option stays off by default. These are one-run, single-engine lab results, not the three-trial cross-engine qualification.
 
 ## Alpha.4 release checks — 7 October 2026
@@ -112,15 +113,16 @@ The 40-run matrix above was re-run in the same home-lab test environment on 2 Oc
 4. **Media quality under real load:** forwarded (bridged) media is re-encoded by the
    participant, and the upstream budget of a forwarding participant on home broadband is still
    unmeasured.
+5. **Port prediction on real networks:** its success case, a NAT that hands out ports in order,
+   cannot be simulated with Linux NAT, so `portPrediction` stays off by default.
 
 ## Reproduce
 ```sh
-npm run typesgate
-node --test test/*.test.mjs
-node test/browser/smoke.mjs chromium,firefox,webkit --tls
-node test/browser/multigate.mjs && node test/browser/rekey.mjs && node test/browser/tracker.mjs && node test/browser/example-app.mjs
-# in a disposable privileged Linux container (see ARCHITECTURE.md §9):
-FREEHOP_DISPOSABLE_LAB=yes lab/qualify.sh
+npm run ship                    # unit tests, release gates and browser suites
+node test/browser/tracker.mjs   # a public WebTorrent tracker as the only gate
+# NAT lab in a disposable privileged Docker container (see ARCHITECTURE.md §9):
+lab/docker.sh qualify           # the 11-scenario matrix three times, cross-engine runs, coturn conformance
+lab/docker.sh hard-pair-turn    # one scenario, including the opt-in ones
 ```
 
 ---

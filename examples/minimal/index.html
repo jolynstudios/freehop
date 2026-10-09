@@ -33,10 +33,12 @@ $('join').onsubmit = async event => {
   const { member, ticket } = await (await fetch('/api/join', { method: 'POST', body: JSON.stringify({ room: $('room').value }) })).json();
   demo.member = member;
   // Opt-in last resorts before 'unreachable', both off by default. A TURN relay arrives in the ticket
-  // when server.mjs runs with FREEHOP_TURN_URLS; a call it carries reads "relay via turn".
+  // when server.mjs runs with FREEHOP_TURN_URLS and is used only when no other route works; a call it
+  // carries reads "relay via turn".
   const session = demo.session = await connect(ticket, {
     media: { audio: true, video: true },
     // portPrediction: true,   // also try predicted ports for NATs that hand out ports in order
+    //                         // (needs two or more stun: servers in the ticket; this example issues none)
   });
   demo.state = 'joined'; $('state').textContent = 'joined as ' + session.id.slice(0, 6);
   await fetch('/api/peer', { method: 'POST', body: JSON.stringify({ member, peer: session.id }) });

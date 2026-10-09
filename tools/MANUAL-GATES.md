@@ -10,11 +10,13 @@ Run the relevant ones before a release whose changes touch the area they guard.
   with audio and video flowing and gate traffic signalling-sized.
 - **Why manual:** it needs a disposable, privileged Linux container (network namespaces, iptables,
   nftables, miniupnpd). It must never run directly on a developer machine or CI runner.
-- **Run:** `lab/docker.sh qualify` (or one scenario: `lab/docker.sh hard-pair`) on any machine with
-  Docker, including Docker Desktop on macOS. It builds `lab/Dockerfile` and runs each scenario in a throwaway
-  `--privileged` container. Inside an existing lab container: `FREEHOP_DISPOSABLE_LAB=yes lab/qualify.sh`.
-- **Must hold:** every `SCENARIOS` expectation in `lab/nat-run.mjs`; `hard-pair` and `gate-only` stay
-  `unreachable` with the default options. Evidence lands in `test/evidence/nat-*.json`.
+- **Run:** `lab/docker.sh qualify` on any machine with Docker, including Docker Desktop on macOS: the
+  11-scenario matrix three times with Chromium, cross-engine runs and coturn conformance.
+  `lab/docker.sh <name>` runs one scenario, including `host-node-gates-down` and the opt-in scenarios
+  below. Each run builds `lab/Dockerfile` and uses a throwaway `--privileged` container. Inside an
+  existing lab container: `FREEHOP_DISPOSABLE_LAB=yes lab/qualify.sh`.
+- **Must hold:** each scenario's expectation in `SCENARIOS` (`lab/nat-run.mjs`); `hard-pair` and
+  `gate-only` stay `unreachable` with the default options. Evidence lands in `test/evidence/nat-*.json`.
 - **Opt-in rung scenarios** (added with the `classifyNat`, `portPrediction` and `turn` options):
   `eim-random` and `udpblock-eim` document pairs that stay unreachable by default; `hard-pair-turn` and
   `udpblock-pair-turn` must report `relay` via `turn` through the application's TURN server
@@ -38,8 +40,9 @@ Run the relevant ones before a release whose changes touch the area they guard.
 
 ## Browser suites in CI
 
-- **Guards:** the TLS mesh, multi-gate outage, kick/rekey and SDK example suites on three engines,
-  and the application TURN rung in Chromium (`test/browser/turn-rung.mjs`, needs a LAN IPv4 address).
+- **Guards:** the TLS mesh on Chromium, Firefox and WebKit; the multi-gate outage, kick/rekey and SDK
+  example suites and the application TURN rung (`test/browser/turn-rung.mjs`, needs a LAN IPv4 address)
+  on Chromium.
 - **Why manual:** CI runners have no browsers installed; `npm run ship` (without `--fast`) runs them.
 - **Run:** `npm run ship`, or `npm run test:browsers`.
 
@@ -52,8 +55,8 @@ Run the relevant ones before a release whose changes touch the area they guard.
 - **Run:** in `../redline-wars-unified-release/web`:
   `FREEHOP_TEST_SOURCE=/path/to/freehop node tools/freehop-browser-gate.mjs`
 - **Must hold:** `freehop-browser-gate PASS`. Only the bare `freehop` import is redirected; `freehop/gate`,
-  `freehop/authority` and `freehop/ticket` still come from Redline's pinned release, which doubles as an
-  old-version compatibility check. `tools/contractgate.mjs` covers the structural rules Redline's asset gate
+  `freehop/authority` and `freehop/ticket` still come from Redline's pinned release, which doubles as a
+  compatibility check against that release. `tools/contractgate.mjs` covers the structural rules Redline's asset gate
   applies to the bundled client.
 - **Status (9 October 2026):** red before any media flows, on Redline's own pinned `0.1.0-alpha.3` as well as
   on Freehop HEAD and the working tree: its harness reports `Room fedcba9876543210 is not open` and "Call
