@@ -48,7 +48,7 @@ const PHASES = [
     name: 'Unreachable',
     budget: '30 s to 5 min',
     servers: 'Unchanged.',
-    routes: 'None inside the session. Freehop reports it instead of renting a relay.',
+    routes: 'None inside the session. By default Freehop reports it instead of renting a relay; an app can opt into its own.',
     leaves: 'ICE restarts after 30 s, 60 s, 120 s, 240 s, then every 300 s. New members or a network change can open a route.',
   },
 ];

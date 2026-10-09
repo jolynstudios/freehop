@@ -32,13 +32,21 @@ $('join').onsubmit = async event => {
   event.preventDefault();
   const { member, ticket } = await (await fetch('/api/join', { method: 'POST', body: JSON.stringify({ room: $('room').value }) })).json();
   demo.member = member;
-  const session = demo.session = await connect(ticket, { media: { audio: true, video: true } });
+  // Opt-in last resorts before 'unreachable', both off by default. A TURN relay arrives in the ticket
+  // when server.mjs runs with FREEHOP_TURN_URLS; a call it carries reads "relay via turn".
+  const session = demo.session = await connect(ticket, {
+    media: { audio: true, video: true },
+    // portPrediction: true,   // also try predicted ports for NATs that hand out ports in order
+  });
   demo.state = 'joined'; $('state').textContent = 'joined as ' + session.id.slice(0, 6);
   await fetch('/api/peer', { method: 'POST', body: JSON.stringify({ member, peer: session.id }) });
   session.on('peer', ({ id }) => { tile(id); demo.peers[id] = { path: 'connecting' }; });
   session.on('peer-left', ({ id }) => { document.querySelector(`[data-peer="${id}"]`)?.remove(); delete demo.peers[id]; });
   session.on('track', ({ peer, track }) => session.attach(track, tile(peer).querySelector(track.kind === 'video' ? 'video' : 'audio')));
-  session.on('path', ({ peer, kind, via }) => { tile(peer).querySelector('.path').textContent = kind + (via ? ' via ' + via.slice(0, 6) : ''); (demo.peers[peer] ??= {}).path = kind; });
+  session.on('path', ({ peer, kind, via }) => {
+    tile(peer).querySelector('.path').textContent = kind === 'unreachable' ? 'unreachable: no route (server.mjs shows the opt-in TURN relay)' : kind + (via ? ' via ' + via.slice(0, 6) : '');
+    (demo.peers[peer] ??= {}).path = kind;
+  });
   $('mic').disabled = $('cam').disabled = $('leave').disabled = false; $('join').hidden = true;
   let mic = true, cam = true;
   $('mic').onclick = async () => { mic = !mic; await session.setMicrophone(mic); $('mic').textContent = mic ? 'Mute' : 'Unmute'; };

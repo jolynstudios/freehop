@@ -166,6 +166,6 @@ function decideRoute(a: Net, b: Net, x: Extras): Omit<Verdict, 'lab'> {
     kind: 'unreachable',
     phase: null,
     headline: 'Unreachable for now, and Freehop says so.',
-    why: `${reason} ${thirdUseless ? 'Cleo cannot reach a UDP-blocked office either, so she cannot bridge. ' : ''}Nobody inside the session can carry the media, so Freehop reports unreachable instead of renting a relay, and retries with an ICE restart after 30 seconds, backing off to every 5 minutes.${missing.length ? ` Add ${list(missing)} with a working route to both endpoints to make another path possible.` : ''}`,
+    why: `${reason} ${thirdUseless ? 'Cleo cannot reach a UDP-blocked office either, so she cannot bridge. ' : ''}Nobody inside the session can carry the media, so by default Freehop reports unreachable instead of renting a relay, and retries with an ICE restart after 30 seconds, backing off to every 5 minutes.${missing.length ? ` Add ${list(missing)} with a working route to both endpoints to make another path possible.` : ''}`,
   };
 }

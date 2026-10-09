@@ -1,7 +1,7 @@
 ---
 title: Test results
 sidebar_label: Test results
-description: "Alpha.4 verification on 7 October 2026: 173 unit tests, browser suites and TypeScript consumers, alongside the dated 40-run home-lab network matrix."
+description: "Alpha.5 verification on 9 October 2026: 201 unit tests, browser suites, TypeScript consumers and a one-run lab rerun with the opt-in routes, alongside the dated 40-run home-lab network matrix."
 ---
 
 import PathBadge from '@site/src/components/PathBadge';
@@ -11,14 +11,14 @@ These are Freehop's own network-test results, produced by its developer in a hom
 
 <StatGrid>
   <Stat value="40/40" label="home-lab network runs passed, 0 failed" note="11 simulated scenarios × 3 Chromium trials, plus 7 cross-engine runs" />
-  <Stat value="173/173" label="unit tests" note="Alpha.4 release checks · 7 October 2026" />
+  <Stat value="201/201" label="unit tests" note="Alpha.5 release checks · 9 October 2026" />
   <Stat value="800/800" label="TURN messages over UDP" note="coturn's turnutils_uclient, 0 lost" />
   <Stat value="800/800" label="TURN messages over TCP" note="coturn's turnutils_uclient, 0 lost" />
 </StatGrid>
 
 :::note[Scope]
 
-This is a repeatable kernel-NAT test in Linux network namespaces, not a certification, independent evaluation or test on physical ISP, carrier or corporate networks. The 40-run matrix was run on 2 October 2026 after the security fixes: gateways and host nodes now relay only inside their session, and every simulated scenario still passed. It has not been rerun for alpha.4. Unit, local-browser and type checks below were run on 7 October 2026. See [Not yet verified](#not-yet-verified) below.
+This is a repeatable kernel-NAT test in Linux network namespaces, not a certification, independent evaluation or test on physical ISP, carrier or corporate networks. The 40-run matrix was run on 2 October 2026 after the security fixes: gateways and host nodes now relay only inside their session, and every simulated scenario still passed. On 9 October 2026 every scenario ran once more with Chromium for alpha.5, in the same lab packaged as a Docker container (`lab/docker.sh`), and took the same route; the three-trial, three-engine matrix has not been rerun. Unit, local-browser and type checks below were run on 7 October 2026. See [Not yet verified](#not-yet-verified) below.
 
 :::
 
@@ -71,11 +71,26 @@ The measurements below are from the original 2 October run; all 40 scenarios als
 
 Earlier research that only tried direct routes proved its own boundary: two fully random symmetric NATs connected in 0 of 3 attempts, and UDP-blocked peers had no route at all. In these simulated network tests Freehop connects both cases, through a desktop participant's gateway, the session's host node or a participant. The same test setup leaves a hard-NAT pair without a helper unreachable. A network profile that reaches nothing but the gate (`gate-only`) remains unreachable even with session helpers. There, media is impossible without the operator carrying it, and Freehop reports `unreachable`.
 
+## Opt-in last resorts (alpha.5, 9 October 2026)
+
+One Chromium run each, in the Docker-packaged lab. The first two rows use the default options and document limits; the rest use the opt-in `turn` and `portPrediction` options.
+
+| Scenario | Profiles | Result | Path per pair |
+|---|---|---|---|
+| `eim-random` | a=eim, b=random | 1/1 | a–b <PathBadge kind="unreachable" /> (home router against a strict NAT) |
+| `udpblock-eim` | a=udpblock, b=eim | 1/1 | a–b <PathBadge kind="unreachable" /> (UDP-blocked browser against a home router) |
+| `hard-pair-turn` | a=random, b=random, t=application TURN | 1/1 | a–b <PathBadge kind="relay" /> via `turn`, over UDP |
+| `udpblock-pair-turn` | a=udpblock, b=udpblock, t=application TURN | 1/1 | a–b <PathBadge kind="relay" /> via `turn`, over TCP |
+| `random-eim-predict` | a=random, b=eim, `portPrediction` | 1/1 | a–b <PathBadge kind="unreachable" />, no prediction attempted |
+| `hard-pair-predict` | a=random, b=random, `portPrediction` | 1/1 | a–b <PathBadge kind="unreachable" />, no prediction attempted |
+
+Port prediction's success case, a NAT that hands out ports in order, cannot be simulated with Linux NAT and has not yet been tested on real networks; the option stays off by default.
+
 ## Other evidence
 
-### Unit tests: 173 of 173
+### Unit tests: 201 of 201
 
-Passed for alpha.4 on 7 October 2026, including the audio-recovery and adaptive-video regressions.
+Passed for alpha.5 on 9 October 2026, including the audio-recovery and adaptive-video regressions and the opt-in route tests: NAT classification, prediction bounds, TURN rung order and fallback, and TURN servers in tickets.
 
 - STUN codec with the RFC 5769 test vectors, plus fuzzing.
 - TURN server: integrity, framing, quotas, room bandwidth, IPv6 destination policy and TCP deadlines.
@@ -84,9 +99,9 @@ Passed for alpha.4 on 7 October 2026, including the audio-recovery and adaptive-
 - Gateway: bounded room-scoped credentials, revocation retention, renderer isolation and loopback refusal.
 - Protocol regressions: gate audiences, STUN pinning, discovery churn, both-endpoint forwarding consent and cancellation, key rotation and copied aliases.
 
-### TURN conformance-tool run (part of the original home-lab test run)
+### TURN conformance-tool run (original home-lab test run, rerun 9 October 2026)
 
-coturn's `turnutils_uclient` against Freehop's TURN server: **UDP 800/800 and TCP 800/800 messages, 0 lost.** It runs in Send/Data mode, because coturn's client uses obsolete RFC 5766 channel numbers. ChannelData is covered by the browser tests.
+coturn's `turnutils_uclient` against Freehop's TURN server: **UDP 800/800 and TCP 800/800 messages, 0 lost**, in both runs. It runs in Send/Data mode, because coturn's client uses obsolete RFC 5766 channel numbers. ChannelData is covered by the browser tests.
 
 ### TURN browser interop (macOS, original test run)
 
@@ -94,7 +109,7 @@ coturn's `turnutils_uclient` against Freehop's TURN server: **UDP 800/800 and TC
 
 ### Local browser suites (macOS)
 
-On 7 October 2026, `npm run ship` passed the three-engine TLS mesh, multi-gate outage, kick/rekey and SDK reference app suites for alpha.4. The list below also includes the original three-Chromium and public-tracker checks; tracker connectivity was separately exercised in live demo checks.
+On 9 October 2026, `npm run ship` passed the three-engine TLS mesh, multi-gate outage, kick/rekey, SDK reference app and application-TURN suites for alpha.5. The list below also includes the original three-Chromium and public-tracker checks; tracker connectivity was separately exercised in live demo checks.
 
 - A mesh of three Chromium browsers.
 - Chromium, Firefox and WebKit in one mesh over TLS.
@@ -102,10 +117,11 @@ On 7 October 2026, `npm run ship` passed the three-engine TLS mesh, multi-gate o
 - Kick and rekey.
 - **A public WebTorrent tracker as the only gate** (`wss://tracker.openwebtorrent.com`): no server of our own.
 - The SDK reference app driven through its own interface and API, including a kick rotation.
+- Two Chromium peers that accept only relayed candidates: `unreachable` without the `turn` option, relay via `turn` with it.
 
 ### TypeScript consumers
 
-Alpha.4 ships declarations for all 15 public entry points. Strict browser and backend consumers passed with TypeScript 6 and 7 on 7 October 2026, including a backend without DOM types and Electron 44.6 declarations. A fresh install from npm passed compile and runtime smoke checks after publication. Run `npm run typesgate` from a checkout for the maintained consumer fixtures.
+Declarations cover all 15 public entry points since alpha.4. For alpha.5 on 9 October 2026, strict browser and backend consumers passed with the repository's TypeScript 7 compiler, including the new option types; the TypeScript 6 and Electron 44.6 checks are from alpha.4 on 7 October 2026. A fresh install from npm passed compile and runtime smoke checks after publication. Run `npm run typesgate` from a checkout for the maintained consumer fixtures.
 
 ### Security review
 

@@ -2,6 +2,10 @@
 // Minimal Freehop consumer: an application backend that admits members to rooms and hands
 // out tickets, plus the gate on the same origin. Everything an app needs, nothing app-specific.
 //   node examples/minimal/server.mjs [port]
+// Optional last resort before 'unreachable', off unless configured: your own TURN relay, which then
+// carries only calls that would otherwise fail (its bandwidth is yours).
+//   FREEHOP_TURN_URLS=turn:turn.example.com:3478 FREEHOP_TURN_USERNAME=… FREEHOP_TURN_CREDENTIAL=… npm run example
+// A real deployment mints short-lived credentials per ticket: createAuthority({ turn: async ({ expires }) => … }).
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
@@ -11,7 +15,12 @@ import { createAuthority } from '../../src/sdk/authority.mjs';
 const root = new URL('../../', import.meta.url);
 const TYPES = { '.mjs': 'text/javascript', '.html': 'text/html; charset=utf-8' };
 
-export async function startExample({ host = '127.0.0.1', port = 0 } = {}) {
+export function turnFromEnv(env = process.env) {
+  const urls = (env.FREEHOP_TURN_URLS ?? '').split(',').map(url => url.trim()).filter(Boolean);
+  return urls.length ? [{ urls, username: env.FREEHOP_TURN_USERNAME ?? '', credential: env.FREEHOP_TURN_CREDENTIAL ?? '' }] : undefined;
+}
+
+export async function startExample({ host = '127.0.0.1', port = 0, turn = turnFromEnv() } = {}) {
   const gateTokenSecret = randomBytes(32).toString('base64url');
   const members = new Map();   // member id -> room id (your app's own notion of membership)
   const peerIds = new Map();   // member id -> Freehop peer id (reported by the client)
@@ -58,11 +67,13 @@ export async function startExample({ host = '127.0.0.1', port = 0 } = {}) {
   await new Promise(resolve => server.listen(port, host, resolve));
   const origin = `http://${host}:${server.address().port}`;
   const gate = await createGate({ server, tokenSecret: gateTokenSecret });
-  authority = createAuthority({ app: 'peerlane-example', gates: [origin.replace(/^http/, 'ws') + gate.path], gateTokenSecret });
-  return { origin, gate, authority, members, async close() { await gate.close(); await new Promise(r => server.close(r)); server.closeAllConnections?.(); } };
+  // With `turn`, every ticket carries the relay; clients add it only when no other route works.
+  authority = createAuthority({ app: 'peerlane-example', gates: [origin.replace(/^http/, 'ws') + gate.path], gateTokenSecret, ...(turn ? { turn } : {}) });
+  return { origin, gate, authority, members, turn: turn ?? null, async close() { await gate.close(); await new Promise(r => server.close(r)); server.closeAllConnections?.(); } };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const example = await startExample({ port: Number(process.argv[2] ?? 8790) });
   console.log(`Freehop example: ${example.origin}  (open it in two or more browser windows)`);
+  console.log(example.turn ? `TURN last resort: on (${example.turn[0].urls.join(', ')})` : 'TURN last resort: off (set FREEHOP_TURN_URLS, FREEHOP_TURN_USERNAME and FREEHOP_TURN_CREDENTIAL to enable it)');
 }

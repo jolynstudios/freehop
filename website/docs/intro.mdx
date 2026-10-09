@@ -15,7 +15,7 @@ Freehop is a JavaScript SDK with bundled TypeScript declarations for adding peer
 
 :::caution[Alpha, home-lab network tests only]
 
-Freehop is alpha software. Its developer-built home-lab setup passed 40 of 40 simulated-network runs across three browser engines on 2 October 2026. Release checks on 7 October passed 173 unit tests, local browser suites and TypeScript consumer checks; the full NAT matrix has not been rerun for alpha.4. This was not an independent lab evaluation or a test on real internet connections. Freehop has not yet been verified on physical home routers, 4G/5G carrier networks, corporate networks or mobile browsers. See [Limits](./limits.mdx) before you depend on it.
+Freehop is alpha software. Its developer-built home-lab setup passed 40 of 40 simulated-network runs across three browser engines on 2 October 2026. Release checks for alpha.5 on 9 October passed 201 unit tests, local browser suites and TypeScript consumer checks, and every lab scenario ran once more with Chromium; the three-engine, three-trial matrix has not been rerun. This was not an independent lab evaluation or a test on real internet connections. Freehop has not yet been verified on physical home routers, 4G/5G carrier networks, corporate networks or mobile browsers. See [Limits](./limits.mdx) before you depend on it.
 
 :::
 
@@ -43,6 +43,8 @@ Classic WebRTC deployments fall back to a TURN relay that the operator rents. Ev
 | 3 | <PathBadge kind="relay" /> | The gateway of another session member, such as the session's host node |
 | 4 | <PathBadge kind="bridged" /> | Another participant, who forwards the media because it is in the call anyway |
 | | <PathBadge kind="unreachable" /> | Nothing: an honest status when no route exists inside the session |
+
+Applications that want one more chance can opt into two last resorts before `unreachable`: port prediction for NATs that hand out ports in order, and their own TURN relay. Both are off by default; a relay you add carries only the calls that would otherwise fail, and its bandwidth is yours.
 
 The [paths and escalation](./concepts/paths.mdx) page explains when each step is tried and how long it gets.
 

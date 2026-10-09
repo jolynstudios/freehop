@@ -11,14 +11,14 @@ is still JavaScript, so existing JavaScript integrations keep working.
 ## Install the typed release
 
 The typed alpha is available on [npm](https://www.npmjs.com/package/freehop) and
-[GitHub Releases](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.4).
+[GitHub Releases](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.5).
 Install the current alpha:
 
 ```sh
 npm install freehop@alpha
 ```
 
-To pin this release, use `npm install freehop@0.1.0-alpha.4`.
+To pin the current release, use `npm install freehop@0.1.0-alpha.5`.
 
 No separate `@types/freehop` package is needed. Use a current TypeScript compiler and
 `moduleResolution: "Bundler"` in a browser build or `"NodeNext"` in an ESM Node project.
@@ -50,6 +50,18 @@ export async function joinCall(ticket: Ticket, video: HTMLVideoElement): Promise
 Explicit annotations are optional. `connect()` already returns `Promise<Session>`;
 `type Ticket`, `ConnectOptions`, `RoomEvents` and the stats types are available when you
 need them for your application's own interfaces.
+
+## Opt-in routes are typed too
+
+```ts
+import { connect, type ConnectOptions, type NatInfo, type TurnServer } from 'freehop';
+
+const turn: TurnServer[] = [{ urls: ['turn:turn.example.com:3478'], username: 'u', credential: 'c' }];
+const session = await connect(ticket, { portPrediction: true, turn } satisfies ConnectOptions);
+const nat: NatInfo | undefined = (await session.stats()).nat; // { type: 'eim' | 'sequential' | 'random' | 'unknown', delta }
+```
+
+`turn` and `portPrediction` are off unless you pass them. On the backend, `createAuthority({ turn })` accepts the same `TurnServer[]` or a function that mints them per ticket.
 
 ## Validate data at the boundary
 

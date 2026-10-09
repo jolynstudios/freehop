@@ -16,11 +16,13 @@ Freehop is alpha software. Its network tests ran in a developer-built home-lab s
 
 Gus is on a guest network that lets traffic through to the gate's host and to nothing else. Envelopes reach the gate, so Gus can be introduced, but there is no machine in the session his media could travel to. Carrying it through the gate would mean the operator carries media, which is exactly what Freehop rules out. Freehop reports such pairs as `unreachable` (home-lab test scenario `gate-only`).
 
-A separately configured session gateway can help only if the network permits a route to its media transport. Running it on the gate’s host does not by itself bypass firewall rules. Its owner supplies the media bandwidth; the gate remains signalling-only.
+A separately configured session gateway, or your own TURN relay (the opt-in `turn` option), can help only if the network permits a route to its media transport. Running it on the gate’s host does not by itself bypass firewall rules. Its owner supplies the media bandwidth; the gate remains signalling-only.
 
 ### Two hard networks and nobody else
 
 Two browser-only participants who are both behind hard NATs or UDP-blocking networks, with no IPv6, no gateway in the session and no third participant, cannot connect (home-lab test scenario `hard-pair`). Any one of these changes that: a desktop participant with a reachable gateway, a [host node](./concepts/host-nodes.mdx), or a third participant who reaches both and can [forward](./concepts/forwarding.mdx).
+
+The home lab confirms two more pairs that stay unreachable without help: a home router against a strict NAT (`eim-random`), and a UDP-blocked browser against a home router (`udpblock-eim`). Two opt-in last resorts change that before `unreachable` is reported. Your own TURN relay (`turn`) connected two strict NATs and two UDP-blocked peers in the lab (`hard-pair-turn`, `udpblock-pair-turn`); its bandwidth is yours. Port prediction (`portPrediction`) targets NATs that hand out ports in order; it never fires for random NATs and is not yet verified on real networks, so it stays off by default.
 
 When a pair is `unreachable`, Freehop keeps retrying with ICE restarts after 30, 60, 120 and 240 seconds, then every 300 seconds, at almost no cost to the gate. Show your users an honest message, such as "voice unavailable on this network", rather than silence.
 
@@ -67,6 +69,7 @@ The following environments and workloads remain unverified:
 2. **Application performance under load:** CPU, rendering and responsiveness while calls run alongside a meeting UI, shared workspace or game.
 3. **iOS Safari and Android browsers.** Only desktop engines were tested.
 4. **Media quality under real load,** including how much upload a forwarding participant on home broadband can spare.
+5. **Port prediction on real networks:** carrier NATs that hand out ports in order. The Linux lab cannot simulate them.
 
 The [network test results](./results.mdx) list exactly what *has* been verified.
 

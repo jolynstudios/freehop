@@ -57,7 +57,7 @@ Ana and Ben join `room-42`. Ana is on a home router; Ben is on a phone hotspot.
 4. **Greeting.** Every peer on a gate's roster is only a hint, so Ana greets Ben with sealed capabilities, and Ben greets Ana. When Ana's first envelope authenticates at Ben's side, Ben admits her as a member (`peer` event), and the other way round.
 5. **Offer.** The peer with the lower id opens the link and makes the offer; the other side waits for it. Descriptions and ICE candidates travel as sealed envelopes through every gate both are on.
 6. **Endpoint phase.** ICE gathers against application-approved STUN and any gateways named in the capabilities. Ana and Ben have 5 seconds (plus one grace period while checks get answers) to connect.
-7. **Escalation, if needed.** If they do not connect, the pair moves to the session phase (session gateways, 7 seconds), then bridging through a participant, then `unreachable` with slow retries. See [paths and escalation](./concepts/paths.mdx).
+7. **Escalation, if needed.** If they do not connect, the pair moves to the session phase (session gateways, 7 seconds), then bridging through a participant, then (only if the application opted in) port prediction and its own TURN relay, then `unreachable` with slow retries. See [paths and escalation](./concepts/paths.mdx).
 8. **Connected.** The link's data channel opens, and from now on Ana and Ben send each other envelopes over it. Pair signalling uses the data channel. Gate keepalives, tracker discovery announcements and recovery traffic can still continue.
 9. **Path.** Each side reads its selected candidate pair and reports the path (`direct`, `gateway`, `relay` or `bridged`) to your interface.
 

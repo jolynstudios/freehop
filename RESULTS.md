@@ -1,5 +1,15 @@
 # Freehop verification results
 
+## Alpha.5 release checks — 9 October 2026
+
+Alpha.5 adds opt-in last resorts before `unreachable`: NAT classification (`classifyNat`), port prediction (`portPrediction`) and the application's own TURN relay (`turn`). All are off by default.
+
+- `npm run ship` passed: 201 unit tests; the export, type, documentation, contract and ladder gates; and the Chromium/Firefox/WebKit TLS mesh, multi-gate outage, kick/rekey, SDK example and application-TURN browser suites.
+- `laddergate` replayed 19 path-ladder scenarios; the 12 with the new options unset match traces recorded from the unmodified ladder byte for byte.
+- The Linux NAT lab, packaged as a disposable Docker container (`lab/docker.sh`, Docker Desktop on macOS, Linux 6.10), ran every existing scenario once with Chromium: all 12 passed with the same routes as on 2 October. The six new scenarios passed once each: `eim-random` and `udpblock-eim` stay unreachable with default options; `hard-pair-turn` (UDP) and `udpblock-pair-turn` (TCP) connect as relay via `turn` through the application's TURN server; `random-eim-predict` and `hard-pair-predict` stay unreachable with no prediction attempt.
+- coturn's `turnutils_uclient` against Freehop's TURN server: UDP 800/800 and TCP 800/800, 0 lost.
+- Not verified: port prediction's success case (a NAT that hands out ports in order) cannot be simulated with Linux NAT and has not been tested on real networks, so the option stays off by default. These are one-run, single-engine lab results, not the three-trial cross-engine qualification.
+
 ## Alpha.4 release checks — 7 October 2026
 
 `npm run ship` passed: 173 unit tests, export and documentation gates, and the local Chromium/Firefox/WebKit TLS mesh, multi-gate outage, kick/rekey and SDK example suites. TypeScript 6 and 7 consumers passed across all 15 public entry points, including backend-only and Electron checks. A fresh install of `freehop@0.1.0-alpha.4` from npm passed compile and runtime smoke checks.

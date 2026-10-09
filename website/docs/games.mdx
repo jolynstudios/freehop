@@ -72,4 +72,4 @@ Messages accept JSON values up to 4096 characters, with a receiver limit of 20 m
 
 ## Understand the network boundary
 
-Gates carry sealed signalling and never media. Direct paths can expose network addresses to other participants. Strict NATs and UDP-blocking networks may remain unreachable in a browser-only room; a suitable session host or desktop gateway can offer another route. Forwarding through a participant decodes and re-encodes media. See [Security](./concepts/security.mdx) and [Limits](./limits.mdx).
+Gates carry sealed signalling and never media. Direct paths can expose network addresses to other participants. Strict NATs and UDP-blocking networks may remain unreachable in a browser-only room; a suitable session host or desktop gateway can offer another route, and so can your own TURN relay if you opt in (`turn`). Forwarding through a participant decodes and re-encodes media. See [Security](./concepts/security.mdx) and [Limits](./limits.mdx).

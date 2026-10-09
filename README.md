@@ -16,9 +16,11 @@ Open-source calling for small meeting rooms, in-app conversations, shared worksp
 
 </div>
 
-**Typed SDK:** declarations for all 15 public entry points are included in **0.1.0-alpha.4**.
-Install the current alpha from [npm](https://www.npmjs.com/package/freehop), or download the
-[GitHub release](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.4).
+**New in 0.1.0-alpha.5:** opt-in last resorts for calls that would otherwise end `unreachable`:
+your own TURN relay (`turn`), port prediction for NATs that hand out ports in order (`portPrediction`)
+and NAT classification (`classifyNat`). All are off by default, so existing integrations behave
+exactly as before. Install the current alpha from [npm](https://www.npmjs.com/package/freehop), or
+download the [GitHub release](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.5).
 
 ```sh
 npm install freehop@alpha
@@ -65,17 +67,19 @@ or per-minute fee. Its *gates* introduce participants and exchange sealed setup 
 do not carry media. When a direct connection fails, media can use a participant's gateway, the
 session host, or another participant. If you run that gateway or host on infrastructure you pay
 for, its bandwidth and compute can still appear on your bill. If no route inside the session
-works, Freehop reports `unreachable` instead of sending media through an operator-run gate.
+works, Freehop reports `unreachable` instead of sending media through an operator-run gate. Your app
+can opt into its own TURN relay as a last resort before that; it then carries only the calls that
+would otherwise fail, and its bandwidth is yours (a provider's free tier usually covers it).
 
 ## Why Freehop
 
 | | |
 |---|---|
 | **No media through your gate** | Gates carry sealed signalling only. In every home-lab network test, gate traffic for an entire scenario stayed between 30 and 210 KB. A session gateway you run can still carry media on your bill. |
-| **Routes through the session** | Two strict (symmetric) NATs, or a network that blocks UDP, can't connect directly. Freehop routes them through a session member's gateway or the session host, without sending media through the signalling gate. |
+| **Routes through the session** | Two strict (symmetric) NATs, or a network that blocks UDP, can't connect directly. Freehop routes them through a session member's gateway or the session host, without sending media through the signalling gate. When nobody in the session can help, an app can opt into port prediction or its own TURN relay before `unreachable`. |
 | **Multiple signalling gates** | Run one gate or many, operated by you, your community, or public WebTorrent trackers. Peers on different gates still find each other. **Calls keep running when every gate is down.** |
 | **Private by construction** | Signalling is sealed (HKDF + AES-256-GCM), so gates can't read or forge envelopes. Direct and gateway paths preserve end-to-end DTLS-SRTP; a forwarding participant decodes and re-encodes media. |
-| **Automatic** | No manual room link is required in a ticket-based integration. Your backend issues a ticket, and the SDK takes the cheapest path that works: direct, then gateway, then relay, then bridge. |
+| **Automatic** | No manual room link is required in a ticket-based integration. Your backend issues a ticket, and the SDK takes the cheapest path that works: direct, then gateway, then relay, then bridge, then (only if you opt in) port prediction and your own TURN relay. |
 | **Small and open** | Zero-dependency browser client; a gate with one runtime dependency (`ws`); TURN gateway and PCP / NAT-PMP / UPnP port mapping in plain Node. Apache-2.0. |
 
 ## How it works
@@ -97,7 +101,7 @@ flowchart LR
 
 1. **Your backend issues tickets.** `createAuthority()` owns each room's secret. A member gets a ticket over your own authenticated channel.
 2. **Gates introduce.** Clients announce on every gate in the ticket and exchange sealed envelopes. Once linked, signalling moves onto the peers' own data channels. A gate can be your own small server or a public WebTorrent tracker: the envelopes ride in the offer and answer messages that trackers already pass between browsers ([how](https://jolynstudios.github.io/freehop/docs/concepts/trackers)).
-3. **The path ladder finds a route.** Freehop tries direct first (LAN, IPv6, STUN). If that fails it uses an endpoint's own gateway, then a gateway of another session member, then forwarding through a participant. A failure is reported honestly as `unreachable`.
+3. **The path ladder finds a route.** Freehop tries direct first (LAN, IPv6, STUN). If that fails it uses an endpoint's own gateway, then a gateway of another session member, then forwarding through a participant. Apps can opt into two more attempts after that: port prediction and their own TURN relay. A failure is reported honestly as `unreachable`.
 4. **Kicks rotate keys.** `authority.kick()` issues a new room secret; remaining members `update()` and drop the kicked peer.
 
 ## Published network evidence
@@ -123,11 +127,26 @@ arrive.
 | A network that can only reach the gate | ✅ 3/3 | `unreachable` (no route exists without your server) |
 
 **40/40 home-lab network test runs passed** on 2 October 2026 after security hardening,
-including gateways that relay only inside their session. That matrix has not been rerun for
-this revision. These are repeatable simulated-network results, not field reliability evidence. Other checks:
-- **173/173 unit tests** on 7 October 2026, including the RFC 5769 STUN vectors and the security regressions.
-- **coturn's own test client** against Freehop's TURN server on 2 October 2026: 800/800 messages over UDP and 800/800 over TCP, 0 lost.
-- **Browser suites:** multi-gate with every gate shut down mid-call, kick/rekey, a public WebTorrent tracker as the only gate, and the SDK example app.
+including gateways that relay only inside their session. On 9 October 2026 every scenario above ran
+once more with Chromium for 0.1.0-alpha.5, in the same lab packaged as a Docker container
+(`lab/docker.sh`), and took the same route. New scenarios for the opt-in last resorts, also run once
+with Chromium on 9 October:
+
+| Network situation | Result | Route Freehop chose |
+|---|---|---|
+| Home router ↔ strict NAT, nobody else (default options) | ✅ 1/1 | `unreachable` (a limit, now documented) |
+| UDP-blocking firewall ↔ home router, nobody else (default options) | ✅ 1/1 | `unreachable` (a limit, now documented) |
+| Two strict NATs + the app's own TURN relay (`turn`) | ✅ 1/1 | relay via `turn` over UDP |
+| Two UDP-blocked peers + the app's own TURN relay (`turn`) | ✅ 1/1 | relay via `turn` over TCP |
+| Strict NAT ↔ home router, and two strict NATs, with `portPrediction` | ✅ 1/1 each | `unreachable`, no prediction attempted (random NATs are never predicted) |
+
+Port prediction's success case (a NAT that hands out ports in order) cannot be simulated in this
+lab and is not yet verified on real networks, so it stays off by default. These are repeatable
+simulated-network results, not field reliability evidence. Other checks:
+- **201/201 unit tests** on 9 October 2026, including the RFC 5769 STUN vectors, the security regressions and the opt-in route tests.
+- **coturn's own test client** against Freehop's TURN server on 9 October 2026: 800/800 messages over UDP and 800/800 over TCP, 0 lost.
+- **Browser suites:** multi-gate with every gate shut down mid-call, kick/rekey, a public WebTorrent tracker as the only gate, the SDK example app, and two Chromium peers that can only connect through the app's TURN relay.
+- **Release gates:** `laddergate` replays 19 connection scenarios against traces recorded before the opt-in routes existed, and `contractgate` freezes the public API, wire format and ticket format.
 
 Full details are in [RESULTS.md](RESULTS.md).
 
@@ -158,6 +177,20 @@ session.on('track', ({ peer, track }) => session.attach(track, audioElementFor(p
 session.on('path', ({ peer, kind }) => console.log(peer, 'is', kind));  // direct | gateway | relay | bridged | unreachable
 ```
 
+**Optional: a last resort before `unreachable`.** Off by default. Hand tickets your own TURN
+servers, and let clients try predicted ports first:
+```js
+const authority = createAuthority({
+  app: 'my-app', gates: ['wss://example.com/freehop'],
+  turn: async ({ expires }) => mintTurnCredentials(expires)  // your provider: [{ urls, username, credential }]
+});
+const session = await connect(ticket, { media: { audio: true }, portPrediction: true });
+session.on('path', ({ kind, via }) => { if (via === 'turn') console.log('carried by your TURN relay'); });
+```
+The relay carries only calls that would otherwise fail, and its bandwidth is yours. A provider's free
+tier, or Freehop's own TURN server (`freehop/turn`) on a machine you already run, keeps that at zero.
+See [SDK.md](SDK.md#when-no-route-exists-opt-in).
+
 **Gate:** the signalling service. Set `FREEHOP_GATE_TOKEN_SECRET` to the same private signing key (at least 32 characters) in the backend and gate environments, and put the gate behind your TLS proxy.
 ```bash
 FREEHOP_GATE_PORT=8787 FREEHOP_GATE_PUBLIC_HOST=example.com \
@@ -178,7 +211,7 @@ two people cannot connect directly, and who pays for that traffic.
 
 | Option | What it is | When a direct route fails, media goes through | Your media bill | Built for | License |
 |---|---|---|---|---|---|
-| **Freehop** | Peer-to-peer SDK plus small signalling gates | Machines in the session: a participant's desktop gateway, the host node, or a forwarding participant | **Gates carry no media; operator cost depends on who runs the session gateway** | 2 to 8 people (mesh) | Apache-2.0 |
+| **Freehop** | Peer-to-peer SDK plus small signalling gates | Machines in the session: a participant's desktop gateway, the host node, or a forwarding participant; optionally your own TURN relay as a last resort | **Gates carry no media; operator cost depends on who runs the session gateway, and an opt-in TURN relay bills only the calls that need it** | 2 to 8 people (mesh) | Apache-2.0 |
 | WebRTC + your own TURN | The browser API, plus the servers you build (e.g. coturn) | Your TURN server | Every relayed byte | Small groups (mesh), more with an SFU you add | coturn: BSD-3-Clause |
 | [PeerJS](https://peerjs.com) | Library for one-to-one connections by peer id, with PeerServer signalling | A TURN server you supply; its free TURN service closed in December 2023 | Yours, once you add TURN | One-to-one; groups are a mesh you build | MIT |
 | [Trystero](https://github.com/dmotz/trystero) | Serverless peer-to-peer matchmaking library | A TURN server you add; without one, hard-NAT pairs fail | Yours, once you add TURN | Small groups (mesh) | MIT |
@@ -223,12 +256,13 @@ adds signalling and encryption, with sources.
 | `src/relay/` | TURN gateway, PCP / NAT-PMP / UPnP port mapper, host-node member |
 | `src/electron/` | Desktop helper (main + preload) |
 | `examples/minimal/` | A complete reference app |
-| `lab/` | Reproducible Linux NAT test harness, run in a home lab |
+| `lab/` | Reproducible Linux NAT test harness; `lab/docker.sh` runs it in a disposable Docker container |
+| `tools/` | Release gates (`npm run ship`), including the ladder and contract gates |
 | `website/` | The documentation site (Docusaurus) |
 
 ## Releases
 
-[0.1.0-alpha.4](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.4) adds TypeScript declarations for all 15 public entry points. The JavaScript runtime and imports remain compatible. See the [release changelog](https://github.com/jolynstudios/freehop/releases) for changes and validation, and install `freehop@alpha` from npm.
+[0.1.0-alpha.5](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.5) adds opt-in last resorts before `unreachable` (your own TURN relay, port prediction, NAT classification), all off by default, plus release gates that check existing connection behaviour stays unchanged. [0.1.0-alpha.4](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.4) added TypeScript declarations for all 15 public entry points. See the [release changelog](https://github.com/jolynstudios/freehop/releases) for changes and validation, and install `freehop@alpha` from npm.
 
 ## Get involved
 

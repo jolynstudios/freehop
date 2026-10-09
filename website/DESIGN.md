@@ -1,6 +1,6 @@
 # Freehop — Refero design lock
 
-Current design, 7 October 2026. Freehop is a calling SDK for small meeting rooms, in-app conversations, shared workspaces, Electron apps, communities and games. The homepage leads to the working demos and the SDK quickstart. The published package is `0.1.0-alpha.4`, with TypeScript declarations for all 15 public entry points.
+Current design, 7 October 2026. Freehop is a calling SDK for small meeting rooms, in-app conversations, shared workspaces, Electron apps, communities and games. The homepage leads to the working demos and the SDK quickstart. The published package is `0.1.0-alpha.5`, with TypeScript declarations for all 15 public entry points.
 
 ## References
 

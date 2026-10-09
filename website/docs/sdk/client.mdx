@@ -69,6 +69,7 @@ Media is captured with echo cancellation, noise suppression and automatic gain c
 | `drop(peerId)` | Disconnects a peer locally, without touching a gateway. |
 | `ticket()` | The current ticket. |
 | `stats()` | Resolves to a snapshot of gates, links, paths, media counters and bridges (see below). |
+| `setTurn(servers)` | Replaces the application TURN servers, for example with fresh short-lived credentials, or removes them with `null`. Links already using the relay pick them up at their next ICE restart. `refresh(ticket)` does this for you when the reissued ticket carries `turn`. |
 | `leave()` | Says goodbye to every member, closes all links and gates, stops the devices it captured, and releases the room on this participant's desktop gateway. |
 
 ## Mute a member
@@ -109,7 +110,7 @@ Mute is one-way and audio-only: media still arrives and counts against bandwidth
 | `bridged` | Forwarded by a participant; `via` is the forwarder | |
 | `unreachable` | No route inside the session right now | |
 
-`via` is a peer id. It is `'unknown'` in the rare case where a relay cannot be matched to a member. Show users the path: "voice unavailable on this network" is a better message than silence.
+`via` is a peer id, or `'turn'` for your own opt-in TURN relay. It is `'unknown'` in the rare case where a relay cannot be matched to a member. Show users the path: "voice unavailable on this network" is a better message than silence.
 
 Adaptive video waits for two consecutive five-second samples before stepping down. It looks at video packet loss, dropped frames, decode time, encoder limitation reasons and the per-link outgoing estimate; a high RTT alone does not trigger a change. Five healthy samples allow one step back up. If video is paused, Freehop probes at minimal quality after 25 seconds to check for recovery. Stats and encoding controls vary by browser; unavailable measurements leave the current level unchanged. Manual camera-off always wins.
 
@@ -120,7 +121,10 @@ const s = await session.stats();
 // s.gates  -> [{ url, state, sent, received, bytesOut, bytesIn, errors, connects }]
 // s.links  -> [{ peer, connected, phase, path, restarts, connectMs, media: { inbound, outbound } }]
 // s.bridges, s.relaying, s.counters
+// s.nat    -> { type: 'eim' | 'sequential' | 'random' | 'unknown', delta }   (only with classifyNat or portPrediction)
 ```
+
+With the opt-in options, `s.counters` also reports `natSamples`, `predictAttempts`, `predictCandidates`, `turnAttempts` and any `turnErrors` or `rungErrors`.
 
 `bytesOut` and `bytesIn` per gate are what your gate actually carried for this client: a quick way to see that media never touches it.
 

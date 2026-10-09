@@ -118,6 +118,28 @@ const levels = await session.levels(); // { [peerId]: 0..1 } for speaking indica
 await session.leave();
 ```
 
+### Optional: a last resort before `unreachable`
+
+Both options below are off by default; without them nothing changes. Give tickets your own TURN servers, and let clients try predicted ports first:
+
+```js title="backend.mjs"
+const authority = createAuthority({
+  app: 'my-app',
+  gates: ['wss://gate.example.com/freehop'],
+  // Your TURN provider's short-lived credentials, minted per ticket: [{ urls, username, credential }]
+  turn: async ({ roomId, member, expires }) => mintTurnCredentials(expires)
+});
+```
+
+```js title="call.js"
+const session = await connect(ticket, { media: { audio: true }, portPrediction: true });
+session.on('path', ({ kind, via }) => {
+  if (via === 'turn') showNote('Connected through your TURN relay');
+});
+```
+
+The relay carries only calls that would otherwise be `unreachable`, still encrypted end to end, and its bandwidth is yours. A provider's free tier, or Freehop's own TURN server (`freehop/turn`) on a machine you already run, usually keeps that at zero. Port prediction needs at least two `stun:` servers and stays off by default until it is verified on real carrier networks. See [connect() options](./sdk/client.mdx#connectticket-options) and [paths](./concepts/paths.mdx).
+
 `kind` is one of `direct`, `gateway`, `relay`, `bridged` or `unreachable` once a route is known, and `connecting` before that. Show it to your users: it is honest about what happened. Report `session.id` to your backend so that it can tell the other members which peer to drop after a kick. See [Client: connect](./sdk/client.mdx) for every option and event.
 
 ## 4. Desktop apps: open the participant's front door
@@ -180,6 +202,13 @@ node examples/minimal/server.mjs        # prints http://127.0.0.1:8790
 ```
 
 Open the address in two or more browser windows and join the same room. `test/browser/example-app.mjs` drives the same app with three real browsers and asserts the mesh, the kick rotation and the removal.
+
+To try the opt-in TURN last resort, start the example with your relay; every ticket then carries it, and a call it carries reads "relay via turn":
+
+```bash
+FREEHOP_TURN_URLS=turn:turn.example.com:3478 FREEHOP_TURN_USERNAME=… FREEHOP_TURN_CREDENTIAL=… \
+  node examples/minimal/server.mjs
+```
 
 ## Next
 

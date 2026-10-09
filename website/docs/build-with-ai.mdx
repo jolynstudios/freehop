@@ -24,6 +24,7 @@ Use freehop@alpha and keep the interface and connection layers separate.
 - Attach incoming media tracks to my own HTML call panel.
 - Support chat with small, validated messages, below 20 per second.
 - Show the actual path: direct, gateway, relay, bridged or unreachable.
+- If I configure a TURN relay as a last resort, my backend passes it in tickets (createAuthority({ turn })); never hard-code TURN credentials in the page.
 - Handle missing permissions, blocked playback and connection failures.
 - Leave the session and stop owned media on navigation.
 - Keep keyboard controls, labels and mobile layouts usable.
