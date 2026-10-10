@@ -1,7 +1,7 @@
 ---
 title: Test results
 sidebar_label: Test results
-description: "Alpha.5 verification on 9 October 2026: 201 unit tests, browser suites, TypeScript consumers and a one-run lab rerun with the opt-in routes, alongside the dated 40-run home-lab network matrix."
+description: "Alpha.6 verification on 10 October 2026: 208 unit tests, browser suites including leaving the TURN relay, and TypeScript consumers, with alpha.5's one-run lab rerun of the opt-in routes and the dated 40-run home-lab network matrix."
 ---
 
 import PathBadge from '@site/src/components/PathBadge';
@@ -11,7 +11,7 @@ These are Freehop's own network-test results, produced by its developer in a hom
 
 <StatGrid>
   <Stat value="40/40" label="home-lab network runs passed, 0 failed" note="11 simulated scenarios × 3 Chromium trials, plus 7 cross-engine runs" />
-  <Stat value="201/201" label="unit tests" note="Alpha.5 release checks · 9 October 2026" />
+  <Stat value="208/208" label="unit tests" note="Alpha.6 release checks · 10 October 2026" />
   <Stat value="800/800" label="TURN messages over UDP" note="coturn's turnutils_uclient, 0 lost" />
   <Stat value="800/800" label="TURN messages over TCP" note="coturn's turnutils_uclient, 0 lost" />
 </StatGrid>
@@ -86,11 +86,24 @@ One Chromium run each, in the Docker-packaged lab. The first two rows use the de
 
 Port prediction's success case, a NAT that hands out ports in order, cannot be simulated with Linux NAT and has not yet been tested on real networks; the option stays off by default.
 
+## Leaving the TURN relay (alpha.6, 10 October 2026)
+
+Two Chromium peers on one machine whose pages first accept only relayed candidates (`test/browser/turn-upgrade.mjs`). Same machine and LAN: not a NAT or WAN test.
+
+| Step | Result |
+|---|---|
+| Connect with the application TURN relay | <PathBadge kind="relay" /> via `turn` |
+| A check for a cheaper route while none exists | stays on the relay, no gap in the audio |
+| Every candidate accepted again | both peers move to <PathBadge kind="direct" /> by themselves, no gap in the audio |
+| After the move | the relay forwards 0 bytes; its allocations end about 70 s later |
+
+A variant without the final restart left one allocation open for the rest of the run, so that restart is what releases the relay.
+
 ## Other evidence
 
-### Unit tests: 201 of 201
+### Unit tests: 208 of 208
 
-Passed for alpha.5 on 9 October 2026, including the audio-recovery and adaptive-video regressions and the opt-in route tests: NAT classification, prediction bounds, TURN rung order and fallback, and TURN servers in tickets.
+Passed for alpha.6 on 10 October 2026, including the audio-recovery and adaptive-video regressions, the opt-in route tests (NAT classification, prediction bounds, TURN rung order and fallback, and TURN servers in tickets) and leaving the TURN relay: checks with the relay still configured, its release, the polite side, and TURN as the last rung again afterwards.
 
 - STUN codec with the RFC 5769 test vectors, plus fuzzing.
 - TURN server: integrity, framing, quotas, room bandwidth, IPv6 destination policy and TCP deadlines.
@@ -109,7 +122,7 @@ coturn's `turnutils_uclient` against Freehop's TURN server: **UDP 800/800 and TC
 
 ### Local browser suites (macOS)
 
-On 9 October 2026, `npm run ship` passed the three-engine TLS mesh, multi-gate outage, kick/rekey, SDK reference app and application-TURN suites for alpha.5. The list below also includes the original three-Chromium and public-tracker checks; tracker connectivity was separately exercised in live demo checks.
+On 10 October 2026, `npm run ship` passed the three-engine TLS mesh, multi-gate outage, kick/rekey, SDK reference app, application-TURN and TURN-upgrade suites for alpha.6. The list below also includes the original three-Chromium and public-tracker checks; tracker connectivity was separately exercised in live demo checks.
 
 - A mesh of three Chromium browsers.
 - Chromium, Firefox and WebKit in one mesh over TLS.
@@ -118,10 +131,11 @@ On 9 October 2026, `npm run ship` passed the three-engine TLS mesh, multi-gate o
 - **A public WebTorrent tracker as the only gate** (`wss://tracker.openwebtorrent.com`): no server of our own.
 - The SDK reference app driven through its own interface and API, including a kick rotation.
 - Two Chromium peers that accept only relayed candidates: `unreachable` without the `turn` option, relay via `turn` with it.
+- Two Chromium peers on the application TURN relay leave it for a direct route once one exists, without a gap in the audio, and release it.
 
 ### TypeScript consumers
 
-Declarations cover all 15 public entry points since alpha.4. For alpha.5 on 9 October 2026, strict browser and backend consumers passed with the repository's TypeScript 7 compiler, including the new option types; the TypeScript 6 and Electron 44.6 checks are from alpha.4 on 7 October 2026. After publication on 9 October, a fresh install of `freehop@0.1.0-alpha.5` from npm passed the same compile and runtime smoke checks. Run `npm run typesgate` from a checkout for the maintained consumer fixtures.
+Declarations cover all 15 public entry points since alpha.4. For alpha.6 on 10 October 2026, strict browser and backend consumers passed with the repository's TypeScript 7 compiler; the option types are from alpha.5 plus `timing.turnUpgradeMs`; the TypeScript 6 and Electron 44.6 checks are from alpha.4 on 7 October 2026. After publication on 9 October, a fresh install of `freehop@0.1.0-alpha.5` from npm passed the same compile and runtime smoke checks. Run `npm run typesgate` from a checkout for the maintained consumer fixtures.
 
 ### Security review
 
@@ -134,6 +148,7 @@ The earlier source and test review recorded 11 findings. The subsequent source r
 3. **iOS Safari and Android browsers.** Only desktop engines were tested.
 4. **Media quality under real load.** Forwarded (bridged) media is re-encoded by the participant, and the upstream budget of a forwarding participant on home broadband is still unmeasured.
 5. **Port prediction on real networks.** Its success case, a NAT that hands out ports in order, cannot be simulated with Linux NAT, so `portPrediction` stays off by default.
+6. **The application TURN relay in Firefox and WebKit, and leaving it on real networks.** In the relay-only browser setup, Firefox gets no audio in one direction through the application relay, also with the alpha.5 code. Leaving the relay was tested with Chromium on one machine.
 
 ## Reproduce
 

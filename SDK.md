@@ -6,14 +6,14 @@ and a client; desktop gateways and session hosts are optional.
 
 ## TypeScript support
 
-Since 0.1.0-alpha.4, declarations cover every public entry point (0.1.0-alpha.5 adds the opt-in route options). The runtime remains
+Since 0.1.0-alpha.4, declarations cover every public entry point (0.1.0-alpha.5 adds the opt-in route options, 0.1.0-alpha.6 `timing.turnUpgradeMs`). The runtime remains
 JavaScript; options, event callbacks, tickets, stats and backend APIs are typed for consumers.
 Import `type Session`, `type Ticket` or `type ConnectOptions` from `freehop` as needed.
 Incoming message data is `unknown` and must be narrowed. Outgoing messages are checked for
 JSON compatibility. Backend-only imports do not require DOM types.
 
 Install the typed release with `npm install freehop@alpha`. It is also available on
-[GitHub](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.5). See the [TypeScript setup guide](https://jolynstudios.github.io/freehop/docs/typescript).
+[GitHub](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.6). See the [TypeScript setup guide](https://jolynstudios.github.io/freehop/docs/typescript).
 
 
 ```

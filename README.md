@@ -16,11 +16,13 @@ Open-source calling for small meeting rooms, in-app conversations, shared worksp
 
 </div>
 
-**New in 0.1.0-alpha.5:** opt-in last resorts for calls that would otherwise end `unreachable`:
-your own TURN relay (`turn`), port prediction for NATs that hand out ports in order (`portPrediction`)
-and NAT classification (`classifyNat`). All are off by default, so existing integrations behave
-exactly as before. Install the current alpha from [npm](https://www.npmjs.com/package/freehop), or
-download the [GitHub release](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.5).
+**New in 0.1.0-alpha.6:** your own TURN relay (`turn`, opt-in since alpha.5) now stays the last
+resort after it connects a call. A pair it carries keeps checking for a cheaper route, moves to a
+direct route or a gateway as soon as one works, and then releases the relay. Like port prediction
+(`portPrediction`) and NAT classification (`classifyNat`), it is off unless you configure it, so
+existing integrations behave exactly as before. Install the current alpha from
+[npm](https://www.npmjs.com/package/freehop), or download the
+[GitHub release](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.6).
 
 ```sh
 npm install freehop@alpha
@@ -143,10 +145,10 @@ with Chromium on 9 October:
 Port prediction's success case (a NAT that hands out ports in order) cannot be simulated in this
 lab and is not yet verified on real networks, so it stays off by default. These are repeatable
 simulated-network results, not field reliability evidence. Other checks:
-- **201/201 unit tests** on 9 October 2026, including the RFC 5769 STUN vectors, the security regressions and the opt-in route tests.
+- **208/208 unit tests** on 10 October 2026, including the RFC 5769 STUN vectors, the security regressions, the opt-in route tests and leaving the TURN relay.
 - **coturn's own test client** against Freehop's TURN server on 9 October 2026: 800/800 messages over UDP and 800/800 over TCP, 0 lost.
-- **Browser suites** (`npm run ship`, 9 October 2026): a Chromium, Firefox and WebKit mesh over TLS, multi-gate with every gate shut down mid-call, kick/rekey, the SDK example app, and two Chromium peers that can only connect through the app's TURN relay. A public WebTorrent tracker as the only gate was verified in the original test run.
-- **Release gates:** `laddergate` replays 19 connection scenarios, and the 12 without the opt-in routes must match traces recorded before those routes existed, and `contractgate` freezes the public API, wire format and ticket format.
+- **Browser suites** (`npm run ship`, 10 October 2026): a Chromium, Firefox and WebKit mesh over TLS, multi-gate with every gate shut down mid-call, kick/rekey, the SDK example app, two Chromium peers that can only connect through the app's TURN relay, and two Chromium peers that leave that relay for a direct route without an audio gap and release it. A public WebTorrent tracker as the only gate was verified in the original test run.
+- **Release gates:** `laddergate` replays 23 connection scenarios, and the 12 without the opt-in routes must match traces recorded before those routes existed, and `contractgate` freezes the public API, wire format and ticket format.
 
 Full details are in [RESULTS.md](RESULTS.md).
 
@@ -263,7 +265,7 @@ adds signalling and encryption, with sources.
 
 ## Releases
 
-[0.1.0-alpha.5](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.5) adds opt-in last resorts before `unreachable` (your own TURN relay, port prediction, NAT classification), all off by default, plus release gates that check existing connection behaviour stays unchanged. [0.1.0-alpha.4](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.4) added TypeScript declarations for all 15 public entry points. See the [release changelog](https://github.com/jolynstudios/freehop/releases) for changes and validation, and install `freehop@alpha` from npm.
+[0.1.0-alpha.6](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.6) keeps the application's TURN relay the last resort after it connects: a pair it carries moves to a cheaper route when one works and releases the relay. [0.1.0-alpha.5](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.5) added opt-in last resorts before `unreachable` (your own TURN relay, port prediction, NAT classification), all off by default, plus release gates that check existing connection behaviour stays unchanged. [0.1.0-alpha.4](https://github.com/jolynstudios/freehop/releases/tag/v0.1.0-alpha.4) added TypeScript declarations for all 15 public entry points. See the [release changelog](https://github.com/jolynstudios/freehop/releases) for changes and validation, and install `freehop@alpha` from npm.
 
 ## Get involved
 
