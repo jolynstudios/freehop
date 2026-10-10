@@ -7,7 +7,8 @@ Alpha.6 keeps the application's TURN relay (`turn`) the last resort after it con
 - `npm run ship` passed: 208 unit tests; the export, type, documentation, contract and ladder gates; and the Chromium/Firefox/WebKit TLS mesh, multi-gate outage, kick/rekey, SDK example, application-TURN and TURN-upgrade browser suites.
 - `laddergate` replayed 23 path-ladder scenarios. The 19 stamped for alpha.5 are byte-identical; four new ones cover a pair that stays on the relay, one that moves to a direct route and back to TURN when that route breaks, one that moves to a gateway appearing mid-call, and the polite side.
 - `test/browser/turn-upgrade.mjs`, two Chromium peers on one machine whose pages first accept only relayed candidates: a check with nothing better kept the call on the relay with no gap in the audio. Once every candidate was accepted, both peers moved to a direct route by themselves, again with no audio gap; the relay forwarded 0 bytes afterwards and its allocations ended about 70 s later. A variant without the final restart left one allocation open for the rest of the run, so that restart is what releases the relay.
-- Not verified: leaving the relay on real networks, in WebKit and in Firefox. In this relay-only setup Firefox gets no audio in one direction through the application relay (the TURN server drops it for a missing permission), also with the alpha.5 code, so Firefox through the application relay remains unverified. The Linux NAT lab and coturn conformance were not rerun; their alpha.5 results stand.
+- Work in progress: Firefox through the application relay. In this relay-only setup Firefox gets no audio in one direction through it (the TURN server drops it for a missing permission), also with the alpha.5 code.
+- Not verified: leaving the relay on real networks and in WebKit. The Linux NAT lab and coturn conformance were not rerun; their alpha.5 results stand.
 
 ## Alpha.5 release checks — 9 October 2026
 

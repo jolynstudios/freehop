@@ -246,6 +246,9 @@ adds signalling and encryption, with sources.
   See [SDK.md](SDK.md#when-no-route-exists-opt-in).
 - **Home-lab tested, not field-proven.** Real ISPs, 4G/5G carrier NAT, corporate networks
   and mobile browsers remain unverified. Status: **alpha**.
+- **Firefox through your own TURN relay is work in progress.** In the relay-only browser test,
+  Firefox gets no audio in one direction through the application relay, also on alpha.5, while
+  Chromium connects. Firefox through desktop gateways and host nodes passed the home-lab tests.
 - **Forwarded media is re-encoded.** When a participant forwards the call, it re-encodes the
   media. That participant is in the call anyway.
 

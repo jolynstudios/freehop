@@ -148,7 +148,7 @@ The earlier source and test review recorded 11 findings. The subsequent source r
 3. **iOS Safari and Android browsers.** Only desktop engines were tested.
 4. **Media quality under real load.** Forwarded (bridged) media is re-encoded by the participant, and the upstream budget of a forwarding participant on home broadband is still unmeasured.
 5. **Port prediction on real networks.** Its success case, a NAT that hands out ports in order, cannot be simulated with Linux NAT, so `portPrediction` stays off by default.
-6. **The application TURN relay in Firefox and WebKit, and leaving it on real networks.** In the relay-only browser setup, Firefox gets no audio in one direction through the application relay, also with the alpha.5 code. Leaving the relay was tested with Chromium on one machine.
+6. **The application TURN relay in Firefox (work in progress) and WebKit, and leaving it on real networks.** In the relay-only browser setup, Firefox gets no audio in one direction through the application relay, also with the alpha.5 code. Leaving the relay was tested with Chromium on one machine.
 
 ## Reproduce
 
