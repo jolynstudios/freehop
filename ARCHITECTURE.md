@@ -116,7 +116,9 @@ stateDiagram-v2
 - **Opt-in rungs.** Before a pair is reported unreachable, an application may enable port
   prediction (`portPrediction`, for NATs that allocate ports in order) and its own TURN relay
   (`turn`, reported as `relay` via `'turn'`). Both reuse the restart rules above, add no phase,
-  envelope kind or path kind, and fall through to unreachable on failure (PROTOCOL.md §7a).
+  envelope kind or path kind, and fall through to unreachable on failure (PROTOCOL.md §7a). A pair
+  the TURN relay carries keeps checking for a cheaper route and releases the relay once one holds;
+  a later failure runs the ladder again, TURN last.
 
 ## 4. Gateways
 
@@ -201,11 +203,11 @@ sequenceDiagram
 - **Release gates** (`npm run ship`): besides the unit tests, `exportsgate`, `typesgate` and
   `docsyncgate` check the public surface and the docs; `contractgate` freezes exports, wire
   constants, the ticket format and the client markers downstream apps check; `laddergate` replays
-  19 path-ladder scenarios through real `Room`s on a deterministic fake `RTCPeerConnection` and
+  23 path-ladder scenarios through real `Room`s on a deterministic fake `RTCPeerConnection` and
   compares them with traces checked into `tools/baselines/`.
 - **Browser suites** (`test/browser/`): real Chromium, Firefox and WebKit through Playwright.
   They cover the mesh, cross-engine runs over TLS, multi-gate with a gate outage, kick/rekey,
-  the public tracker, the SDK example and the application TURN rung.
+  the public tracker, the SDK example, the application TURN rung and leaving that relay again.
 - **Home-lab NAT test harness** (`lab/`): a disposable privileged Linux container with network namespaces. Each
   peer gets a router and client namespace with a NAT profile; miniupnpd plays the home router.
   Browsers run inside the namespaces with fake capture devices. `lab/docker.sh` builds the

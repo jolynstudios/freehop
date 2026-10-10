@@ -100,7 +100,10 @@ this):
   peer whose NAT allocates in order, when the other side keeps one mapping or also allocates in order.
   Random NATs are never predicted. It is off by default until it is proven on real carrier networks.
 - `turn: [{ urls, username, credential }]` is your own TURN relay, tried last. The path reports
-  `relay` with `via: 'turn'`. Tickets can carry it: `createAuthority({ turn })` takes the servers or a
+  `relay` with `via: 'turn'`. It stays the last resort after it connects a pair: the pair checks for a
+  cheaper route after a minute (`timing.turnUpgradeMs`), then less often, and within seconds when a
+  gateway it could use appears. When one works, the pair moves to it and releases the relay; if that
+  route fails later, the ladder runs again with TURN last. Tickets can carry it: `createAuthority({ turn })` takes the servers or a
   function `({ roomId, member, expires }) => servers` that mints short-lived credentials per ticket.
   `session.refresh()` applies fresh credentials from a reissued ticket, `session.setTurn(servers)`
   replaces them directly, and `connect(ticket, { turn: null })` keeps TURN off whatever the ticket says.

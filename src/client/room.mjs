@@ -704,6 +704,63 @@ export class Room extends Emitter {
     for (const link of this.links.values()) if (link.useTurn) { try { link.applyServers(false); } catch (error) { this.count('turnErrors', error); } }
   }
 
+  // The application's TURN relay stays the last resort after it connected a pair. The pair keeps
+  // looking for a cheaper route: after turnUpgradeMs, then less often (up to maxRetryMs), and within
+  // seconds when a gateway it could use appears. The relay stays configured during each try, so the
+  // call keeps its route when nothing better exists. Once a cheaper route has held for two media
+  // checks, the relay leaves the pair's servers and a fresh ICE generation releases its allocations;
+  // if that route fails later, the ladder runs again with TURN last. Only the impolite side
+  // restarts: the polite side drops the relay from its servers, for the next generation it answers.
+  // Without application TURN servers (never set, or removed by setTurn) nothing here restarts a link.
+  planTurn(link) {
+    if (link.closed || !link.connected || !this.turnServers) return;
+    if (this.onTurn(link)) {
+      link.turnHeld = true; link.offTurnSince = null;
+      if (link.polite) return;
+      const routes = this.upgradeRoutes(link), known = link.turnRoutes ?? routes;
+      link.turnRoutes = routes;
+      const fresh = routes.some(id => !known.includes(id));
+      if (link.turnTimer && !fresh) return;
+      clearTimeout(link.turnTimer);
+      const delay = fresh ? 1000 : Math.min((this.timing.turnUpgradeMs ?? 60000) * 2 ** Math.min(link.turnProbes ?? 0, 4), this.timing.maxRetryMs);
+      link.turnTimer = setTimeout(() => { link.turnTimer = null; this.probeTurn(link); }, delay);
+      return;
+    }
+    clearTimeout(link.turnTimer); link.turnTimer = null; link.turnRoutes = undefined;
+    if (!link.turnHeld && !link.useTurn) return;
+    link.offTurnSince ??= Date.now();
+    if (link.polite) this.releaseTurn(link, false);
+    else if (Date.now() - link.offTurnSince >= 2 * this.timing.mediaWatchMs) this.releaseTurn(link, true);
+  }
+
+  // Carried by the application's relay: attributed to it, or an unattributed relay on a pair that
+  // reached the TURN rung (a TURN URL with a host name hides the remote end's relay address).
+  onTurn(link) {
+    const { kind, via } = link.path;
+    return !!this.turnServers && kind === 'relay' && (via === 'turn' || via === 'unknown' && !!link.useTurn);
+  }
+
+  // Relays this pair could use instead: our own gateway, the peer's, and other session members'.
+  upgradeRoutes(link) {
+    return [this.ownGateway ? this.id : null, this.caps.get(link.id)?.gateway ? link.id : null, ...this.sessionGatewayIds(link)].filter(Boolean);
+  }
+
+  probeTurn(link) {
+    if (this.closed || link.closed || !link.connected || link.polite || !this.onTurn(link)) return;
+    link.turnProbes = (link.turnProbes ?? 0) + 1;
+    this.count('turnProbes');
+    for (const id of this.sessionGatewayIds(link).filter(id => !link.extraGateways.has(id)).slice(0, 2)) link.extraGateways.add(id);
+    try { link.applyServers(false); } catch (error) { this.count('turnErrors', error); return; }
+    link.requestRestart();
+  }
+
+  releaseTurn(link, restart) {
+    link.useTurn = false; link.turnTried = false; link.turnHeld = false; link.offTurnSince = null;
+    this.count('turnReleases');
+    try { link.applyServers(false); } catch (error) { this.count('turnErrors', error); return; }
+    if (restart) link.requestRestart();
+  }
+
   rescueLink(peer) {
     const link = this.links.get(peer);
     if (!link || link.connected || link.closed) return;
@@ -732,6 +789,7 @@ export class Room extends Emitter {
     const changed = link.path.kind !== kind || link.path.via !== via;
     link.path = { kind, via, ...info };
     if (changed) this.emit('path', { peer: link.id, ...link.path });
+    this.planTurn(link);
   }
 
   gatewayOwner(info) {

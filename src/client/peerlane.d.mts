@@ -59,6 +59,8 @@ export interface RoomTiming {
   predictMs?: number;
   /** Application TURN rung budget (default 10000). */
   turnMs?: number;
+  /** First check for a cheaper route on a pair the application TURN relay carries (default 60000, then doubling up to maxRetryMs). */
+  turnUpgradeMs?: number;
 }
 export interface RoomLimits {
   audioBitrate: number;

@@ -41,8 +41,9 @@ Run the relevant ones before a release whose changes touch the area they guard.
 ## Browser suites in CI
 
 - **Guards:** the TLS mesh on Chromium, Firefox and WebKit; the multi-gate outage, kick/rekey and SDK
-  example suites and the application TURN rung (`test/browser/turn-rung.mjs`, needs a LAN IPv4 address)
-  on Chromium.
+  example suites, the application TURN rung (`test/browser/turn-rung.mjs`) and leaving that relay again
+  once a direct route exists (`test/browser/turn-upgrade.mjs`) on Chromium; both TURN suites need a LAN
+  IPv4 address.
 - **Why manual:** CI runners have no browsers installed; `npm run ship` (without `--fast`) runs them.
 - **Run:** `npm run ship`, or `npm run test:browsers`.
 

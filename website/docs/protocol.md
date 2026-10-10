@@ -155,6 +155,8 @@ Three options, all off by default, add rungs exactly where §7 would report `unr
 
 Order: prediction, then TURN, then `unreachable` with the usual backoff. Both rungs reuse the restart rules of §7 (impolite side first, polite side after `restartFallbackMs`). A rung that fails, for example a TURN URL the browser refuses, is counted (`rungErrors`, `turnErrors`) and the link falls through to `unreachable` in the same escalation. There is no new phase, envelope kind or path kind. Random NATs are never predicted: two of them need a relay.
 
+The application relay stays the last resort after it connects a pair. While a link is carried by it, the impolite side restarts ICE after `timing.turnUpgradeMs` (60 s), then at doubling intervals up to `maxRetryMs`, and within seconds when a gateway the pair could use appears. The relay stays in the link's ICE servers during these restarts, so the pair keeps its route when nothing cheaper works. Once the pair has used another route for two media checks (`mediaWatchMs`), the relay leaves the link's ICE servers on both sides and the TURN rung counts as untried again; the impolite side restarts ICE once more so the relay's allocations end. A later failure runs the whole ladder again, TURN last. The polite side never restarts for this: it answers with the relay removed. Counted as `turnProbes` and `turnReleases`; again no new phase, envelope kind or path kind.
+
 ## 8. Gateways
 
 ### 8.1 Reachability

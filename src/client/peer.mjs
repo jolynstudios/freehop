@@ -293,7 +293,7 @@ export class PeerLink {
   close() {
     if (this.closed) return;
     this.closed = true; this.connected = false;
-    clearTimeout(this.watchdog); clearTimeout(this.recovery); clearTimeout(this.restartFallback); clearTimeout(this.offerTimer);
+    clearTimeout(this.watchdog); clearTimeout(this.recovery); clearTimeout(this.restartFallback); clearTimeout(this.offerTimer); clearTimeout(this.turnTimer);
     try { this.control.close(); } catch {}
     try { this.pc.close(); } catch {}
     this.pendingCandidates = []; this.forwardMap.clear(); this.forwardSenders.clear(); this.remoteTracks.clear();

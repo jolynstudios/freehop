@@ -69,8 +69,14 @@ export function createWorld(scenario) {
       return out;
     },
     evaluate(pc) {
-      if (pc.probe || pc.closed || pc.connectTimer || pc.connectionState === 'connected') return;
+      if (pc.probe || pc.closed || pc.connectTimer) return;
       const peer = bound.get(pc);
+      if (pc.connectionState === 'connected') {
+        // Optional: a later ICE generation of a connected pair may select a better pair, as browsers do.
+        const next = peer && scenario.reselect?.({ pc, peer, room, negotiated: negotiated(pc), configured: url => configured(pc, url), world });
+        if (next && JSON.stringify(next) !== JSON.stringify(pc.pair)) { pc.pair = next; world.record(pc, 'reselect', { local: next.local, remote: next.remote, url: next.url ?? null }); }
+        return;
+      }
       const pair = peer && scenario.connect?.({ pc, peer, room, negotiated: negotiated(pc), configured: url => configured(pc, url), world });
       if (!pair) return;
       pc.connectTimer = setTimeout(() => { pc.connectTimer = null; if (pc.closed) return; pc.pair = pair; pc.setState('connected'); }, scenario.connectDelay ?? 200);
@@ -170,6 +176,9 @@ export async function runScenario(scenario, { mutate } = {}) {
       return link;
     };
     if (room.ownGateway) await room.gatewayCredsFor('self');
+    // The periodic media watch room.start() installs (it re-reads every connected link's path), for
+    // scenarios that depend on it.
+    if (scenario.mediaWatch) room.mediaWatch = setInterval(() => room.checkSending(), room.timing.mediaWatchMs);
     mutate?.(room, world);
     await scenario.setup({ room, world, IDS });
     await clock.run(START + scenario.runMs);
@@ -262,6 +271,7 @@ const generationOf = pc => Number(/r(\d+)$/.exec(pc.remoteUfrag ?? '')?.[1] ?? 0
 const probed = (pc, port) => pc.remoteCandidates.some(c => c.split(' ')[5] === String(port));
 const mappedAt = shift => ({ pc, negotiated }) => negotiated && probed(pc, 41000 + 10 * generationOf(pc) + shift) ? pairs.direct : null;
 const viaTurn = ({ negotiated, configured }) => negotiated && configured(APP_TURN[0].urls[0]) ? pairs.relay(APP_TURN[0].urls[0], '198.18.9.9') : null;
+const directOpen = ({ negotiated, pc, world }) => negotiated && world.directAfter !== undefined && pc.localGeneration > world.directAfter;
 const sequentialMember = (world, IDS, extra = {}) => member(world, IDS.B, 'B', { candidates: sequentialPeer, caps: { v: 1, forward: true, peers: [], gateway: null, nat: { type: 'sequential', delta: 1 } }, ...extra });
 
 export const FEATURE_SCENARIOS = {
@@ -290,6 +300,42 @@ export const FEATURE_SCENARIOS = {
     runMs: 60000, options: { portPrediction: true, turn: APP_TURN },
     connect: args => mappedAt(30)(args) ?? viaTurn(args),
     setup({ world, IDS }) { announce(world, sequentialMember(world, IDS)); },
+  },
+  // Leaving the relay once it carries a pair (test/turn-upgrade.test.mjs).
+  'turn-stays': {
+    runMs: 250000, mediaWatch: true, options: { turn: APP_TURN }, connect: viaTurn,
+    setup({ world, IDS }) { announce(world, member(world, IDS.B, 'B')); },
+  },
+  'turn-upgrade-direct': {
+    // A direct route opens 30 s in, findable only by a later ICE generation; at 120 s it breaks again.
+    runMs: 200000, mediaWatch: true, options: { turn: APP_TURN },
+    connect: args => directOpen(args) ? pairs.direct : viaTurn(args),
+    reselect: args => directOpen(args) ? pairs.direct : null,
+    setup({ world, IDS }) {
+      announce(world, member(world, IDS.B, 'B'));
+      setTimeout(() => { world.directAfter = world.linkFor(IDS.B).pc.localGeneration; }, 30000);
+      setTimeout(() => { world.directAfter = Infinity; world.setState(IDS.B, 'failed'); }, 120000);
+    },
+  },
+  'turn-upgrade-gateway': {
+    // B's own gateway comes up 20 s into a call the relay carries.
+    runMs: 120000, mediaWatch: true, options: { turn: APP_TURN }, connect: viaTurn,
+    reselect: ({ negotiated, configured }) => negotiated && configured(GATEWAYS.B.urls[0]) ? pairs.relay(GATEWAYS.B.urls[0], '198.18.0.20') : null,
+    setup({ world, IDS }) {
+      const b = member(world, IDS.B, 'B');
+      announce(world, b);
+      setTimeout(() => { b.caps = { ...b.caps, gateway: GATEWAYS.B }; world.dispatch(b, { kind: 'caps', caps: b.caps }); }, 20000);
+    },
+  },
+  'turn-upgrade-polite': {
+    // The impolite member restarts ICE once a direct route exists; the polite side never restarts for it.
+    runMs: 120000, self: IDS.Z, mediaWatch: true, options: { turn: APP_TURN },
+    connect: args => directOpen(args) ? pairs.direct : viaTurn(args),
+    reselect: args => directOpen(args) ? pairs.direct : null,
+    setup({ world, IDS }) {
+      const b = member(world, IDS.B, 'B'); announce(world, b); setTimeout(() => world.offer(b), 200);
+      setTimeout(() => { world.directAfter = world.linkFor(IDS.B).pc.localGeneration; world.offer(b); }, 30000);
+    },
   },
   'turn-configuration-refused': {
     runMs: 60000, options: { turn: APP_TURN }, connect: viaTurn,

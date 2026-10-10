@@ -49,7 +49,7 @@ A few rules keep the escalation stable:
 Applications can opt into two more attempts at exactly the point where a pair would report <PathBadge kind="unreachable" />. With neither option set, nothing above changes.
 
 - **Port prediction** (`portPrediction: true`). Some strict NATs hand out ports in order. When one side's NAT does and the other keeps one mapping (or also allocates in order), the link restarts once and probes the peer's next ports for up to 10 s, aiming for <PathBadge kind="direct" />. Random NATs are never predicted.
-- **Your own TURN relay** (`turn`). Tried last, for up to 10 s; the path reports <PathBadge kind="relay" /> with `via: 'turn'`. The media stays encrypted end to end, but it crosses a relay you run or rent, so its bandwidth is yours. A network that can only reach your gate still needs that relay to be reachable through what the network allows.
+- **Your own TURN relay** (`turn`). Tried last, for up to 10 s; the path reports <PathBadge kind="relay" /> with `via: 'turn'`. The media stays encrypted end to end, but it crosses a relay you run or rent, so its bandwidth is yours. It stays the last resort after it connects: the pair checks for a cheaper route after a minute, then less often, and within seconds when a gateway it could use appears. When one works, the pair moves to it and releases the relay. A network that can only reach your gate still needs that relay to be reachable through what the network allows.
 
 ## Play the timeline
 

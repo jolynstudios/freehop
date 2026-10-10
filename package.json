@@ -71,7 +71,7 @@
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "test:browsers": "node test/browser/smoke.mjs chromium,firefox,webkit --tls && node test/browser/multigate.mjs && node test/browser/rekey.mjs && node test/browser/example-app.mjs && node test/browser/turn-rung.mjs",
+    "test:browsers": "node test/browser/smoke.mjs chromium,firefox,webkit --tls && node test/browser/multigate.mjs && node test/browser/rekey.mjs && node test/browser/example-app.mjs && node test/browser/turn-rung.mjs && node test/browser/turn-upgrade.mjs",
     "unitgate": "node tools/unitgate.mjs",
     "exportsgate": "node tools/exportsgate.mjs",
     "docsyncgate": "node tools/docsyncgate.mjs",
